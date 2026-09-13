@@ -83,7 +83,7 @@ Open `src/data/projects.js`. Find the closing `];` at the bottom of the `project
 ```
 
 - **id:** unique, lowercase, hyphenated; it becomes the project URL. Keep existing IDs stable when updating projects.
-- **category:** exactly `Cabinets`, `Vinyl siding`, `Aluminum, fiber cement & engineered wood`, `Brick`, `Stucco`, `Doors & Windows`, or `Commercial`. Cabinets appear in the kitchen/bathroom collection; all other categories appear in exteriors.
+- **category:** exactly `Cabinets`, `Vinyl Siding`, `Aluminum, Fiber Cement & Engineered Wood`, `Brick`, `Stucco`, `Doors & Windows`, or `Commercial`. Cabinets appear in the kitchen/bathroom collection; all other categories appear in exteriors.
 - **surfaceType:** your description, shown in project details. The gallery filters use category and color family only.
 - **colorFamily:** exactly `White`, `Black`, `Gray`, `Blue`, `Green`, `Beige / Tan`, or `Other`.
 - **color:** the specific color name shown in project details. Optional; defaults to the family.

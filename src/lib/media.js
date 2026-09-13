@@ -25,15 +25,16 @@ export function youtubeEmbed(url) {
 
 export function filterProjects(projects, params) {
   const collection = params.get('collection');
+  const category = params.get('category')?.toLowerCase();
   return projects
     .filter(
       (project) =>
         (collection !== 'cabinets' || project.category === 'Cabinets') &&
         (collection !== 'exterior' || project.category !== 'Cabinets') &&
-        (!params.get('category') ||
-          project.category === params.get('category') ||
-          (params.get('category') === 'Siding' &&
-            ['Vinyl siding', 'Aluminum, fiber cement & engineered wood'].includes(project.category))) &&
+        (!category ||
+          project.category.toLowerCase() === category ||
+          (category === 'siding' &&
+            ['Vinyl Siding', 'Aluminum, Fiber Cement & Engineered Wood'].includes(project.category))) &&
         (!params.get('color') || project.colorFamily === params.get('color')),
     )
     .sort((a, b) => a.displayOrder - b.displayOrder);

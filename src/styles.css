@@ -677,25 +677,25 @@
   }
   .filters {
     background: #f3f5f7;
-    padding: 22px;
+    padding: 12px 14px;
     border-radius: 14px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
   }
   .filter-row {
     display: flex;
-    gap: 15px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 8px;
   }
   .filter-row:last-of-type {
     margin-bottom: 0;
   }
   .filter-row legend {
     float: left;
-    width: 110px;
+    width: 92px;
     flex-shrink: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 800;
-    padding-top: 14px;
+    padding-top: 12px;
   }
   .chips {
     display: flex;
@@ -1658,7 +1658,7 @@
     .filter-row legend {
       float: none;
       width: auto;
-      padding: 0 0 10px;
+      padding: 0 0 4px;
     }
     .reset-filters {
       margin-left: 0;
@@ -1980,7 +1980,7 @@
       display: none;
     }
     .filters {
-      padding: 17px;
+      padding: 12px;
     }
     .chip {
       min-height: 52px;
@@ -2330,5 +2330,17 @@
   .update-banner .button {
     min-height: 52px;
     font-size: 18px;
+  }
+}
+
+@layer components {
+  .filters .chips {
+    gap: 6px;
+  }
+  .filters .chip {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 24px;
   }
 }

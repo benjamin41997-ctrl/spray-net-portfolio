@@ -1,7 +1,7 @@
 export const categories = [
   'Cabinets',
-  'Vinyl siding',
-  'Aluminum, fiber cement & engineered wood',
+  'Vinyl Siding',
+  'Aluminum, Fiber Cement & Engineered Wood',
   'Brick',
   'Stucco',
   'Doors & Windows',
@@ -147,7 +147,7 @@ export const projects = [
   {
     id: 'contrasting-engineered-wood',
     title: 'Crisp contrast for engineered wood',
-    category: 'Aluminum, fiber cement & engineered wood',
+    category: 'Aluminum, Fiber Cement & Engineered Wood',
     surfaceType: 'Engineered wood siding',
     colorFamily: 'Black',
     color: 'White and dark tones; exact colors unrecorded',
@@ -169,7 +169,7 @@ export const projects = [
   {
     id: 'slate-aluminum',
     title: 'Aluminum siding in Slate',
-    category: 'Aluminum, fiber cement & engineered wood',
+    category: 'Aluminum, Fiber Cement & Engineered Wood',
     surfaceType: 'Aluminum siding',
     colorFamily: 'Gray',
     color: 'Slate',
@@ -191,7 +191,7 @@ export const projects = [
   {
     id: 'deep-tone-aluminum',
     title: 'A deeper palette for aluminum siding',
-    category: 'Aluminum, fiber cement & engineered wood',
+    category: 'Aluminum, Fiber Cement & Engineered Wood',
     surfaceType: 'Aluminum siding',
     colorFamily: 'Gray',
     color: 'Dark gray; exact color unrecorded',
@@ -213,8 +213,8 @@ export const projects = [
   {
     id: 'slate-vinyl',
     title: 'A refreshed vinyl exterior',
-    category: 'Vinyl siding',
-    surfaceType: 'Vinyl siding',
+    category: 'Vinyl Siding',
+    surfaceType: 'Vinyl Siding',
     colorFamily: 'Gray',
     color: 'Slate',
     location: '',
@@ -279,7 +279,7 @@ export const projects = [
   {
     id: 'blue-engineered-wood',
     title: 'Blue siding, white architectural details',
-    category: 'Aluminum, fiber cement & engineered wood',
+    category: 'Aluminum, Fiber Cement & Engineered Wood',
     surfaceType: 'Engineered wood siding',
     colorFamily: 'Blue',
     color: 'Blue; exact color unrecorded',

@@ -36,9 +36,9 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   );
   await page.locator('.main-nav a').first().click();
   await expect(page.getByRole('group', { name: 'Surface type', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Vinyl siding', exact: true }).click();
+  await page.getByRole('button', { name: 'Vinyl Siding', exact: true }).click();
   await expect(page.locator('.project-card')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Aluminum, fiber cement & engineered wood', exact: true }).click();
+  await page.getByRole('button', { name: 'Aluminum, Fiber Cement & Engineered Wood', exact: true }).click();
   await expect(page.locator('.project-card')).toHaveCount(4);
   await page.getByRole('button', { name: 'Blue', exact: true }).click();
   await expect(page.locator('.project-card')).toHaveCount(1);

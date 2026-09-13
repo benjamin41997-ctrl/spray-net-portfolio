@@ -29,7 +29,7 @@ export default function Videos({ video }) {
     <>
       <PageHeader
         eyebrow="BEHIND THE TRANSFORMATION"
-        title="From formulation to application."
+        title="From Formulation to Application."
         description="Explore the preparation and specialized spray application behind a Spray-Net transformation."
       />
       {!videos.length && (
