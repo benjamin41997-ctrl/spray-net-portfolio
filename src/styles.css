@@ -1405,16 +1405,13 @@
     text-align: center;
     gap: 20px;
   }
-  .stats-strip strong {
-    font-size: 58px;
-    line-height: 1.2;
-    font-weight: 500;
-    letter-spacing: -0.06em;
-  }
   .stats-strip h3 {
-    font-size: 15px;
-    letter-spacing: -0.01em;
-    margin-top: 6px;
+    font-size: clamp(28px, 3.6vw, 42px);
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+  }
+  .stats-strip h3 span {
+    display: block;
   }
   .stats-strip p {
     font-size: 11px;
@@ -2065,13 +2062,8 @@
       max-width: none;
     }
     .stats-strip {
-      gap: 12px;
-    }
-    .stats-strip strong {
-      font-size: 45px;
-    }
-    .stats-strip h3 {
-      font-size: 12px;
+      grid-template-columns: 1fr;
+      gap: 26px;
     }
     .stats-strip p {
       font-size: 10px;
@@ -2186,10 +2178,6 @@
     max-width: none;
     font-size: 12px;
   }
-  .stats-strip strong {
-    font-size: 42px;
-    font-weight: 900;
-  }
   .brand > span {
     margin-top: 5px;
     color: var(--ink);
@@ -2221,9 +2209,6 @@
     }
     .mini-stat span {
       font-size: 10px;
-    }
-    .stats-strip strong {
-      font-size: 28px;
     }
     .comparison-label {
       font-size: 20px;

@@ -1,11 +1,11 @@
 // Customer-facing copy aligned to local corporate materials; source map: docs/BRAND-SOURCES.md.
 // These service highlights replace the original fictional portfolio statistics.
 export const statistics = [
-  { value: 'Factory', label: 'quality finish', detail: 'A like-new finish, applied at your home' },
-  { value: 'Custom', label: 'chemistry', detail: 'Proprietary coatings designed for the surface' },
+  { value: 'Factory', label: 'Quality Finish', detail: 'A like-new finish, applied at your home' },
+  { value: 'Custom', label: 'Chemistry', detail: 'Proprietary coatings designed for the surface' },
   {
-    value: 'On-site',
-    label: 'convenience',
+    value: 'On-Site',
+    label: 'Convenience',
     detail: 'An alternative to replacing existing materials',
   },
 ];

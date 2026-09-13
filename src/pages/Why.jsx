@@ -138,8 +138,10 @@ export default function Why({ article, route }) {
       <section className="stats-strip" aria-label="Spray-Net service highlights">
         {statistics.map((stat) => (
           <div key={stat.label}>
-            <strong>{stat.value}</strong>
-            <h3>{stat.label}</h3>
+            <h3>
+              <span>{stat.value}</span>
+              <span>{stat.label}</span>
+            </h3>
             <p>{stat.detail}</p>
           </div>
         ))}
