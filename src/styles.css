@@ -2314,3 +2314,21 @@
   align-items: center;
   gap: 12px;
 }
+
+@layer components {
+  .update-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px 24px;
+    padding: 12px 4vw;
+    background: #edf3f7;
+    color: var(--ink);
+    font-size: 18px;
+  }
+  .update-banner .button {
+    min-height: 52px;
+    font-size: 18px;
+  }
+}

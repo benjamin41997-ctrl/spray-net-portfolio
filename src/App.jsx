@@ -1,6 +1,7 @@
-import { Component, useCallback, useEffect, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRoute } from './lib/navigation';
 import { mediaUrl } from './lib/media';
+import { hasAppUpdate, subscribeToAppUpdate, refreshPortfolio } from './lib/appUpdates';
 import { useOnline } from './hooks/useOnline';
 import { useSessionReset } from './hooks/useSessionReset';
 import { settings } from './data/settings';
@@ -57,6 +58,7 @@ function NotFound() {
 export default function App() {
   const route = useRoute();
   const online = useOnline();
+  const updateAvailable = useSyncExternalStore(subscribeToAppUpdate, hasAppUpdate);
   const [session, setSession] = useState(0);
   const [offlineReady, setOfflineReady] = useState(false);
   const reset = useCallback(() => setSession((value) => value + 1), []);
@@ -143,6 +145,14 @@ export default function App() {
           <span>Home</span>
         </a>
       </header>
+      {updateAvailable && (
+        <div className="update-banner" role="status">
+          <span>A new portfolio is ready.</span>
+          <button className="button button-dark" onClick={refreshPortfolio}>
+            Update now
+          </button>
+        </div>
+      )}
       {!online && (
         <div className="offline-banner" role="status">
           <Icon name="offline" size={17} />

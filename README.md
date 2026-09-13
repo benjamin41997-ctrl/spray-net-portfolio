@@ -10,7 +10,7 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online, close all portfolio browser tabs and installed app windows, and reopen it. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
 **The first real-media collection contains 16 Spray-Net network projects, three attributed testimonial excerpts, two local corporate films, one corporate YouTube collaboration, and three reference sheets.** These are explicitly identified as network examples, not South Charlotte jobs or reviews. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
@@ -224,7 +224,7 @@ The workflow installs locked dependencies, validates media and data, builds the 
 1. Open the relevant media directory and choose **Add file → Upload files** to add approved images, screenshots, or a small MP4. Commit the upload.
 2. Open the relevant `src/data/` file, choose its pencil edit control, and update the paths and text. Commit the edit.
 3. Open **Actions** and wait for a green deployment. If a build fails, open its **Validate content and build** step to see the missing path or invalid field. Correct it and commit again.
-4. Open the app online on each sales tablet. A new service worker waits until existing app windows close so it will not reload during a consultation. Close all portfolio windows/standalone instances, then reopen online to activate the downloaded update. If necessary, reopen once more after it has checked for updates.
+4. Open the app online on each sales tablet. When the new version has downloaded, a banner says **A new portfolio is ready**. Tap **Update now** to activate it and reload; an active consultation is not interrupted automatically. Closing all portfolio instances also allows a waiting update to activate. For older installations without the banner, close all portfolio browser tabs and home-screen windows, reopen online to download the update, then close and reopen once more if needed.
 5. Confirm the new content and the offline-ready indicator, then test airplane mode before your next visit.
 
 GitHub's web uploader has per-file size limits; keep videos short and compressed. Use GitHub Desktop for larger batches. Do not put media behind Git LFS pointers—Pages needs the real media files in the build.
@@ -266,7 +266,7 @@ No customer data or filter preferences are stored. Browser history remains avail
 - No external fonts, photo servers, or APIs are needed.
 - YouTube is excluded. Local MP4s are optional runtime content, as described above.
 - A missing/failed image has a labeled placeholder. Invalid routes provide a Home action. Empty project filters offer Clear filters.
-- A new version downloads in the background and waits for the old app instances to close. No forced update prompt interrupts the homeowner.
+- A new version downloads in the background and exposes an **Update now** button. It activates when tapped, or after every old app instance closes. There is no forced mid-consultation reload. Foreground/reconnection checks are throttled to once per minute; visible online sessions also check every 15 minutes.
 - Offline use requires a successful initial online load. Device storage pressure, browser clearing, private browsing, or OS storage eviction can remove caches. Reopen online and confirm **Ready offline** before a visit. Do not assume an app is cached just because its icon is installed.
 
 ## Verification
