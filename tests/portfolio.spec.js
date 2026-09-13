@@ -8,7 +8,6 @@ test('content filtering and embed URL validation', () => {
     const params = new URLSearchParams({
       category: project.category,
       color: project.colorFamily,
-      surface: project.surfaceType,
     });
     expect(filterProjects(projects, params)).toContain(project);
   }
@@ -35,6 +34,15 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toContain(
     'Lato',
   );
+  await page.locator('.main-nav a').first().click();
+  await expect(page.getByRole('group', { name: 'Surface type', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Vinyl siding', exact: true }).click();
+  await expect(page.locator('.project-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Aluminum, fiber cement & engineered wood', exact: true }).click();
+  await expect(page.locator('.project-card')).toHaveCount(4);
+  await page.getByRole('button', { name: 'Blue', exact: true }).click();
+  await expect(page.locator('.project-card')).toHaveCount(1);
+  await page.locator('.home-control').click();
   await page.locator('.cabinet-card').click();
   await expect(page.locator('.project-card')).toHaveCount(4);
   await page.getByRole('button', { name: 'Blue', exact: true }).click();
@@ -308,7 +316,7 @@ test('major screens meet automated WCAG AA accessibility checks', async ({ page,
 
 test('network provenance, paired photos, and corporate reference sheets', async ({ page }) => {
   expect(projects).toHaveLength(16);
-  expect(new Set(projects.map((project) => project.category)).size).toBe(6);
+  expect(new Set(projects.map((project) => project.category)).size).toBe(7);
   for (const project of projects) {
     expect(project.location).toBe('');
     expect(project.review).toBe('');

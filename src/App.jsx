@@ -139,7 +139,7 @@ export default function App() {
           aria-label="Home"
           aria-current={route.path === '/' ? 'page' : undefined}
         >
-          <Icon name="home" size={18} />
+          <Icon name="home" size={24} />
           <span>Home</span>
         </a>
       </header>

@@ -30,9 +30,11 @@ export function filterProjects(projects, params) {
       (project) =>
         (collection !== 'cabinets' || project.category === 'Cabinets') &&
         (collection !== 'exterior' || project.category !== 'Cabinets') &&
-        (!params.get('category') || project.category === params.get('category')) &&
-        (!params.get('color') || project.colorFamily === params.get('color')) &&
-        (!params.get('surface') || project.surfaceType === params.get('surface')),
+        (!params.get('category') ||
+          project.category === params.get('category') ||
+          (params.get('category') === 'Siding' &&
+            ['Vinyl siding', 'Aluminum, fiber cement & engineered wood'].includes(project.category))) &&
+        (!params.get('color') || project.colorFamily === params.get('color')),
     )
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }

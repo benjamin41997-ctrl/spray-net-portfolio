@@ -20,7 +20,7 @@ export default function PageHeader({
           }
         }}
       >
-        <Icon name="back" size={18} />
+        <Icon name="back" size={26} />
         {backLabel}
       </a>
       <div className="page-heading-row">

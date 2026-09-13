@@ -29,9 +29,8 @@ export default function Projects({ route }) {
   const availableCategories = categories.filter((category) =>
     pool.some((project) => project.category === category),
   );
-  const surfaces = [...new Set(pool.map((project) => project.surfaceType))];
   const filtered = filterProjects(projects, route.params);
-  const activeCount = ['category', 'color', 'surface'].filter((key) =>
+  const activeCount = ['category', 'color'].filter((key) =>
     route.params.has(key),
   ).length;
   const reset = () =>
@@ -48,9 +47,7 @@ export default function Projects({ route }) {
           All{' '}
           {label.toLowerCase() === 'category'
             ? 'categories'
-            : label.toLowerCase() === 'surface type'
-              ? 'surfaces'
-              : 'colors'}
+            : 'colors'}
         </button>
         {options.map((option) => (
           <button
@@ -127,7 +124,6 @@ export default function Projects({ route }) {
       >
         {availableCategories.length > 1 && group('Category', 'category', availableCategories)}
         {group('Color family', 'color', colorFamilies)}
-        {group('Surface type', 'surface', surfaces)}
         {activeCount > 0 && (
           <button className="text-button reset-filters" onClick={reset}>
             <Icon name="close" size={16} />

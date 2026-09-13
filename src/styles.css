@@ -219,14 +219,17 @@
   .main-nav {
     display: flex;
     align-items: center;
-    gap: clamp(4px, 1.6vw, 26px);
+    gap: clamp(4px, 1vw, 16px);
     margin-left: auto;
   }
   .main-nav a {
-    min-height: 48px;
-    padding: 15px 9px;
-    color: #6d6e70;
-    font-size: 12px;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 9px;
+    color: var(--ink);
+    font-size: 20px;
     font-weight: 800;
     white-space: nowrap;
     position: relative;
@@ -247,11 +250,11 @@
   .home-control {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
+    gap: 10px;
+    font-size: 20px;
     font-weight: 800;
     border: 1px solid #cbd6df;
-    min-height: 46px;
+    min-height: 56px;
     padding: 0 18px;
     border-radius: 100px;
     flex-shrink: 0;
@@ -481,7 +484,8 @@
     position: absolute;
     top: 15px;
     left: 15px;
-    border-radius: 100px;
+    max-width: calc(100% - 30px);
+    border-radius: 20px;
     background: #ffffffed;
     padding: 7px 11px;
     font-size: 9px;
@@ -593,6 +597,9 @@
     padding: 23px 0 30px;
   }
   .back-link {
+    font-size: 20px;
+    min-height: 56px;
+    gap: 12px;
     color: #003965;
     margin-bottom: 17px;
   }
@@ -684,9 +691,9 @@
   }
   .filter-row legend {
     float: left;
-    width: 96px;
+    width: 110px;
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: 16px;
     font-weight: 800;
     padding-top: 14px;
   }
@@ -700,10 +707,11 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-height: 46px;
-    padding: 10px 14px;
-    border-radius: 100px;
-    font-size: 11px;
+    min-height: 52px;
+    max-width: 100%;
+    padding: 12px 18px;
+    border-radius: 28px;
+    font-size: 16px;
     font-weight: 500;
     background: #ffffff;
     border: 1px solid #cbd6df;
@@ -1565,6 +1573,23 @@
       padding-right: max(4vw, calc((100vw - 1360px) / 2));
     }
   }
+  @media (min-width: 761px) and (max-width: 1100px) {
+    .app-header {
+      flex-wrap: wrap;
+      gap: 10px 24px;
+      padding-bottom: 8px;
+    }
+    .home-control {
+      margin-left: auto;
+    }
+    .main-nav {
+      order: 3;
+      flex: 0 0 100%;
+      display: grid;
+      grid-template-columns: repeat(4, auto);
+      margin-left: 0;
+    }
+  }
   @media (max-width: 1000px) {
     .app-header {
       gap: 15px;
@@ -1573,7 +1598,6 @@
       gap: 0;
     }
     .main-nav a {
-      font-size: 11px;
       padding-inline: 7px;
     }
     .brand img {
@@ -1959,8 +1983,8 @@
       padding: 17px;
     }
     .chip {
-      min-height: 46px;
-      font-size: 11px;
+      min-height: 52px;
+      font-size: 16px;
       padding-inline: 12px;
     }
     .comparison {
