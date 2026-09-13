@@ -171,7 +171,7 @@ export default function App() {
       </main>
       <footer className="app-footer">
         <span className="offline-status">
-          <span>Portfolio 1.0.5</span>
+          <span>Portfolio 1.0.6</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />

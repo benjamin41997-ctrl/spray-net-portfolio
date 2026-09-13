@@ -10,9 +10,9 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.5. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.6. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
-**The first real-media collection contains 16 Spray-Net network projects, three attributed testimonial excerpts, two local corporate films, one corporate YouTube collaboration, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
+**The collection contains 53 transformations, 19 customer review excerpts, 16 videos, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
 See [Corporate brand alignment and source map](docs/BRAND-SOURCES.md) for the exact resources, slogans, and implementation decisions. The corporate resources require Marketing Team approval for new marketing materials. This app has been aligned to those resources but has not been submitted or approved by corporate Marketing.
 
@@ -94,7 +94,7 @@ Open `src/data/projects.js`. Find the closing `];` at the bottom of the `project
 - **imageAspectRatio:** optional CSS ratio such as `4 / 3` or `3 / 4` to preserve the photo orientation.
 - **review / videoUrl:** use `''` when unavailable. A project video accepts a local MP4 path or a valid YouTube embed URL.
 - **rating:** a whole number from `1` to `5`, or `null` when unavailable. It is displayed with a project review.
-- **featured:** `true` shows the project on the home screen; `false` keeps it in the main gallery. Three featured projects make a balanced home layout.
+- **featured:** Reserved for future curated collections. The home screen currently shows navigation cards only.
 - **displayOrder:** lower numbers appear first in galleries.
 
 If a sentence contains an apostrophe, use double quotes around it: `description: "You'll love this finish.",` Keep quotes, commas, brackets, and braces intact. The build catches syntax mistakes.
@@ -271,7 +271,7 @@ No customer data or filter preferences are stored. Browser history remains avail
 
 ## Verification
 
-The real-media production build precaches **60 entries totaling approximately 14.2 MiB**, including 32 project photographs, corporate branding, local fonts, video thumbnails, and three reference sheets. The approximately 42 MB of local MP4s load on demand and are not part of this initial download.
+The real-media production build precaches **150 entries totaling approximately 28.8 MiB**, including 109 project photographs, corporate branding, local fonts, video thumbnails, and three reference sheets. The approximately 42 MB of local MP4s load on demand and are not part of this initial download.
 
 The browser suite covers network attribution, nullable review ratings, both comparison layouts, fullscreen reference sheets, filters, navigation, inactivity reset, local MP4 playback/seeking, offline reload, and responsive overflow. Windows WebKit H.264 playback, WebKit service-worker emulation, and the duplicate WebKit accessibility scan are documented skips; Chromium covers those capabilities. Physical iPad/Android installation, audio/captions, and real YouTube playback remain device acceptance checks.
 
@@ -296,3 +296,9 @@ All current customer-facing media is listed in [MEDIA-SOURCES.md](docs/MEDIA-SOU
 Corporate reference images live in `public/media/information/`; their titles, summaries, context, and page associations are in `src/data/resources.js`. They open inside the existing fullscreen viewer and are cached offline. Use the correct country’s document and retain test conditions and footnotes.
 
 `scripts/generate-demo.mjs` and `scripts/generate-demo-video.mjs` are legacy demonstration generators. They are not part of the build and must not be run against the real-media portfolio: they would recreate retired placeholder assets. Previous versions are retained in Git history.
+
+## September 13 Media Expansion — Portfolio 1.0.6
+
+The portfolio now includes **53 transformations, 19 authentic review excerpts, and 16 videos**. The offline shell and local images total approximately 29 MB on first installation. Thirteen new films embed the official Spray-Net YouTube channel; thumbnails work offline, but playback requires internet. Sixteen reviews have verified five-star ratings; three original testimonials retain unreported ratings.
+
+Source filenames and checksums are recorded in `docs/media-sources.json` and `docs/review-sources.json`. Verified video metadata is in `docs/video-sources.json`. See `docs/MEDIA-SOURCES.md` for the selection record. Keep these records updated when adding media.

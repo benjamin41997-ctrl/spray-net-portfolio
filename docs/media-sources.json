@@ -334,5 +334,803 @@
       }
     },
     "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "chantilly-black-island",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_CM_Kitchens_Chantilly Lace_Black Island_Before.png",
+        "sha256": "a23ecffb8e130421569d48d5d0cda2b1ed0e773726d55af8379c5992af161f64",
+        "width": 1800,
+        "height": 1528,
+        "output": "media/projects/chantilly-black-island/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_CM_Kitchens_Chantilly Lace_Black Island_Now.png",
+        "sha256": "aae2ad373d218f900ec497857c33a72906e928232dcfd3df00e565b20f3d8a9b",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/chantilly-black-island/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "black-pepper-navy",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_JA_Kitchens_Black Pepper_Hale Navy Island_Before.JPEG",
+        "sha256": "450ea55becc43df2c409f92a2f5a391d97cd1d7b72516d1691b5cabbd58ee3c5",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/black-pepper-navy/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_JA_Kitchens_Black Pepper_Hale Navy Island_Now.jpg",
+        "sha256": "7a826a8e88f78484fa84c9862575faed8a54de911b9adf046e6095b831976fd6",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/black-pepper-navy/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "decorators-white-island",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_JA_Kitchens_Decorator_s White 4_Before.jpg",
+        "sha256": "9060930bb27a8fe0dafb767f6a2964172794294e2aaa24e6732fe1f950cdbe18",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/decorators-white-island/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_JA_Kitchens_Decorator_s White 4_Now.jpg",
+        "sha256": "0117f935bd05fdd431c75a876a188c6cda2875055c7f92d41cb706594c18812f",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/decorators-white-island/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "chantilly-navy-window",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021-01_Kitchens_Chantilly Lace and Hale Navy_Peterborough_Before.jpg",
+        "sha256": "f77cc1c16a0adc29a3b48a6807a094a9361e6c3b5b0fcb21ae89fe1395807dd3",
+        "width": 1800,
+        "height": 1202,
+        "output": "media/projects/chantilly-navy-window/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021-01_Kitchens_Chantilly Lace and Hale Navy_Peterborough_Now.jpg",
+        "sha256": "47e11fd9ec9e4e4f5ccfd66f4ec703ab59f9547c356265871dd20eabfb5a6c85",
+        "width": 1800,
+        "height": 1202,
+        "output": "media/projects/chantilly-navy-window/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "chantilly-navy-stone",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021-01_Kitchens_Chantilly Lace and Hale Navy_Winnipeg_Before.jpg",
+        "sha256": "aee4771e3d5cf74961f7beacf2087e1b38db6a989734dee45bbf180c865f9955",
+        "width": 908,
+        "height": 680,
+        "output": "media/projects/chantilly-navy-stone/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021-01_Kitchens_Chantilly Lace and Hale Navy_Winnipeg_Now.jpg",
+        "sha256": "24a5509971ba784ccfbb6bb81e2c2a87edbe39181cd23cd10c4e5e6b306905e9",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/chantilly-navy-stone/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "dark-to-chantilly",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_12_Kitchens_Chantilly Lace_Before.png",
+        "sha256": "5fa57f3d07bd635283092bc8c6e59a9706f410c6586bd8e7e8951582f772a14f",
+        "width": 1800,
+        "height": 987,
+        "output": "media/projects/dark-to-chantilly/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_12_Kitchens_Chantilly Lace_Now.png",
+        "sha256": "aa092a335c390112f8d5e0209dad52c1d530d217ee946e99a8576e6de9e30c41",
+        "width": 1800,
+        "height": 988,
+        "output": "media/projects/dark-to-chantilly/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "chantilly-peninsula",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_13_Kitchens_Chantilly Lace_Before.jpg",
+        "sha256": "7c1b90591a04075cdfe24a38fba6f57d7771881547517c0ba45df3f6fff53c2e",
+        "width": 1311,
+        "height": 982,
+        "output": "media/projects/chantilly-peninsula/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_13_Kitchens_Chantilly Lace_Now.jpg",
+        "sha256": "fe862430f30607673535533eb2d64086a69d04d125da870d4d095cf941924284",
+        "width": 1311,
+        "height": 977,
+        "output": "media/projects/chantilly-peninsula/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "chantilly-black-contrast",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_14_Kitchens_Chantilly Lace_Black Island_Before.jpg",
+        "sha256": "78571f83d31d272cea2e1269baa8ec032898a140f599d7fe400c9e1f3047c4a1",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/chantilly-black-contrast/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_14_Kitchens_Chantilly Lace_Black Island_Now.jpg",
+        "sha256": "e5053c9a19149f4bcde09c483f498be68780464a2f14e997896dc26ea6628a7b",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/chantilly-black-contrast/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "chantilly-long-kitchen",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_16_Kitchens_Chantilly Lace_Black Island_Before.jpeg",
+        "sha256": "6c6882f54c0e7024de98ba1f308688cb8886d1e59bb2ad34ac58827428b2ac88",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/chantilly-long-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_16_Kitchens_Chantilly Lace_Black Island_Now.jpeg",
+        "sha256": "4684fed9575035908f1953bd1ab850934fd0fdffcd71aea917e68d42d1610fa3",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/chantilly-long-kitchen/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "decorators-white-compact",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_BB_Kitchens_Decorator's White_Before.jpeg",
+        "sha256": "65463a16dfa6a2ae2454ac2eee98675af2d300109493aa92ff03c86ee3ad78aa",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/decorators-white-compact/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_BB_Kitchens_Decorator's White_Now.jpeg",
+        "sha256": "915667aa71d0dacdf4d64186f671b333c23446bde3ea0f419adc7d1172e83c2d",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/decorators-white-compact/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "balboa-mist-cabinets",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_JA_Kitchens_Balboa Mist_Before.jpg",
+        "sha256": "707d6b8ad9f25e95dc546a2123a184864d5da99b8c5e759d19146defd514f19b",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/balboa-mist-cabinets/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_JA_Kitchens_Balboa Mist_Now.jpg",
+        "sha256": "7a2c92ed2d8a8a02d2739d9176c8d4a9c5853c83029dbcc717b33978897acc62",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/balboa-mist-cabinets/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "collingwood-gray",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_JA_Kitchens_Cabinets Collingwood_Gray Surfaces_Before.png",
+        "sha256": "4575bf4723b3e15dd31317b5b467fd946a527db08eff845f9090895d1db7ac62",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/collingwood-gray/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_JA_Kitchens_Cabinets Collingwood_Gray Surfaces_Now.png",
+        "sha256": "26ae0634e2fafb66c7bc8c2e95c76fb25770a6fa161aab7bed8c762cf8071972",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/collingwood-gray/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "collingwood-black-pepper",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_JA_Kitchens_Collingwood_Black Pepper Island_Before.png",
+        "sha256": "51c702c94c5d5b53a6739740e92c7041f54f160300833ed1f219d81d575aa61a",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/collingwood-black-pepper/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_JA_Kitchens_Collingwood_Black Pepper Island_Now.png",
+        "sha256": "ceb3b6145927e0bcd22de2a08fd542949a01b2e4d4995971cda642e121a9cff4",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/collingwood-black-pepper/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-gray-kitchen",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_03_Before_1.jpg",
+        "sha256": "6f3316373f07482e761fef2480b0bb418a03467519f23e74146d4d78dafef559",
+        "width": 1800,
+        "height": 1200,
+        "output": "media/projects/white-gray-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_03_Now_1.jpg",
+        "sha256": "aacdb69987d73942a85f295214348ecac01ec385a5df7d7882f9b475514cf1fa",
+        "width": 1166,
+        "height": 868,
+        "output": "media/projects/white-gray-kitchen/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-glass-cabinets",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Ottawa_11_Before.jpeg",
+        "sha256": "92cf3ac5a603f979cf62d6180b2d943137d1edc635f2e17b9e69c44c91ba727e",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-glass-cabinets/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Ottawa_11_Now.jpeg",
+        "sha256": "6ed7e7de1315e6bf835e387645d16af581c2966fa5ea9acd0fb80ac1bfd04d3c",
+        "width": 1600,
+        "height": 900,
+        "output": "media/projects/white-glass-cabinets/after.webp"
+      },
+      "additional-1": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Ottawa_11_Now_1.jpeg",
+        "sha256": "f77295badfca19ee28159678aef8f310ab431dc11cc7c0965d92d10a4a23fca0",
+        "width": 1600,
+        "height": 900,
+        "output": "media/projects/white-glass-cabinets/additional-1.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "compact-white-kitchen",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Quebec_01_Before.PNG",
+        "sha256": "929f909744f1a6ea61638c7e4190ca44b62a5a0f3cb451baeac10c79d2ebc3f4",
+        "width": 1800,
+        "height": 1014,
+        "output": "media/projects/compact-white-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Quebec_01_Now.PNG",
+        "sha256": "2390033afb52200c3e94bc1d8870e13518f162e7271dd76fd889cc97035c6cdf",
+        "width": 1800,
+        "height": 1014,
+        "output": "media/projects/compact-white-kitchen/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-blue-centerpiece",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_SouthShore_05_Before.jpg",
+        "sha256": "c117f8fd3363526fdbad1317afd7f89d9aedf87a0531e2db9c5c5917e3cb7faf",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-blue-centerpiece/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_SouthShore_05_Now.jpg",
+        "sha256": "53754249c3e83964ce403e78b26be0510932705d87b4aa60b4eb7edf39e8c124",
+        "width": 1800,
+        "height": 1432,
+        "output": "media/projects/white-blue-centerpiece/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "oak-to-white",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_SouthShore_06_Before.jpg",
+        "sha256": "3508954a6fca1693886a1e8f5016e243f3f6e881cefccb01c98feca27efb650e",
+        "width": 1280,
+        "height": 960,
+        "output": "media/projects/oak-to-white/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_SouthShore_06_Now.jpg",
+        "sha256": "9b0ceeb70b3d3471aa8a9a7265100a158af1ee41097828acfd841a35c86f7583",
+        "width": 1600,
+        "height": 1200,
+        "output": "media/projects/oak-to-white/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-corner-kitchen",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_01_Before.jpg",
+        "sha256": "0fd22dfb67927afcf7afc8beaf092b73661b1fec057fa0f533bae278b7ed7ac3",
+        "width": 640,
+        "height": 480,
+        "output": "media/projects/white-corner-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_01_Now.jpg",
+        "sha256": "8708a99c21f6321733fa9396570f80ba8458c4a492553b1860fb3054b38638d9",
+        "width": 640,
+        "height": 480,
+        "output": "media/projects/white-corner-kitchen/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "muted-blue-kitchen",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_02_Before.jpeg",
+        "sha256": "e537d52c9541a8927f03ca0f846c4faaf62453c61a8e85162707949a5764ce9b",
+        "width": 640,
+        "height": 480,
+        "output": "media/projects/muted-blue-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_02_Now.jpeg",
+        "sha256": "301fe11cb7fa4a36e680c5bf6aab5afc807a4aae7109c444de6efbeb56ab6bfe",
+        "width": 640,
+        "height": 480,
+        "output": "media/projects/muted-blue-kitchen/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-raised-panel",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_03_Before.jpg",
+        "sha256": "5e9d3fc795dd7f1412b466a7810975c38c7b2e85be1589d5402e6a8f6481783b",
+        "width": 1280,
+        "height": 960,
+        "output": "media/projects/white-raised-panel/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_03_Now.jpeg",
+        "sha256": "db32e53ff16c6b885f7f919f65dae72a453128c55ec8cf6bb9b8b17725e5677e",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-raised-panel/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-navy-island",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_04_Before.JPG",
+        "sha256": "4f0da5a2d9f56d97433504ad3e80878659146e0f4b5e445b90acd62f95f483fd",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-navy-island/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_04_Now.JPG",
+        "sha256": "8abbf1ec43ef1a4510ca3fcbacad5aca835c7801ee78722a38c743dbbf54c9bf",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-navy-island/after.webp"
+      },
+      "additional-1": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_04_Now_1.JPG",
+        "sha256": "46eb4f046ca02ca8e52c880eabcc5906edf013b95ce1cf8d2365a91982f7b21b",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-navy-island/additional-1.webp"
+      },
+      "additional-2": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_04_Now_2.JPG",
+        "sha256": "751cd1690029ddc8eb8a3848f696090486c1acb85b808e7d43ec847e14cf3a68",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-navy-island/additional-2.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-condo-kitchen",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_05_Before.jpeg",
+        "sha256": "fbaf57bad6ae2c343d6062bc1b074b6df61021b3c23053d60334e976b386f63b",
+        "width": 640,
+        "height": 480,
+        "output": "media/projects/white-condo-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_05_Now.jpeg",
+        "sha256": "6773c3801b60471f5d3c5de36cd2aba2564654b9a2d9e7c1206d36ecdd251b54",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-condo-kitchen/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "bright-white-blue",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_06_Before.png",
+        "sha256": "8cb4e85dc2111099f47bd4658201fdd1d09c3574be62abd7d59dc7b8392445c5",
+        "width": 460,
+        "height": 375,
+        "output": "media/projects/bright-white-blue/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_06_After.png",
+        "sha256": "7c8da5594b3a120e7e6d30c1ae8fdf5f0ebd54c49e6eff24683c2ef6b0537933",
+        "width": 460,
+        "height": 375,
+        "output": "media/projects/bright-white-blue/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "chantilly-dark-counters",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_Chantilly Lace_Before.JPG",
+        "sha256": "54ebb0f89080d5ff196a97ae16888d875a1754226866c5da276a8c406c01a25f",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/chantilly-dark-counters/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/Kitchen_Vancouver_Chantilly Lace_Now.JPG",
+        "sha256": "c127d23c0f7ceabb4d288f5ae00d363ff195ccce4e7245ee7f68e5ecb65bd9cc",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/chantilly-dark-counters/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "slate-brick-black",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2019_SB_Brick Slate_Custom Vinyl_Black Trim+Door+Windows_Before.jpg",
+        "sha256": "7bc01bde7ffc144fa92156728d15b3a3b2d73964a4aa32de2fe819c9cf10010f",
+        "width": 1800,
+        "height": 1366,
+        "output": "media/projects/slate-brick-black/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2019_SB_Brick Slate_Custom Vinyl_Black Trim+Door+Windows_Now.jpg",
+        "sha256": "b0d9a883b08dc0f32da65554ad39959d6fe32ca42eb79bed595de020766500f3",
+        "width": 1800,
+        "height": 1259,
+        "output": "media/projects/slate-brick-black/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "deep-gray-stucco",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020-10_Saskatoon_Stucco_Before.JPG",
+        "sha256": "b735c6cb2b97ad41884dc38ba927a0a9f0da5b5ee6055f4a34cadd4261529ebf",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/deep-gray-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020-10_Saskatoon_Stucco_Now.JPG",
+        "sha256": "e779dc7dd6316644e80a3732d27958b7d66d17981eb4f8367b5cc89078764199",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/deep-gray-stucco/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "iron-ore-stucco",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Iron Ore_Before.jpg",
+        "sha256": "a4a91b1ec90432cf454f98d012adf88f628b4a3bf87f530552e640a92edee69c",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/iron-ore-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Iron Ore_Now.jpg",
+        "sha256": "0c32851e933a6a6a2499bb9cd46876eb0518c75b75fdbee9a325909d0ba834b9",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/iron-ore-stucco/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "pebble-dark-drift",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Pebble_Dark Drift_Before.jpg",
+        "sha256": "0151005fd5adf304526e54ca861b5c0e5414da4908d473e2d23abc5aba0abaed",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/pebble-dark-drift/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Pebble_Dark Drift_Now.jpg",
+        "sha256": "50beba64fbd900d4cb72c04e66915b900ffd5e256b6499e46d0e43c12300f57a",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/pebble-dark-drift/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "slate-stucco",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Slate_Before.jpg",
+        "sha256": "ef28ab9c1383e286be48770f28be0c21c41c8b964fd00eea81a6e37be9eb4e26",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/slate-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Slate_Now.jpg",
+        "sha256": "eef1b4d77416f335980046d2e6b3b2b7e038825b8e77fe827d85c58d59496974",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/slate-stucco/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "storm-stucco",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Storm_Before.jpg",
+        "sha256": "de015c4335280b44d957fd532771983bd2c905799fe872ad837bbf6830a4454d",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/storm-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco_Storm_Now.jpg",
+        "sha256": "34106c51d3b7b0a8b26bd0973b509146d7a97202756adabef24faa344e5a2ea3",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/storm-stucco/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "dover-gray-brick",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_AC_Brick_Dover Gray_Before.png",
+        "sha256": "5fcdb213861579abfa03f4e6debf5be308b587ae6e9b51fb31343ff7a2f5c4a1",
+        "width": 1800,
+        "height": 994,
+        "output": "media/projects/dover-gray-brick/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_AC_Brick_Dover Gray_After.png",
+        "sha256": "f0b546282908e87ce700d57dc54dc89dabf0c3c1c7d43d8efb410d9c3a34fc72",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/dover-gray-brick/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "coastal-blue-brick",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Brick+Front Door Coastal Blue_White Storm Door_Before.jpeg",
+        "sha256": "7bef3e90449479e8c13d82f103f642298e8220a0a5a64764c1f6ab15d083844f",
+        "width": 828,
+        "height": 1230,
+        "output": "media/projects/coastal-blue-brick/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Brick+Front Door Coastal Blue_White Storm Door_Now.jpeg",
+        "sha256": "32112d7bc26c6077d1d09c788a4755282f4848b2979d8eff9814ccb8c2108842",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/coastal-blue-brick/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "mist-grey-brick",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Brick_Mist Grey XL_Before.jpeg",
+        "sha256": "4b6bfc1df51f763e088f2d91339892b949127de443fc83de7d2da0465a4c2566",
+        "width": 1600,
+        "height": 1200,
+        "output": "media/projects/mist-grey-brick/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Brick_Mist Grey XL_Now.jpeg",
+        "sha256": "de745221d90c31fb7b1ba7859197831c6b227127396eaf6ba6705c7b668c9127",
+        "width": 1600,
+        "height": 1200,
+        "output": "media/projects/mist-grey-brick/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "black-door-window-trim",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Front Door+Windows_Black_Before.jpeg",
+        "sha256": "c2ad24f57deaca4038e0b8013ccac9b3eb1b220bbcf6326eb1436ee1dc86ce36",
+        "width": 1350,
+        "height": 1800,
+        "output": "media/projects/black-door-window-trim/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Front Door+Windows_Black_Now.jpeg",
+        "sha256": "bfeb018431eca0aa358a15bb4502a3522384681a143fff828fb6b16e74ea9dc3",
+        "width": 1350,
+        "height": 1800,
+        "output": "media/projects/black-door-window-trim/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "storm-dover-trim",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Stucco Storm_Dover Gray Trim_Before.jpeg",
+        "sha256": "0b1da2ec2e0c2b63dfc496542b01e4dd0f5dca568be743bd25f00c84ce0257ee",
+        "width": 1600,
+        "height": 1200,
+        "output": "media/projects/storm-dover-trim/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Stucco Storm_Dover Gray Trim_Now.jpeg",
+        "sha256": "004f836ae959497334dd24b1cc5c20546ce9af69af32763cda198d1b804fc1ce",
+        "width": 1600,
+        "height": 1200,
+        "output": "media/projects/storm-dover-trim/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
+  },
+  {
+    "id": "white-stucco-black",
+    "sourceCollection": "Downloaded Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_Stucco_Before.png",
+        "sha256": "8bc51bb1e80a4d9448ac4c7885cdb8bb9d91dfc3511b9397f13920638ce1ef32",
+        "width": 1280,
+        "height": 960,
+        "output": "media/projects/white-stucco-black/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_Stucco_Now.png",
+        "sha256": "3b74b6d8eeef6590064a83a61119223ee3e498af379f4d5620f17c68d820d0ed",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-stucco-black/after.webp"
+      }
+    },
+    "notes": "Source-labelled before/now pair visually reviewed. Full frame retained, orientation normalized, metadata removed. No unverified location or exact color name supplied."
   }
 ]

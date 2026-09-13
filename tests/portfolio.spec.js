@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { reviews } from '../src/data/reviews.js';
+import { videos } from '../src/data/videos.js';
 import { projects } from '../src/data/projects.js';
 import { filterProjects, youtubeEmbed } from '../src/lib/media.js';
 import AxeBuilder from '@axe-core/playwright';
@@ -44,9 +46,9 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   await expect(page.locator('.project-card')).toHaveCount(1);
   await page.locator('.home-control').click();
   await page.locator('.cabinet-card').click();
-  await expect(page.locator('.project-card')).toHaveCount(4);
+  await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets').length);
   await page.getByRole('button', { name: 'Blue', exact: true }).click();
-  await expect(page.locator('.project-card')).toHaveCount(1);
+  await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets' && p.colorFamily === 'Blue').length);
   await page.getByRole('link', { name: /A bold finish in Hale Navy/ }).click();
   await expect(
     page.getByRole('heading', { name: 'A bold finish in Hale Navy', exact: true }),
@@ -78,21 +80,22 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   await page.getByRole('button', { name: 'Black', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'A fresh start?' })).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters', exact: true }).last().click();
-  await expect(page.locator('.project-card')).toHaveCount(4);
+  await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets').length);
   expect(errors).toEqual([]);
 });
 
 test('network testimonials, video embed, and all information pages', async ({ page }) => {
   await page.goto('./#/reviews');
-  await expect(page.locator('.review-card')).toHaveCount(3);
+  await expect(page.locator('.review-card')).toHaveCount(reviews.length);
+  await expect(page.locator('.review-card .stars')).toHaveCount(16);
   await page.getByRole('button', { name: 'Cabinets', exact: true }).click();
-  await expect(page.locator('.review-card')).toHaveCount(2);
-  await expect(page.locator('.review-card .stars')).toHaveCount(0);
+  await expect(page.locator('.review-card')).toHaveCount(reviews.filter(r => r.serviceType === 'Cabinets').length);
+  await expect(page.locator('.review-card').filter({ hasText: 'Tina' }).locator('.stars')).toHaveCount(0);
   await expect(page.getByText('Hear what our customers love about their Spray-Net transformations.')).toBeVisible();
   await page.locator('.home-control').click();
   await page.locator('.video-nav').click();
-  await expect(page.locator('.video-card')).toHaveCount(3);
-  await page.locator('.video-card').last().click();
+  await expect(page.locator('.video-card')).toHaveCount(videos.length);
+  await page.locator('a[href="#/videos/sherry-holmes-kitchen"]').click();
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<p>Embedded video test</p>' }),
   );
@@ -181,14 +184,14 @@ test('manifest, scoped service worker, offline reload and online video fallback'
   ).toBe(true);
   await page.locator('.home-control').click();
   await page.locator('.review-nav').click();
-  await expect(page.locator('.review-card')).toHaveCount(3);
+  await expect(page.locator('.review-card')).toHaveCount(reviews.length);
   await page.locator('.home-control').click();
   await page.locator('.why-nav').click();
   await page.locator('.info-card').first().click();
   await expect(page.locator('.info-article')).toBeVisible();
   await page.locator('.home-control').click();
   await page.locator('.video-nav').click();
-  await page.locator('.video-card').last().click();
+  await page.locator('a[href="#/videos/sherry-holmes-kitchen"]').click();
   await expect(
     page.getByRole('heading', { name: 'Internet connection required to play this video' }),
   ).toBeVisible();
@@ -206,16 +209,24 @@ test('manifest, scoped service worker, offline reload and online video fallback'
     cachedURLs.some((url) => url.includes('media/projects/chantilly-lace-kitchen/before.webp')),
   ).toBe(true);
   expect(cachedURLs.some((url) => url.includes('branding/fonts/Lato-Black.ttf'))).toBe(true);
+  for (const project of projects) {
+    for (const image of [project.beforeImage, project.afterImage, ...project.additionalImages]) {
+      expect(cachedURLs.some((url) => url.includes(image)), `${image} is available offline`).toBe(true);
+    }
+  }
+  for (const video of videos) {
+    expect(cachedURLs.some((url) => url.includes(video.thumbnail))).toBe(true);
+  }
 });
 
 test('inactivity resets to home and clears filters', async ({ page }) => {
   await page.clock.install();
   await page.goto('./#/projects?collection=cabinets&color=Blue');
-  await expect(page.locator('.project-card')).toHaveCount(1);
+  await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets' && p.colorFamily === 'Blue').length);
   await page.clock.runFor(10 * 60_000 + 1000);
   await expect(page).toHaveURL(/#\/$/);
   await page.locator('.cabinet-card').click();
-  await expect(page.locator('.project-card')).toHaveCount(4);
+  await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets').length);
 });
 
 test('responsive layouts, loaded images, and no external navigation', async ({ page }) => {
@@ -315,7 +326,7 @@ test('major screens meet automated WCAG AA accessibility checks', async ({ page,
 });
 
 test('network provenance, paired photos, and corporate reference sheets', async ({ page }) => {
-  expect(projects).toHaveLength(16);
+  expect(projects.length).toBeGreaterThanOrEqual(53);
   expect(new Set(projects.map((project) => project.category)).size).toBe(7);
   for (const project of projects) {
     expect(project.location).toBe('');
