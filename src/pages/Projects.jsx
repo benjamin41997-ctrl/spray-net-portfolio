@@ -104,7 +104,10 @@ export default function Projects({ route }) {
         <p aria-live="polite" role="status">
           <strong>{filtered.length}</strong>{' '}
           {filtered.length === 1 ? 'transformation' : 'transformations'}
-          {settings.demoMode && <span className="demo-inline"> · Illustrative projects</span>}
+          <span className="demo-inline">
+            {' '}
+            · {settings.demoMode ? 'Illustrative projects' : 'Spray-Net network projects'}
+          </span>
         </p>
         <button
           className="filter-toggle"

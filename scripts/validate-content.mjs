@@ -4,6 +4,7 @@ import { reviews } from '../src/data/reviews.js';
 import { content, statistics } from '../src/data/content.js';
 import { videos } from '../src/data/videos.js';
 import { settings } from '../src/data/settings.js';
+import { resources } from '../src/data/resources.js';
 import { youtubeEmbed } from '../src/lib/media.js';
 
 const errors = [];
@@ -101,8 +102,9 @@ for (const review of reviews) {
   ])
     check(field in review, `Review ${review.id}: missing ${field}.`);
   check(
-    Number.isInteger(review.rating) && review.rating >= 1 && review.rating <= 5,
-    `Review ${review.id}: rating must be an integer from 1 to 5.`,
+    review.rating === null ||
+      (Number.isInteger(review.rating) && review.rating >= 1 && review.rating <= 5),
+    `Review ${review.id}: rating must be null (not published) or an integer from 1 to 5.`,
   );
   check(
     Boolean(review.text && review.customerName),
@@ -142,6 +144,13 @@ check(
   'Inactivity minutes must be a number >= 0.',
 );
 media(settings.logo, 'Brand logo');
+for (const resource of resources) {
+  media(resource.image, `Resource ${resource.id}`);
+  check(
+    content.some((article) => article.id === resource.articleId),
+    `Resource ${resource.id}: unknown article.`,
+  );
+}
 if (errors.length) {
   console.error(`Content validation failed:\n${errors.map((error) => `  • ${error}`).join('\n')}`);
   process.exit(1);

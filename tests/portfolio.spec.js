@@ -37,11 +37,11 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   );
   await page.locator('.cabinet-card').click();
   await expect(page.locator('.project-card')).toHaveCount(4);
-  await page.getByRole('button', { name: 'Green', exact: true }).click();
+  await page.getByRole('button', { name: 'Blue', exact: true }).click();
   await expect(page.locator('.project-card')).toHaveCount(1);
-  await page.getByRole('link', { name: /A fresh perspective/ }).click();
+  await page.getByRole('link', { name: /A bold finish in Hale Navy/ }).click();
   await expect(
-    page.getByRole('heading', { name: 'A fresh perspective', exact: true }),
+    page.getByRole('heading', { name: 'A bold finish in Hale Navy', exact: true }),
   ).toBeVisible();
   const slider = page.getByRole('slider', { name: 'Before and now comparison' });
   await expect(page.locator('.after-label')).toHaveText('NOW');
@@ -57,13 +57,13 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   await page.goBack();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('button', { name: 'Green', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Blue', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
   await page.locator('.project-card').first().click();
   await page.locator('.back-link').click();
-  await expect(page.getByRole('button', { name: 'Green', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Blue', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -74,22 +74,31 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
   expect(errors).toEqual([]);
 });
 
-test('reviews, screenshot, video preview, and all information pages', async ({ page }) => {
+test('network testimonials, video embed, and all information pages', async ({ page }) => {
   await page.goto('./#/reviews');
-  await expect(page.locator('.review-card')).toHaveCount(4);
+  await expect(page.locator('.review-card')).toHaveCount(3);
   await page.getByRole('button', { name: 'Cabinets', exact: true }).click();
   await expect(page.locator('.review-card')).toHaveCount(2);
-  await page.getByRole('button', { name: 'View review screenshot from Taylor L.' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Close fullscreen viewer' }).click();
-  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.locator('.review-card .stars')).toHaveCount(0);
+  await expect(page.getByText(/These are not reviews of Spray-Net South Charlotte/)).toBeVisible();
   await page.locator('.home-control').click();
   await page.locator('.video-nav').click();
-  await expect(page.locator('.video-card')).toHaveCount(2);
+  await expect(page.locator('.video-card')).toHaveCount(3);
   await page.locator('.video-card').last().click();
-  await expect(page.getByRole('heading', { name: 'Film coming soon' })).toBeVisible();
+  await page.route('https://www.youtube-nocookie.com/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<p>Embedded video test</p>' }),
+  );
+  await page
+    .getByRole('button', { name: 'Play A kitchen transformation with Sherry Holmes' })
+    .click();
+  await expect(page.locator('iframe')).toHaveAttribute('src', /youtube-nocookie.com/);
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'sandbox',
+    'allow-scripts allow-same-origin allow-presentation',
+  );
   await page.locator('.home-control').click();
   await page.locator('.why-nav').click();
+  await expect(page.locator('.info-card')).toHaveCount(7);
   const hrefs = await page
     .locator('.info-card')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
@@ -108,8 +117,8 @@ test('local MP4 starts and can seek', async ({ page, browserName }) => {
     browserName === 'webkit' && process.platform === 'win32',
     'Verify H.264 on real iPad Safari; Windows WebKit lacks codec support.',
   );
-  await page.goto('./#/videos/process-preview');
-  await page.getByRole('button', { name: 'Play A fresh finish, step by step' }).click();
+  await page.goto('./#/videos/network-exterior-process');
+  await page.getByRole('button', { name: 'Play An exterior transformation, step by step' }).click();
   await expect(page.locator('video')).toBeVisible();
   await expect
     .poll(() => page.locator('video').evaluate((video) => video.currentTime))
@@ -164,7 +173,7 @@ test('manifest, scoped service worker, offline reload and online video fallback'
   ).toBe(true);
   await page.locator('.home-control').click();
   await page.locator('.review-nav').click();
-  await expect(page.locator('.review-card')).toHaveCount(4);
+  await expect(page.locator('.review-card')).toHaveCount(3);
   await page.locator('.home-control').click();
   await page.locator('.why-nav').click();
   await page.locator('.info-card').first().click();
@@ -185,15 +194,15 @@ test('manifest, scoped service worker, offline reload and online video fallback'
     ).flat(),
   );
   expect(cachedURLs.some((url) => url.includes('youtube'))).toBe(false);
-  expect(cachedURLs.some((url) => url.includes('media/projects/sage-kitchen-before.svg'))).toBe(
-    true,
-  );
+  expect(
+    cachedURLs.some((url) => url.includes('media/projects/chantilly-lace-kitchen/before.webp')),
+  ).toBe(true);
   expect(cachedURLs.some((url) => url.includes('branding/fonts/Lato-Black.ttf'))).toBe(true);
 });
 
 test('inactivity resets to home and clears filters', async ({ page }) => {
   await page.clock.install();
-  await page.goto('./#/projects?collection=cabinets&color=Green');
+  await page.goto('./#/projects?collection=cabinets&color=Blue');
   await expect(page.locator('.project-card')).toHaveCount(1);
   await page.clock.runFor(10 * 60_000 + 1000);
   await expect(page).toHaveURL(/#\/$/);
@@ -212,7 +221,8 @@ test('responsive layouts, loaded images, and no external navigation', async ({ p
     for (const route of [
       '/',
       '/projects',
-      '/projects/a-fresh-perspective',
+      '/projects/hale-navy-kitchen',
+      '/projects/commercial-metal-building',
       '/reviews',
       '/videos',
       '/why',
@@ -252,12 +262,12 @@ test('responsive layouts, loaded images, and no external navigation', async ({ p
 });
 
 test('direct image link closes safely and invalid routes recover', async ({ page }) => {
-  await page.goto('./#/projects/a-fresh-perspective?photo=0');
+  await page.goto('./#/projects/hale-navy-kitchen?photo=0');
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', { name: 'Close fullscreen viewer' }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(
-    page.getByRole('heading', { name: 'A fresh perspective', exact: true }),
+    page.getByRole('heading', { name: 'A bold finish in Hale Navy', exact: true }),
   ).toBeVisible();
   await page.goto('./#/unknown');
   await expect(page.getByRole('heading', { name: 'A new direction.' })).toBeVisible();
@@ -274,7 +284,7 @@ test('major screens meet automated WCAG AA accessibility checks', async ({ page,
   for (const route of [
     '/',
     '/projects',
-    '/projects/a-fresh-perspective',
+    '/projects/hale-navy-kitchen',
     '/reviews',
     '/videos',
     '/why',
@@ -294,4 +304,31 @@ test('major screens meet automated WCAG AA accessibility checks', async ({ page,
     );
   }
   expect(violations).toEqual([]);
+});
+
+test('network provenance, paired photos, and corporate reference sheets', async ({ page }) => {
+  expect(projects).toHaveLength(16);
+  expect(new Set(projects.map((project) => project.category)).size).toBe(6);
+  for (const project of projects) {
+    expect(project.location).toBe('');
+    expect(project.review).toBe('');
+    expect(project.rating).toBeNull();
+    expect(project.attribution).toBe('Spray-Net network project');
+  }
+  await page.goto('./#/projects/commercial-metal-building');
+  await expect(page.locator('.comparison-pair img')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Slider', exact: true }).click();
+  await expect(page.getByRole('slider')).toBeVisible();
+  await page.getByRole('button', { name: 'Side by side', exact: true }).click();
+  await expect(page.getByRole('slider')).not.toBeVisible();
+  await page.goto('./#/why/paint-comparison');
+  await page.getByRole('button', { name: 'View Cabinet coating comparison fullscreen' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.locator('.resource-sheet')).toHaveCount(2);
+  await page.goto('./#/why/coating-technology?sheet=stucco-technology');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Close fullscreen viewer' }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
 });

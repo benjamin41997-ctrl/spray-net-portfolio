@@ -1,27 +1,40 @@
-// type is "local" or "youtube". YouTube requires an embed URL, never a watch URL.
+// Corporate customer-facing films. The multi-GB staff training library stays outside the app.
 export const videos = [
   {
-    id: 'process-preview',
-    title: 'A fresh finish, step by step',
-    eyebrow: 'THE PROCESS',
-    duration: '0:12',
+    id: 'network-exterior-process',
+    title: 'An exterior transformation, step by step',
+    eyebrow: 'THE EXTERIOR PROCESS',
+    duration: '1:30',
     description:
-      'A short animated sample: prepare, coat, and reveal. Replace with your own approved production footage.',
+      'A corporate Spray-Net film showing preparation, spray application, and the finished exterior. Includes siding and roof-coating footage; your proposal confirms the services available for your home.',
     type: 'local',
-    url: 'media/videos/process-demo.mp4',
-    thumbnail: 'media/projects/sage-kitchen-after.svg',
-    captions: 'media/videos/process-demo.vtt',
-    note: 'Illustrative animation · No audio',
+    url: 'media/videos/network-exterior-transformation.mp4',
+    thumbnail: 'media/videos/network-exterior.webp',
+    note: 'Spray-Net corporate film · Network project · 26 MB · Local video',
   },
   {
-    id: 'exterior-preview',
-    title: 'See the exterior possibilities',
-    eyebrow: 'THE TRANSFORMATION',
-    duration: 'Preview',
+    id: 'network-home-process',
+    title: 'A coordinated exterior finish',
+    eyebrow: 'PREPARATION TO REVEAL',
+    duration: '0:56',
     description:
-      'This card is ready for an approved Spray-Net YouTube embed. Your salesperson can walk you through the exterior process in the meantime.',
+      'Watch a Spray-Net network crew work across a home’s exterior. This original corporate film includes roof, siding, and garage-door footage; it is not a South Charlotte project.',
+    type: 'local',
+    url: 'media/videos/network-home-transformation.mp4',
+    thumbnail: 'media/videos/network-home.webp',
+    note: 'Spray-Net corporate archive film · Original branding retained · 16 MB · Local video',
+  },
+  {
+    id: 'sherry-holmes-kitchen',
+    title: 'A kitchen transformation with Sherry Holmes',
+    eyebrow: 'CORPORATE COLLABORATION',
+    duration: 'Online film',
+    description:
+      'The kitchen collaboration featured on Spray-Net’s corporate website. A network example of bringing a new color palette to existing cabinetry.',
     type: 'youtube',
-    url: '',
-    thumbnail: 'media/projects/white-brick-after.svg',
+    url: 'https://www.youtube.com/embed/EZZetN1m7bg',
+    thumbnail: 'media/videos/kitchen-collaboration.svg',
+    note: 'Spray-Net corporate collaboration · Internet connection required',
+    sourceUrl: 'https://www.spray-net.com/collaborations',
   },
 ];

@@ -3,9 +3,14 @@ import { brand } from '../data/brand';
 import PageHeader from '../components/PageHeader';
 import Icon from '../components/Icon';
 import Photo from '../components/Photo';
-export default function Why({ article }) {
+import Lightbox from '../components/Lightbox';
+import { resources } from '../data/resources';
+import { closeOverlay, updateQuery } from '../lib/navigation';
+export default function Why({ article, route }) {
   if (article) {
     const next = content[(content.indexOf(article) + 1) % content.length];
+    const sheets = resources.filter((item) => item.articleId === article.id);
+    const selectedSheet = sheets.find((item) => item.id === route?.params.get('sheet'));
     return (
       <>
         <PageHeader
@@ -51,6 +56,23 @@ export default function Why({ article }) {
               ))}
             </div>
           )}
+          {sheets.map((sheet) => (
+            <section className="resource-sheet" key={sheet.id}>
+              <h3>{sheet.title}</h3>
+              <p>{sheet.description}</p>
+              <button
+                className="resource-preview"
+                onClick={() => updateQuery(route, 'sheet', sheet.id, false)}
+                aria-label={`View ${sheet.title} fullscreen`}
+              >
+                <Photo src={sheet.image} alt={sheet.title} />
+                <span className="button">
+                  View full sheet <Icon name="expand" size={18} />
+                </span>
+              </button>
+              <p>{sheet.context}</p>
+            </section>
+          ))}
           <div className="article-note">
             <Icon name="quote" />
             <p>
@@ -59,6 +81,19 @@ export default function Why({ article }) {
             </p>
           </div>
         </article>
+        {selectedSheet && (
+          <Lightbox
+            images={[
+              {
+                src: selectedSheet.image,
+                alt: `${selectedSheet.title}. ${selectedSheet.description}`,
+              },
+            ]}
+            index={0}
+            onChange={() => {}}
+            onClose={() => closeOverlay(route, 'sheet')}
+          />
+        )}
         <a className="next-article" href={`#/why/${next.id}`}>
           <div>
             <span className="eyebrow">KEEP EXPLORING</span>
@@ -83,8 +118,8 @@ export default function Why({ article }) {
           <p>Proprietary coatings. Specialized spray application. An alternative to replacement.</p>
         </div>
         <Photo
-          src="media/projects/white-kitchen-detail.svg"
-          alt="Illustration of white cabinetry and warm brass details"
+          src="media/projects/oxford-white-black-island/after.webp"
+          alt="Spray-Net network kitchen with Oxford White cabinets and a black island"
         />
       </section>
       <div className="info-grid">

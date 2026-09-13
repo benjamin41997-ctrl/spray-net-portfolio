@@ -94,7 +94,8 @@ export default function App() {
   else if (route.path === '/videos') page = <Videos />;
   else if (video && route.path === `/videos/${video.id}`) page = <Videos video={video} />;
   else if (route.path === '/why') page = <Why />;
-  else if (article && route.path === `/why/${article.id}`) page = <Why article={article} />;
+  else if (article && route.path === `/why/${article.id}`)
+    page = <Why article={article} route={route} />;
   else page = <NotFound />;
   return (
     <>
@@ -166,7 +167,7 @@ export default function App() {
         <p>
           {settings.demoMode
             ? 'Demo portfolio · Illustrative projects & sample reviews'
-            : brand.tagline}
+            : settings.portfolioNotice || brand.tagline}
         </p>
         <span className="offline-status">
           {offlineReady && (

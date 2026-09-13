@@ -28,8 +28,8 @@ export default function Home() {
       <section className="home-cards" aria-label="Explore the portfolio">
         <a className="visual-card cabinet-card" href="#/projects?collection=cabinets">
           <Photo
-            src="media/projects/sage-kitchen-after.svg"
-            alt="Illustration of a sunlit sage kitchen with a warm wood island"
+            src="media/projects/chantilly-lace-kitchen/after.webp"
+            alt="Spray-Net network kitchen refinished in Chantilly Lace"
             eager
           />
           <span className="card-kicker">FACTORY-QUALITY FINISH</span>
@@ -50,8 +50,8 @@ export default function Home() {
         </a>
         <a className="visual-card exterior-card" href="#/projects?collection=exterior">
           <Photo
-            src="media/projects/white-brick-after.svg"
-            alt="Illustration of a white brick home with charcoal trim"
+            src="media/projects/white-brick-stucco/after.webp"
+            alt="Spray-Net network home with white masonry and dark accents"
             eager
           />
           <div className="visual-card-bottom">
@@ -76,7 +76,7 @@ export default function Home() {
           <div>
             <span className="small-caps">IN THEIR WORDS</span>
             <h2>Customer Reviews</h2>
-            <p>Our customers’ experience.</p>
+            <p>Stories from across Spray-Net.</p>
           </div>
           <Icon name="arrow" />
         </a>

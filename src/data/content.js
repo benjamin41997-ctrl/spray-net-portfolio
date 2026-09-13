@@ -66,7 +66,7 @@ export const content = [
     paragraphs: [
       'Different surfaces need different properties. Some need flexibility; others need breathability. Spray-Net develops proprietary coatings for those specific requirements instead of taking a one-size-fits-all approach.',
       'Our exterior process includes weather-adjustable coatings that can be adapted on-site to temperature and humidity. The coating and application process work together to achieve the intended finish.',
-      'Your representative will explain the system for your project. Final colors should be chosen from approved physical samples; screen colors and the illustrations in this portfolio are a starting point.',
+      'Your representative will explain the system for your project. Final colors should be chosen from approved physical samples; screen colors and project photographs are a starting point.',
     ],
   },
   {

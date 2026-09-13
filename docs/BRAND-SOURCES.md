@@ -2,6 +2,8 @@
 
 Reviewed September 12, 2026 against the local corporate resources listed below. This document records the basis for the implementation; it is **not a claim of corporate Marketing approval** of this new app.
 
+**Media update, September 13, 2026:** The demonstration projects, reviews, and artwork mentioned in this original branding audit have since been replaced by real, attributed network media. See [Media sources and remaining gaps](MEDIA-SOURCES.md) for the current collection. The visual standards and corporate source map below remain applicable; references to demo content describe the earlier revision.
+
 ## Visual standards applied
 
 | Standard                              | Application                                                                                                       |

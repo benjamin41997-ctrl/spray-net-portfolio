@@ -1,0 +1,338 @@
+[
+  {
+    "id": "chantilly-lace-kitchen",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_15_Kitchens_Chantilly Lace_Before.jpg",
+        "sha256": "e3d31ddc8d353691d910c73a02ad2ad2a132f1ccfb210d65d482b1b9220bd1a8",
+        "width": 1280,
+        "height": 853,
+        "output": "media/projects/chantilly-lace-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_15_Kitchens_Chantilly Lace_Now.jpg",
+        "sha256": "99729da0466eabed5502ddb98900a70465b2e5b026153d8ae7281e444ac03654",
+        "width": 1280,
+        "height": 853,
+        "output": "media/projects/chantilly-lace-kitchen/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "oxford-white-black-island",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Market Picks - South Charlotte/Source Pairs/Interiors/02_Oxford_White_Black_Island_BEFORE.jpg",
+        "sha256": "3d9c68b5e4252fbb23a4633656b1f037252d34cb537d037bfce14cc8de2374ce",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/oxford-white-black-island/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Market Picks - South Charlotte/Source Pairs/Interiors/02_Oxford_White_Black_Island_NOW.jpg",
+        "sha256": "a3c3b2ea516945a9154fe4f8f30ef79df867dd079ed1ade031005880afbd606e",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/oxford-white-black-island/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "hale-navy-kitchen",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_Kitchen_Hale Navy_Before.jpeg",
+        "sha256": "999b1e9b77c8aae44879859900762cddb72f3457b4c810b6ea08bcdf8b016412",
+        "width": 1265,
+        "height": 961,
+        "output": "media/projects/hale-navy-kitchen/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2021_Kitchen_Hale Navy_Now.jpeg",
+        "sha256": "15b368cbdc4a18eff8761acc81ef67cfca3e63e1a0883e95617dfca26ec4e49a",
+        "width": 1265,
+        "height": 961,
+        "output": "media/projects/hale-navy-kitchen/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "collingwood-blue-island",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_JA_Kitchens_Collingwood_Custom Polo Blue Island_Before.jpg",
+        "sha256": "579a3816a4de22d948be7fa482db367b0f207e316ebae806d696093c72020b8a",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/collingwood-blue-island/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Kitchen Cabinets/Kitchen Cabinets/2020_JA_Kitchens_Collingwood_Custom Polo Blue Island_Now.jpg",
+        "sha256": "3865f6470c0799ef5423e7b1a267f74588fdfe25c0c586556cdd228837b9a054",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/collingwood-blue-island/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "windswept-smoke-stucco",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco Windswept Smoke_Iron Ore Doors+Windows_Before.jpg",
+        "sha256": "927b8e39ada287eb74552020228b91cf7caaa41e3d3ad4b487ccff47fa04b1ae",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/windswept-smoke-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Stucco Windswept Smoke_Iron Ore Doors+Windows_Now.jpg",
+        "sha256": "0b5b1d53bab0abb4b64ac6074c562dcc43cbc56eb65ed999335bfe88a485c627",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/windswept-smoke-stucco/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "white-brick-stucco",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Brick+Stucco White_Doors+Windows Black_Custom Trim_Before.jpg",
+        "sha256": "ce729d69ab53cfa8b50256128d759edb2580fdb98d35292f8f833832ba7ecf4f",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-brick-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020_JA_Brick+Stucco White_Doors+Windows Black_Custom Trim_Now.JPEG",
+        "sha256": "2a3f630b2e4d621264efbb3f6ba7160cc3df30e7a04358560a9247b773aab140",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/white-brick-stucco/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "contrasting-engineered-wood",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020-09_Beauce_Engineered Wood_Before.jpg",
+        "sha256": "567075e8786b947b09b0051a36009d28f30e0ba067e0ddaf4fe8a55dd18b51b7",
+        "width": 1800,
+        "height": 875,
+        "output": "media/projects/contrasting-engineered-wood/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2020-09_Beauce_Engineered Wood_Now.jpg",
+        "sha256": "881b2d6f66ebc16b87497d2709c8574c5e9bd34318c00e33faa36185b8362dbc",
+        "width": 1800,
+        "height": 875,
+        "output": "media/projects/contrasting-engineered-wood/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "slate-aluminum",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Aluminum_Slate_Before.jpeg",
+        "sha256": "1b4236cdf87c2866f2a0989d4ba6adb12b330c74a3957026848e13e9b256dc60",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/slate-aluminum/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Aluminum_Slate_Now.jpeg",
+        "sha256": "b957576a9589924ae17c5defc22de089f820e70bd7c603dcbdaa258f8dc36b07",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/slate-aluminum/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "deep-tone-aluminum",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021-01_Carolinas_Aluminum Siding_Before.jpeg",
+        "sha256": "1e644638675127270a87b7d7b110b127c9f9b4fa72b78306dbf3bdc06f714903",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/deep-tone-aluminum/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021-01_Carolinas_Aluminum Siding_Now.jpeg",
+        "sha256": "dd060b3a2b6aad5c347fcb601e2ef32559cdbdb9c8a9000b905aabf5e5dce72f",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/deep-tone-aluminum/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "slate-vinyl",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_DM_Vinyl_Slate 1_Before.png",
+        "sha256": "d9a5951d6820d2ee7d0802da381a6670b0c4a0d0a43d07f9b9cdde35a24945ae",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/slate-vinyl/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_DM_Vinyl_Slate 1_Now.png",
+        "sha256": "1831ab19a62718b51b1186a2ad07905afb88f992187d24c63bfaa95389205ab3",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/slate-vinyl/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "coastal-blue-stucco",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_DM_Stucco_Coastal Blue_Before.png",
+        "sha256": "97e4c32b11deb390a9500f37d075ae31540b92b8e4d9aac2c1bc8632be722564",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/coastal-blue-stucco/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_DM_Stucco_Coastal Blue_Now.png",
+        "sha256": "d1b15d006ebee1e32bd6ac64c6e12322a7aaf2ce55ee937689068fa01b87327c",
+        "width": 960,
+        "height": 720,
+        "output": "media/projects/coastal-blue-stucco/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "commercial-metal-building",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/VANCOUVER/2021_Vancouver_Aluminum Siding_Commercial_Before.jpeg",
+        "sha256": "1e7f925ec817d2da000b911384cc8699ae1e3f57498aa0d3c8bba7543e507f93",
+        "width": 1000,
+        "height": 750,
+        "output": "media/projects/commercial-metal-building/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/VANCOUVER/2021_Vancouver_Aluminum Siding_Commercial_Now.jpeg",
+        "sha256": "92781a88fb11ef8405dcd8eb3a83b02ac9ee601d1cd45d5fbf04c7dad2a0454b",
+        "width": 1000,
+        "height": 750,
+        "output": "media/projects/commercial-metal-building/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "blue-engineered-wood",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2022_Columbia_Engineered Wood_Before.jpeg",
+        "sha256": "5b8e47515d8293243a4508628d90b2ac504edc812f8d6ecf9d375aa77ed7e856",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/blue-engineered-wood/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2022_Columbia_Engineered Wood_Now.jpeg",
+        "sha256": "0e85631de75b613035709ef14f87748e8a11cddb911f0a6b0f6d80523addf0f4",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/blue-engineered-wood/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "iron-ore-brick",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Brick_Iron Ore_Before.jpeg",
+        "sha256": "75ae4c5b427a364ded9d6180edb41cb541219865e4f2d6236956def307fcb257",
+        "width": 1350,
+        "height": 1800,
+        "output": "media/projects/iron-ore-brick/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Brick_Iron Ore_Now.jpeg",
+        "sha256": "eda1e1f6c3b2d6d3f725480dcdcfa38e8ef76f2b442b2e62e4124a9125816e65",
+        "width": 1350,
+        "height": 1800,
+        "output": "media/projects/iron-ore-brick/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "black-window-frames",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Windows_Black_Before.jpeg",
+        "sha256": "87eafa07d723d349159141cf7d8e7f01ef36fe4280c21fd9378b8e3d28a9effe",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/black-window-frames/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/2021_SD_Windows_Black_Now.jpeg",
+        "sha256": "cb1e889038dae900247ba985089b9fcf90d81d56e5586d937a8c95e663ae52a6",
+        "width": 1800,
+        "height": 1350,
+        "output": "media/projects/black-window-frames/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  },
+  {
+    "id": "masonry-doors-windows",
+    "sourceCollection": "Downloaded corporate Before / NOW library",
+    "images": {
+      "before": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/CORPORATE/Brick_Doors_Windows_Before.jpg",
+        "sha256": "0c420c2c3236648ced40ee02e7cc17cbfe27678a8520969438a32817fb1ccd1a",
+        "width": 1800,
+        "height": 1391,
+        "output": "media/projects/masonry-doors-windows/before.webp"
+      },
+      "after": {
+        "source": "Spray-Net South Charlotte/Marketing/Photos/BeforeNOW/Exterior/Exterior/CORPORATE/Brick_Doors_Windows_Now.jpg",
+        "sha256": "c51694d0a5b8d0fabd9e958c4fb127a69d689a46143d0c0c41fc93c98f3d4982",
+        "width": 1583,
+        "height": 1800,
+        "output": "media/projects/masonry-doors-windows/after.webp"
+      }
+    },
+    "notes": "Source filenames supply surface and documented color. No local job claim. Full frame retained; resized, WebP encoded, metadata stripped. Camera angle and lighting may differ."
+  }
+]

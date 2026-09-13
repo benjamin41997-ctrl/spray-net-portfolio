@@ -40,8 +40,8 @@ export default function ProjectDetail({ project, route }) {
         title={project.title}
       >
         <span className="location-pill">
-          <Icon name="pin" size={18} />
-          {project.location || 'Project inspiration'}
+          <Icon name={project.location ? 'pin' : 'layers'} size={18} />
+          {project.location || project.attribution || 'Project inspiration'}
         </span>
       </PageHeader>
       <Comparison project={project} onExpand={() => open(0)} />

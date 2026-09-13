@@ -4,5 +4,6 @@ export const settings = {
   locationName: 'South Charlotte',
   logo: 'branding/logo.png',
   inactivityMinutes: 10,
-  demoMode: true,
+  demoMode: false,
+  portfolioNotice: 'Projects & testimonials from the Spray-Net network',
 };

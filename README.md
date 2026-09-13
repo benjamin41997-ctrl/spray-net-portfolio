@@ -12,7 +12,7 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online, close all portfolio browser tabs and installed app windows, and reopen it. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
-**The projects and reviews are demonstrations; the branding now uses corporate resources.** Ten projects, four reviews, the project illustrations, and the process animation are fictional. The header uses the supplied corporate logo, the installation icons use the supplied emblem, and the app uses the corporate orange/navy/charcoal palette and locally stored Lato fonts. Service highlights reflect documented Spray-Net positioning, not invented company statistics. Replace the fictional customer content before sales use.
+**The first real-media collection contains 16 Spray-Net network projects, three attributed testimonial excerpts, two local corporate films, one corporate YouTube collaboration, and three reference sheets.** These are explicitly identified as network examples, not South Charlotte jobs or reviews. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
 See [Corporate brand alignment and source map](docs/BRAND-SOURCES.md) for the exact resources, slogans, and implementation decisions. The corporate resources require Marketing Team approval for new marketing materials. This app has been aligned to those resources but has not been submitted or approved by corporate Marketing.
 
@@ -88,7 +88,10 @@ Open `src/data/projects.js`. Find the closing `];` at the bottom of the `project
 - **colorFamily:** exactly `White`, `Black`, `Gray`, `Blue`, `Green`, `Beige / Tan`, or `Other`.
 - **color:** the specific color name shown in project details. Optional; defaults to the family.
 - **location:** a town or neighborhood. Use an empty string `''` if unavailable.
-- **additionalImages:** use `[]` when there are none.
+- **additionalImages:** use `[]` when there are none. Only add photographs of that same project.
+- **attribution:** identify `Spray-Net network project` or the actual franchise.
+- **comparisonMode:** use `paired` when original camera angles differ substantially, or `slider` for similar framing. Customers can switch between views.
+- **imageAspectRatio:** optional CSS ratio such as `4 / 3` or `3 / 4` to preserve the photo orientation.
 - **review / videoUrl:** use `''` when unavailable. A project video accepts a local MP4 path or a valid YouTube embed URL.
 - **rating:** a whole number from `1` to `5`, or `null` when unavailable. It is displayed with a project review.
 - **featured:** `true` shows the project on the home screen; `false` keeps it in the main gallery. Three featured projects make a balanced home layout.
@@ -130,6 +133,8 @@ For a screenshot, put it in `public/media/reviews/` and set:
     screenshotImage: 'media/reviews/waxhaw-review.webp',
 ```
 
+**Ratings:** use `null` if the source does not publish a numeric star rating; the app will not display stars. Do not infer a five-star score from a positive testimonial. Set `excerpt: true` when displaying a short excerpt, and keep the source URL in `sourceUrl` for maintenance.
+
 The screenshot replaces the large quote in the card and opens fullscreen when tapped. **Still include `text`** as an accessible text equivalent. No link to the review website is required. Service filters are generated from the review entries.
 
 ## 4. Add a video
@@ -154,7 +159,7 @@ Put an H.264 MP4 (AAC audio, if any) and a thumbnail in `public/media/videos/`. 
   },
 ```
 
-`captions` is optional for silent footage, but add English WebVTT captions for spoken content. A VTT example is included. The bundled `process-demo.mp4` is an original, silent, 12-second animation. It demonstrates actual local playback, not an empty media placeholder.
+`captions` is optional for silent footage, but add English WebVTT captions for spoken content. The current local films are unchanged corporate marketing originals (approximately 26 MB and 16 MB). Their cards identify the network origin and roof-coating content. Review speech/captions before a customer rollout. The much larger internal staff-training films remain outside the public app.
 
 Local MP4s load on demand and are **not downloaded with the app shell**. Full HTTP 200 responses can be cached by the local-video runtime route, which supports range requests. Browser range-only streaming does not guarantee an offline copy. If a video is unavailable offline, the app explains that it needs a connection. Local pictures and text remain usable.
 
@@ -177,7 +182,7 @@ Use an approved video that allows embedding:
 
 Replace `REPLACE_ID_` with the video's actual **11-character ID**. A normal `watch?v=` URL will fail validation. The app converts valid embeds to `youtube-nocookie.com`, loads them only after a tap, and never caches them. Offline users see **“Internet connection required to play this video.”**
 
-The sample exterior card deliberately has `url: ''`, so it displays “Film coming soon” until you add approved footage. The embed is sandboxed without popups or top-level navigation. YouTube still controls its own player UI, branding, availability, and errors. For the most contained consultation experience, use local MP4s.
+A YouTube card with `url: ''` displays “Film coming soon”. The current kitchen card uses the collaboration linked from the corporate website. The embed is sandboxed without popups or top-level navigation. YouTube still controls its own player UI, branding, availability, and errors. For the most contained consultation experience, use local MP4s.
 
 ## 5. Change informational text and statistics
 
@@ -189,7 +194,7 @@ Edit `statistics` at the top of the same file to change the home and Why Spray-N
 
 The header's `public/branding/logo.png` is an unchanged copy of the supplied corporate `Horizontal Logo for Skin.png`, including “Custom Chemistry. Smarter Painting.” Do not redraw, recolor, stretch, or append text inside the logo. South Charlotte is displayed separately. If corporate supplies an updated asset, replace this PNG or update `logo` in `src/data/settings.js` to its new local path. Preserve the original aspect ratio and clear space. The alternate supplied wordmark and emblem source are retained under `assets/branding/`.
 
-Change `brandName` and `locationName` in `settings.js` if needed. Once all demo content is replaced, set `demoMode: false` to remove the footer demo notice. Also replace the explicitly labeled sample wording in projects, reviews, video descriptions, and page descriptions; turning off the notice does not convert examples into real work.
+Change `brandName` and `locationName` in `settings.js` if needed. `demoMode` is now `false`; `portfolioNotice` identifies network projects and testimonials in the footer. Keep that notice while network examples remain. Removing it does not convert another franchise’s work into local work.
 
 For the home-screen icon, replace these files with PNGs of the exact dimensions:
 
@@ -266,9 +271,10 @@ No customer data or filter preferences are stored. Browser history remains avail
 
 ## Verification
 
-The final branded revision passed its production build and browser suite: **15 passed, 3 documented skips**, with no automated WCAG A/AA violations on the seven scanned screens.
+The real-media production build precaches **60 entries totaling approximately 14.2 MiB**, including 32 project photographs, corporate branding, local fonts, video thumbnails, and three reference sheets. The approximately 42 MB of local MP4s load on demand and are not part of this initial download.
 
-Corporate brand revision verification on September 12, 2026: the production build precaches 54 entries totaling approximately 3.17 MiB, including the official logo, generated emblem icons, and four locally stored Lato fonts. Browser checks cover tablet navigation, BEFORE / NOW comparisons, local video playback, offline reloads, font/logo caching, and responsive layouts. Automated WCAG A/AA checks cover seven primary screens. Windows WebKit H.264 playback, WebKit service-worker emulation, and the duplicate WebKit accessibility scan are documented skips; Chromium covers those capabilities. Physical tablet installation and a real-device playback check remain deployment acceptance steps.
+The browser suite covers network attribution, nullable review ratings, both comparison layouts, fullscreen reference sheets, filters, navigation, inactivity reset, local MP4 playback/seeking, offline reload, and responsive overflow. Windows WebKit H.264 playback, WebKit service-worker emulation, and the duplicate WebKit accessibility scan are documented skips; Chromium covers those capabilities. Physical iPad/Android installation, audio/captions, and real YouTube playback remain device acceptance checks.
+
 
 ```sh
 pnpm validate
@@ -283,8 +289,10 @@ The tests exercise project collections, all filter dimensions, empty states, key
 
 WebKit automation is a browser-engine approximation, not a physical iPad. Service worker tests run in Chromium; Windows WebKit's missing H.264 decoder is an explicit local-video test skip. Confirm physical device installation and playback before sales rollout. There is no claim of a measured Lighthouse score; the app uses local media, native controls, lazy image loading, semantic structure, visible keyboard focus, reduced-motion handling, and no remote font dependency.
 
-## Demo artwork maintenance
+## Media maintenance
 
-The SVG project scenes and review screenshot are original demonstration artwork. The silent MP4 is an original animation using the supplied corporate logo and local Lato fonts. The header logo is an unchanged corporate asset; installation icons are proportionally sized derivatives of the supplied corporate emblem. No Spray-Net project photography has been scraped or imported.
+All current customer-facing media is listed in [MEDIA-SOURCES.md](docs/MEDIA-SOURCES.md). The photo source manifest records originals, checksums, dimensions, and app paths. Replace media and data together, run the build, then push to `main`.
 
-`scripts/generate-demo.mjs` and `scripts/generate-demo-video.mjs` can recreate the examples. They are maintainer utilities and are **not** part of normal builds or deployment. The artwork generator no longer writes branding files, so it cannot restore the old placeholder logo or icons. Do not run either utility after replacing demo projects or film unless you intend to restore the samples.
+Corporate reference images live in `public/media/information/`; their titles, summaries, context, and page associations are in `src/data/resources.js`. They open inside the existing fullscreen viewer and are cached offline. Use the correct country’s document and retain test conditions and footnotes.
+
+`scripts/generate-demo.mjs` and `scripts/generate-demo-video.mjs` are legacy demonstration generators. They are not part of the build and must not be run against the real-media portfolio: they would recreate retired placeholder assets. Previous versions are retained in Git history.

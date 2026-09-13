@@ -20,7 +20,7 @@ export default function Reviews({ route }) {
       <PageHeader
         eyebrow="IN THEIR WORDS"
         title="The Spray-Net customer experience."
-        description={`Explore a few ${settings.demoMode ? 'sample ' : ''}customer stories.`}
+        description="Testimonials from customers across the Spray-Net network. These are not reviews of Spray-Net South Charlotte."
       />
       <div className="reviews-intro">
         <span className="review-mark">
@@ -83,7 +83,14 @@ export default function Reviews({ route }) {
                 </span>
               </button>
             ) : (
-              <blockquote>“{review.text}”</blockquote>
+              <div>
+                <blockquote>“{review.text}”</blockquote>
+                {review.excerpt && (
+                  <p className="review-excerpt-note">
+                    Excerpt from a published customer testimonial
+                  </p>
+                )}
+              </div>
             )}
             <div className="review-person">
               <span className="avatar">{review.customerName[0]}</span>
