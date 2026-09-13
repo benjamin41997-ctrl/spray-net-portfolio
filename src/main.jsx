@@ -5,7 +5,15 @@ import App from './App';
 import { offerAppUpdate } from './lib/appUpdates';
 import './styles.css';
 
-// Updates wait for an explicit refresh, so an active consultation is never interrupted.
+// The worker can activate while an old tab is open. Offer a page refresh without
+// interrupting a consultation, including updates installed by another window.
+if ('serviceWorker' in navigator) {
+  let hadController = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) offerAppUpdate(() => window.location.reload());
+    hadController = true;
+  });
+}
 const updateServiceWorker = registerSW({
   onNeedRefresh() {
     offerAppUpdate(() => updateServiceWorker(true));

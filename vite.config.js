@@ -35,6 +35,10 @@ export default defineConfig({
       },
       workbox: {
         cacheId: 'spray-net-portfolio',
+        // Activate downloaded releases even when a legacy tab lacks update controls.
+        // Existing pages stay open; their next refresh loads the new cached shell.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: [
           '**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,avif,ttf,woff2,webmanifest,vtt}',
         ],

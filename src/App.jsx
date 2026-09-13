@@ -180,6 +180,7 @@ export default function App() {
             : settings.portfolioNotice || brand.tagline}
         </p>
         <span className="offline-status">
+          <span>Portfolio 1.0.4</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />

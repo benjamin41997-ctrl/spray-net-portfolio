@@ -5,7 +5,7 @@ import { extname, resolve, sep } from 'node:path';
 
 // Serve two actual generated service workers to reproduce a deployed update
 // while an installed copy still controls an open consultation.
-test('a waiting portfolio update can be applied without closing every window', async ({ page, browserName }) => {
+test('a portfolio update activates with old windows open and refreshes offline', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit service-worker emulation is unreliable.');
   const root = resolve('dist');
   let release = 1;
@@ -38,15 +38,27 @@ test('a waiting portfolio update can be applied without closing every window', a
     await page.reload();
     await page.locator('.cabinet-card').click();
     await page.locator('.project-card').first().click();
+    const legacy = await page.context().newPage();
+    // Legacy clients had no controller-change update notice.
+    await legacy.addInitScript(() => {
+      const addListener = navigator.serviceWorker.addEventListener.bind(navigator.serviceWorker);
+      navigator.serviceWorker.addEventListener = (type, ...args) => {
+        if (type !== 'controllerchange') addListener(type, ...args);
+      };
+    });
+    await legacy.goto(page.url());
+    await expect(legacy.locator('html')).toHaveAttribute('data-test-release', '1');
     release = 2;
     await page.evaluate(async () => (await navigator.serviceWorker.ready).update());
     await expect(page.getByRole('button', { name: 'Update now', exact: true })).toBeVisible({ timeout: 20000 });
     // Installing the update must not interrupt the project or reload the old shell.
     await expect(page.locator('html')).toHaveAttribute('data-test-release', '1');
     await expect(page).toHaveURL(/projects\/chantilly-lace-kitchen$/);
-    // A reload with a worker already waiting must still offer the update.
-    await page.reload();
-    await expect(page.getByRole('button', { name: 'Update now', exact: true })).toBeVisible();
+    // A second old window with no update UI must recover through ordinary refresh.
+    await expect(legacy.locator('.update-banner')).toHaveCount(0);
+    await legacy.reload();
+    await expect(legacy.locator('html')).toHaveAttribute('data-test-release', '2');
+    await legacy.close();
     await page.getByRole('button', { name: 'Update now', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-test-release', '2');
     await expect(page.locator('.update-banner')).toHaveCount(0);
