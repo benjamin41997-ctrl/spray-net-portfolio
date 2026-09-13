@@ -1,9 +1,6 @@
-import { projects } from '../data/projects';
-import { statistics } from '../data/content';
 import { brand } from '../data/brand';
 import Icon from '../components/Icon';
 import Photo from '../components/Photo';
-import ProjectCard from '../components/ProjectCard';
 
 export default function Home() {
   return (
@@ -29,7 +26,7 @@ export default function Home() {
         <a className="visual-card cabinet-card" href="#/projects?collection=cabinets">
           <Photo
             src="media/projects/chantilly-lace-kitchen/after.webp"
-            alt="Spray-Net network kitchen refinished in Chantilly Lace"
+            alt="Spray-Net kitchen refinished in Chantilly Lace"
             eager
           />
           <span className="card-kicker">FACTORY-QUALITY FINISH</span>
@@ -51,7 +48,7 @@ export default function Home() {
         <a className="visual-card exterior-card" href="#/projects?collection=exterior">
           <Photo
             src="media/projects/white-brick-stucco/after.webp"
-            alt="Spray-Net network home with white masonry and dark accents"
+            alt="Spray-Net home with white masonry and dark accents"
             eager
           />
           <div className="visual-card-bottom">
@@ -76,7 +73,7 @@ export default function Home() {
           <div>
             <span className="small-caps">IN THEIR WORDS</span>
             <h2>Customer Reviews</h2>
-            <p>Stories from across Spray-Net.</p>
+            <p>Hear From Our Customers.</p>
           </div>
           <Icon name="arrow" />
         </a>
@@ -87,7 +84,7 @@ export default function Home() {
           <div>
             <span className="small-caps">BEHIND THE TRANSFORMATION</span>
             <h2>Process Videos</h2>
-            <p>From formulation to application.</p>
+            <p>From Formulation to Application.</p>
           </div>
           <Icon name="arrow" />
         </a>
@@ -98,46 +95,10 @@ export default function Home() {
           <div>
             <span className="small-caps">THE SPRAY-NET DIFFERENCE</span>
             <h2>Why Spray-Net</h2>
-            <p>Custom chemistry. Factory-quality results.</p>
+            <p>Custom Chemistry. Factory-Quality Results.</p>
           </div>
           <Icon name="arrow" />
         </a>
-      </section>
-      <section className="featured-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">BEFORE &amp; NOW</p>
-            <h2>{brand.customerHeadline}</h2>
-          </div>
-          <a className="text-link" href="#/projects">
-            Explore all projects
-            <Icon name="arrow" size={18} />
-          </a>
-        </div>
-        <div className="project-grid featured-grid">
-          {projects
-            .filter((project) => project.featured)
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-        </div>
-      </section>
-      <section className="home-bottom">
-        <div>
-          <span className="brand-dot" />
-          <p>
-            Custom Chemistry.
-            <br />
-            <strong>Smarter Painting.</strong>
-          </p>
-        </div>
-        {statistics.map((stat) => (
-          <div className="mini-stat" key={stat.label}>
-            <strong>{stat.value}</strong>
-            <span>{stat.label}</span>
-          </div>
-        ))}
       </section>
     </>
   );

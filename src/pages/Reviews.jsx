@@ -20,7 +20,7 @@ export default function Reviews({ route }) {
       <PageHeader
         eyebrow="IN THEIR WORDS"
         title="The Spray-Net Customer Experience."
-        description="Testimonials from customers across the Spray-Net network. These are not reviews of Spray-Net South Charlotte."
+        description="Hear what our customers love about their Spray-Net transformations."
       />
       <div className="reviews-intro">
         <span className="review-mark">

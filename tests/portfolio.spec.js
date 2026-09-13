@@ -88,7 +88,7 @@ test('network testimonials, video embed, and all information pages', async ({ pa
   await page.getByRole('button', { name: 'Cabinets', exact: true }).click();
   await expect(page.locator('.review-card')).toHaveCount(2);
   await expect(page.locator('.review-card .stars')).toHaveCount(0);
-  await expect(page.getByText(/These are not reviews of Spray-Net South Charlotte/)).toBeVisible();
+  await expect(page.getByText('Hear what our customers love about their Spray-Net transformations.')).toBeVisible();
   await page.locator('.home-control').click();
   await page.locator('.video-nav').click();
   await expect(page.locator('.video-card')).toHaveCount(3);

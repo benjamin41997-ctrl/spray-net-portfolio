@@ -39,10 +39,12 @@ export default function ProjectDetail({ project, route }) {
         eyebrow={project.category.toUpperCase()}
         title={project.title}
       >
-        <span className="location-pill">
-          <Icon name={project.location ? 'pin' : 'layers'} size={18} />
-          {project.location || project.attribution || 'Project inspiration'}
-        </span>
+        {project.location && (
+          <span className="location-pill">
+            <Icon name="pin" size={18} />
+            {project.location}
+          </span>
+        )}
       </PageHeader>
       <Comparison project={project} onExpand={() => open(0)} />
       <div className="project-detail-grid">

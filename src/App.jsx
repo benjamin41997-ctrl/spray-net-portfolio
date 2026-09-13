@@ -170,17 +170,8 @@ export default function App() {
         </ErrorBoundary>
       </main>
       <footer className="app-footer">
-        <p>
-          <span className="brand-dot" />
-          {settings.brandName} {settings.locationName}
-        </p>
-        <p>
-          {settings.demoMode
-            ? 'Demo portfolio · Illustrative projects & sample reviews'
-            : settings.portfolioNotice || brand.tagline}
-        </p>
         <span className="offline-status">
-          <span>Portfolio 1.0.4</span>
+          <span>Portfolio 1.0.5</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />

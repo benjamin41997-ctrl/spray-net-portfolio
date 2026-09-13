@@ -5,5 +5,4 @@ export const settings = {
   logo: 'branding/logo.png',
   inactivityMinutes: 10,
   demoMode: false,
-  portfolioNotice: 'Projects & testimonials from the Spray-Net network',
 };

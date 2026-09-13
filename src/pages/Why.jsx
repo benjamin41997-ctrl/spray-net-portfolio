@@ -119,7 +119,7 @@ export default function Why({ article, route }) {
         </div>
         <Photo
           src="media/projects/oxford-white-black-island/after.webp"
-          alt="Spray-Net network kitchen with Oxford White cabinets and a black island"
+          alt="Spray-Net kitchen with Oxford White cabinets and a black island"
         />
       </section>
       <div className="info-grid">

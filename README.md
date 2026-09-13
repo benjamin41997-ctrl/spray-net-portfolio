@@ -10,9 +10,9 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.4. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.5. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
-**The first real-media collection contains 16 Spray-Net network projects, three attributed testimonial excerpts, two local corporate films, one corporate YouTube collaboration, and three reference sheets.** These are explicitly identified as network examples, not South Charlotte jobs or reviews. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
+**The first real-media collection contains 16 Spray-Net network projects, three attributed testimonial excerpts, two local corporate films, one corporate YouTube collaboration, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
 See [Corporate brand alignment and source map](docs/BRAND-SOURCES.md) for the exact resources, slogans, and implementation decisions. The corporate resources require Marketing Team approval for new marketing materials. This app has been aligned to those resources but has not been submitted or approved by corporate Marketing.
 
@@ -159,7 +159,7 @@ Put an H.264 MP4 (AAC audio, if any) and a thumbnail in `public/media/videos/`. 
   },
 ```
 
-`captions` is optional for silent footage, but add English WebVTT captions for spoken content. The current local films are unchanged corporate marketing originals (approximately 26 MB and 16 MB). Their cards identify the network origin and roof-coating content. Review speech/captions before a customer rollout. The much larger internal staff-training films remain outside the public app.
+`captions` is optional for silent footage, but add English WebVTT captions for spoken content. The current local films are unchanged corporate marketing originals (approximately 26 MB and 16 MB). Their descriptions cover the process and roof-coating content; origin details stay in the source documentation. Review speech/captions before a customer rollout. The much larger internal staff-training films remain outside the public app.
 
 Local MP4s load on demand and are **not downloaded with the app shell**. Full HTTP 200 responses can be cached by the local-video runtime route, which supports range requests. Browser range-only streaming does not guarantee an offline copy. If a video is unavailable offline, the app explains that it needs a connection. Local pictures and text remain usable.
 
@@ -188,13 +188,13 @@ A YouTube card with `url: ''` displays “Film coming soon”. The current kitch
 
 Open `src/data/content.js`. Each of the seven pages has an `id`, `title`, `subtitle`, `intro`, and a `paragraphs` array. Edit only the text between quotes. Each array entry becomes a paragraph. `steps` and `comparison` are optional structured blocks.
 
-Edit `statistics` at the top of the same file to change the home and Why Spray-Net highlights. These now describe factory-quality finishes, custom chemistry, and on-site convenience. Use verified values if you later add company statistics. Keep coverage claims consistent with the applicable written warranty. Corporate slogans live separately in `src/data/brand.js`; change them only to approved corporate wording.
+Edit `statistics` at the top of the same file to change the Why Spray-Net highlights. These now describe factory-quality finishes, custom chemistry, and on-site convenience. Use verified values if you later add company statistics. Keep coverage claims consistent with the applicable written warranty. Corporate slogans live separately in `src/data/brand.js`; change them only to approved corporate wording.
 
 ## 6. Replace the logo and app icons
 
 The header's `public/branding/logo.png` is an unchanged copy of the supplied corporate `Horizontal Logo for Skin.png`, including “Custom Chemistry. Smarter Painting.” Do not redraw, recolor, stretch, or append text inside the logo. South Charlotte is displayed separately. If corporate supplies an updated asset, replace this PNG or update `logo` in `src/data/settings.js` to its new local path. Preserve the original aspect ratio and clear space. The alternate supplied wordmark and emblem source are retained under `assets/branding/`.
 
-Change `brandName` and `locationName` in `settings.js` if needed. `demoMode` is now `false`; `portfolioNotice` identifies network projects and testimonials in the footer. Keep that notice while network examples remain. Removing it does not convert another franchise’s work into local work.
+Change `brandName` and `locationName` in `settings.js` if needed. `demoMode` is `false`. The home screen ends after its five navigation cards; the footer shows only the version and offline indicator. Project provenance stays in the maintenance records; keep unverified job locations blank.
 
 For the home-screen icon, replace these files with PNGs of the exact dimensions:
 

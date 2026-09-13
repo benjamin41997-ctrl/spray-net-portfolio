@@ -24,7 +24,7 @@ export const projects = [
     afterImage: 'media/projects/chantilly-lace-kitchen/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing kitchen cabinets in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing kitchen cabinets in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -46,7 +46,7 @@ export const projects = [
     afterImage: 'media/projects/oxford-white-black-island/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing kitchen cabinets in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing kitchen cabinets in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -68,7 +68,7 @@ export const projects = [
     afterImage: 'media/projects/hale-navy-kitchen/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing kitchen cabinets in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing kitchen cabinets in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -90,7 +90,7 @@ export const projects = [
     afterImage: 'media/projects/collingwood-blue-island/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing kitchen cabinets in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing kitchen cabinets in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -112,7 +112,7 @@ export const projects = [
     afterImage: 'media/projects/windswept-smoke-stucco/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing stucco in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing stucco in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -134,7 +134,7 @@ export const projects = [
     afterImage: 'media/projects/white-brick-stucco/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing brick and stucco in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing brick and stucco in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -156,7 +156,7 @@ export const projects = [
     afterImage: 'media/projects/contrasting-engineered-wood/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing engineered wood siding in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing engineered wood siding in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -178,7 +178,7 @@ export const projects = [
     afterImage: 'media/projects/slate-aluminum/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing aluminum siding in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing aluminum siding in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -200,7 +200,7 @@ export const projects = [
     afterImage: 'media/projects/deep-tone-aluminum/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing aluminum siding in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing aluminum siding in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -222,7 +222,7 @@ export const projects = [
     afterImage: 'media/projects/slate-vinyl/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing vinyl siding in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing vinyl siding in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -244,7 +244,7 @@ export const projects = [
     afterImage: 'media/projects/coastal-blue-stucco/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing stucco in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing stucco in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -266,7 +266,7 @@ export const projects = [
     afterImage: 'media/projects/commercial-metal-building/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing aluminum siding in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing aluminum siding in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -288,7 +288,7 @@ export const projects = [
     afterImage: 'media/projects/blue-engineered-wood/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing engineered wood siding in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing engineered wood siding in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -310,7 +310,7 @@ export const projects = [
     afterImage: 'media/projects/iron-ore-brick/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing brick in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing brick in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -332,7 +332,7 @@ export const projects = [
     afterImage: 'media/projects/black-window-frames/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing window frames in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing window frames in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',
@@ -354,7 +354,7 @@ export const projects = [
     afterImage: 'media/projects/masonry-doors-windows/after.webp',
     additionalImages: [],
     description:
-      'A completed Spray-Net network project showing brick, doors and windows in a new finish. Browse the original before and now photographs for color and design inspiration. This project was completed by another Spray-Net franchise, not Spray-Net South Charlotte.',
+      'A Spray-Net transformation showing brick, doors and windows in a new finish. Explore the before and now photos for color and design inspiration.',
     review: '',
     rating: null,
     videoUrl: '',

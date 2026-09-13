@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { settings } from '../data/settings';
 import { projects, categories, colorFamilies } from '../data/projects';
 import { filterProjects } from '../lib/media';
 import { updateQuery, navigate } from '../lib/navigation';
@@ -101,10 +100,6 @@ export default function Projects({ route }) {
         <p aria-live="polite" role="status">
           <strong>{filtered.length}</strong>{' '}
           {filtered.length === 1 ? 'transformation' : 'transformations'}
-          <span className="demo-inline">
-            {' '}
-            · {settings.demoMode ? 'Illustrative projects' : 'Spray-Net network projects'}
-          </span>
         </p>
         <button
           className="filter-toggle"

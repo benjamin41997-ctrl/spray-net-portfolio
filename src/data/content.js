@@ -102,10 +102,10 @@ export const content = [
     icon: 'badge',
     title: 'Warranty',
     subtitle: 'Understand your no-peel coverage.',
-    intro: 'The warranty is part of the conversation.',
+    intro: 'Our No-Peel Warranty.',
     paragraphs: [
-      'Spray-Net’s corporate materials highlight a no-peel warranty as part of the service. Your representative will provide the written warranty applicable to your surfaces and project.',
-      'Review the coverage period, eligible surfaces, exclusions, care requirements, and claim process in that document. The written warranty and your project agreement define your coverage.',
+      'We back our work with a no-peel warranty. We’ll walk you through the written coverage for your surfaces and project.',
+      'Your written warranty explains how long your coverage lasts, what it covers, how to care for your finish, and how to make a claim. We’re here to answer your questions.',
     ],
   },
   {
