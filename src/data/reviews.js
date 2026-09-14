@@ -159,18 +159,6 @@ export const reviews = [
     "excerpt": true
   },
   {
-    "id": "google-patricia-rollins",
-    "customerName": "Patricia Rollins",
-    "rating": 5,
-    "text": "Our cabinets are beautiful and we would highly recommend Spray-Net Marietta's services.",
-    "serviceType": "Cabinets",
-    "location": "",
-    "source": "Google",
-    "sourceUrl": "",
-    "screenshotImage": "",
-    "excerpt": true
-  },
-  {
     "id": "google-lyn-wright",
     "customerName": "Lyn Wright",
     "rating": 5,

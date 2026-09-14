@@ -5,7 +5,7 @@ import Photo from './Photo';
 import Icon from './Icon';
 export default function Comparison({ project, onExpand }) {
   const [position, setPosition] = useState(50);
-  const [paired, setPaired] = useState(project.comparisonMode === 'paired');
+  const [paired, setPaired] = useState(false);
   return (
     <div className="comparison-section">
       <div className="chips comparison-modes" aria-label="Comparison layout">

@@ -28,7 +28,7 @@ export const videos = [
     id: 'sherry-holmes-kitchen',
     title: 'A kitchen transformation with Sherry Holmes',
     eyebrow: 'WITH SHERRY HOLMES',
-    duration: 'Online film',
+    duration: '2:37',
     description:
       'Join Sherry Holmes for a kitchen transformation and see how a new color palette gives existing cabinetry a fresh look.',
     type: 'youtube',

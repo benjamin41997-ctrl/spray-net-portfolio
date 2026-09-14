@@ -31,7 +31,6 @@ export const projects = [
     featured: true,
     displayOrder: 1,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1280 / 853',
   },
   {
@@ -53,7 +52,6 @@ export const projects = [
     featured: false,
     displayOrder: 2,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -75,7 +73,6 @@ export const projects = [
     featured: false,
     displayOrder: 3,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1265 / 961',
   },
   {
@@ -97,7 +94,6 @@ export const projects = [
     featured: false,
     displayOrder: 4,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -119,7 +115,6 @@ export const projects = [
     featured: false,
     displayOrder: 5,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -141,7 +136,6 @@ export const projects = [
     featured: true,
     displayOrder: 6,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'paired',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -163,7 +157,6 @@ export const projects = [
     featured: false,
     displayOrder: 7,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'paired',
     imageAspectRatio: '1800 / 875',
   },
   {
@@ -185,7 +178,6 @@ export const projects = [
     featured: false,
     displayOrder: 8,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -207,7 +199,6 @@ export const projects = [
     featured: false,
     displayOrder: 9,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'paired',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -229,7 +220,6 @@ export const projects = [
     featured: false,
     displayOrder: 10,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '960 / 720',
   },
   {
@@ -251,7 +241,6 @@ export const projects = [
     featured: true,
     displayOrder: 11,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '960 / 720',
   },
   {
@@ -273,7 +262,6 @@ export const projects = [
     featured: false,
     displayOrder: 12,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'paired',
     imageAspectRatio: '1000 / 750',
   },
   {
@@ -295,7 +283,6 @@ export const projects = [
     featured: false,
     displayOrder: 13,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -317,7 +304,6 @@ export const projects = [
     featured: false,
     displayOrder: 14,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1350 / 1800',
   },
   {
@@ -339,7 +325,6 @@ export const projects = [
     featured: false,
     displayOrder: 15,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'slider',
     imageAspectRatio: '1800 / 1350',
   },
   {
@@ -361,7 +346,6 @@ export const projects = [
     featured: false,
     displayOrder: 16,
     attribution: 'Spray-Net network project',
-    comparisonMode: 'paired',
     imageAspectRatio: '1583 / 1800',
   },
 
@@ -383,7 +367,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 17,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -404,7 +387,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 18,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -425,7 +407,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 19,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -446,7 +427,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 20,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1202"
   },
   {
@@ -467,7 +447,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 21,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -488,7 +467,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 22,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 988"
   },
   {
@@ -509,7 +487,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 23,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1311 / 977"
   },
   {
@@ -530,7 +507,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 24,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -551,7 +527,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 25,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "960 / 720"
   },
   {
@@ -572,7 +547,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 26,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -593,7 +567,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 27,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "960 / 720"
   },
   {
@@ -614,7 +587,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 28,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -635,7 +607,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 29,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -656,7 +627,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 30,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1166 / 868"
   },
   {
@@ -679,7 +649,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 31,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1600 / 900"
   },
   {
@@ -700,7 +669,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 32,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1014"
   },
   {
@@ -721,7 +689,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 33,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1432"
   },
   {
@@ -742,7 +709,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 34,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1600 / 1200"
   },
   {
@@ -763,7 +729,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 35,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "640 / 480"
   },
   {
@@ -784,7 +749,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 36,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "640 / 480"
   },
   {
@@ -805,7 +769,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 37,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -829,7 +792,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 38,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -850,7 +812,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 39,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -871,7 +832,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 40,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "460 / 375"
   },
   {
@@ -892,7 +852,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 41,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -913,7 +872,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 42,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1259"
   },
   {
@@ -934,7 +892,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 43,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -955,7 +912,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 44,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -976,7 +932,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 45,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -997,7 +952,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 46,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -1018,7 +972,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 47,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -1039,7 +992,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 48,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -1060,7 +1012,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 49,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   },
   {
@@ -1081,7 +1032,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 50,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1600 / 1200"
   },
   {
@@ -1102,7 +1052,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 51,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1350 / 1800"
   },
   {
@@ -1123,7 +1072,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 52,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1600 / 1200"
   },
   {
@@ -1144,7 +1092,6 @@ export const projects = [
     "featured": false,
     "displayOrder": 53,
     "attribution": "Spray-Net network project",
-    "comparisonMode": "paired",
     "imageAspectRatio": "1800 / 1350"
   }
 

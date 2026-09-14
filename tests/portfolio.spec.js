@@ -87,7 +87,8 @@ test('home, filters, comparison, gallery, Back, and empty state', async ({ page 
 test('network testimonials, video embed, and all information pages', async ({ page }) => {
   await page.goto('./#/reviews');
   await expect(page.locator('.review-card')).toHaveCount(reviews.length);
-  await expect(page.locator('.review-card .stars')).toHaveCount(16);
+  await expect(page.getByText(/Marietta/)).toHaveCount(0);
+  await expect(page.locator('.review-card .stars')).toHaveCount(15);
   await page.getByRole('button', { name: 'Cabinets', exact: true }).click();
   await expect(page.locator('.review-card')).toHaveCount(reviews.filter(r => r.serviceType === 'Cabinets').length);
   await expect(page.locator('.review-card').filter({ hasText: 'Tina' }).locator('.stars')).toHaveCount(0);
@@ -95,6 +96,7 @@ test('network testimonials, video embed, and all information pages', async ({ pa
   await page.locator('.home-control').click();
   await page.locator('.video-nav').click();
   await expect(page.locator('.video-card')).toHaveCount(videos.length);
+  await expect(page.locator('a[href="#/videos/sherry-holmes-kitchen"]')).toContainText('2:37');
   await page.locator('a[href="#/videos/sherry-holmes-kitchen"]').click();
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<p>Embedded video test</p>' }),
@@ -335,11 +337,16 @@ test('network provenance, paired photos, and corporate reference sheets', async 
     expect(project.attribution).toBe('Spray-Net network project');
   }
   await page.goto('./#/projects/commercial-metal-building');
-  await expect(page.locator('.comparison-pair img')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Slider', exact: true }).click();
-  await expect(page.getByRole('slider')).toBeVisible();
+  await expect(page.getByRole('slider')).toHaveValue('50');
   await page.getByRole('button', { name: 'Side by side', exact: true }).click();
   await expect(page.getByRole('slider')).not.toBeVisible();
+  await expect(page.locator('.comparison-pair img')).toHaveCount(2);
+  await page.locator('.home-control').click();
+  await expect(page.locator('.home-cards')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('slider')).toHaveValue('50');
+  await page.goto('./#/projects/chantilly-black-island');
+  await expect(page.getByRole('slider')).toHaveValue('50');
   await page.goto('./#/why/paint-comparison');
   await page.getByRole('button', { name: 'View Cabinet coating comparison fullscreen' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();

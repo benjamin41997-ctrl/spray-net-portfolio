@@ -77,7 +77,11 @@ const paths = {
   ),
   quote: (
     <>
-      <path d="M9 5H4v7h5v7H3m18-14h-5v7h5v7h-6" />
+      <path
+        d="M3 5h7v7c0 4-2 6-6 7v-3c2-.6 3-2 3-4H3Zm11 0h7v7c0 4-2 6-6 7v-3c2-.6 3-2 3-4h-4Z"
+        fill="currentColor"
+        stroke="none"
+      />
     </>
   ),
 };

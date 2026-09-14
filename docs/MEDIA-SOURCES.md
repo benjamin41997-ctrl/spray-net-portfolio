@@ -1,18 +1,18 @@
 # Portfolio Media Sources
 
-Updated September 13, 2026. The portfolio contains **53 transformations, 19 customer reviews, and 16 videos**. Provenance belongs in these maintainer records. Project locations remain blank unless verified; reviews are not attached to unrelated projects.
+Updated September 14, 2026. The portfolio contains **53 transformations, 18 customer reviews, and 16 videos**. Provenance belongs in these maintainer records. Project locations remain blank unless verified; reviews are not attached to unrelated projects.
 
 ## Photos
 
 The downloaded Before / NOW library supplies 106 before/now photographs plus three additional kitchen angles. Every pair was visually reviewed. Duplicate images and ambiguous pairings were excluded. Cabinets, vinyl siding, aluminum/engineered wood, brick, stucco, doors/windows, and commercial exteriors are represented.
 
-[media-sources.json](media-sources.json) records original filenames, SHA-256 hashes, output paths, and dimensions. Images retain their full frame, with orientation normalized, metadata stripped, and WebP encoding at up to 1800 pixels. No colors or project outcomes were retouched. New pairs default to side-by-side viewing because camera positions can differ; the slider remains available. Exact color names are only supplied when documented in filenames.
+[media-sources.json](media-sources.json) records original filenames, SHA-256 hashes, output paths, and dimensions. Images retain their full frame, with orientation normalized, metadata stripped, and WebP encoding at up to 1800 pixels. No colors or project outcomes were retouched. Every project opens with the slider centered at 50%. Side-by-side viewing remains available as an optional control. Exact color names are only supplied when documented in filenames.
 
 Confirmed bathroom vanity, green, and fiber-cement photo pairs remain gaps. The video collection includes a verified Hardie Board transformation.
 
 ## Reviews
 
-Sixteen Google review excerpts were checked directly against screenshots in the synced Viva Engage attachment collection, `All Company - Documents/Apps/Yammer`. Each has five visible stars. [review-sources.json](review-sources.json) records the source file and checksum. Excerpts retain the customer's wording, name, and actual rating. Unspecified services use Customer Experience. The app displays formatted excerpts rather than publishing screenshots containing unrelated business details.
+Fifteen Google review excerpts were checked directly against screenshots in the synced Viva Engage attachment collection, `All Company - Documents/Apps/Yammer`. Each has five visible stars. [review-sources.json](review-sources.json) records the source file and checksum. Excerpts retain the customer's wording, name, and actual rating. Unspecified services use Customer Experience. The app displays formatted excerpts rather than publishing screenshots containing unrelated business details.
 
 The original three short testimonials remain from [Spray-Net’s reviews page](https://www.spray-net.com/user-review). Those entries have no individual published numeric rating, so their ratings remain null. No aggregate rating is claimed.
 
@@ -20,7 +20,7 @@ The original three short testimonials remain from [Spray-Net’s reviews page](h
 
 Thirteen additional films were verified on [Spray-Net’s official YouTube channel](https://www.youtube.com/@SprayNetInc), with the channel identity, original titles, and thumbnails checked using YouTube oEmbed. [video-sources.json](video-sources.json) records those sources. They cover cabinets, coating production, siding, windows, doors, garage doors, brick, fiber cement, stucco, customer experiences, and transformation reveals. Staff training and franchise recruitment films were excluded from the homeowner collection.
 
-The existing Sherry Holmes collaboration remains, alongside two local MP4s from `Franchisee Site - Documents/English/Marketing/Home Show/Video for Home Show/`: `Total exterior home transformation.mp4` (1:30) and `Spray-Net total home transformation!.mp4` (0:56). Their descriptions identify the roof-coating footage they contain.
+The existing Sherry Holmes collaboration (2:37, verified in its YouTube player) remains, alongside two local MP4s from `Franchisee Site - Documents/English/Marketing/Home Show/Video for Home Show/`: `Total exterior home transformation.mp4` (1:30) and `Spray-Net total home transformation!.mp4` (0:56). Their descriptions identify the roof-coating footage they contain.
 
 All thumbnails are local and precached. YouTube videos require internet and are never cached; no YouTube video downloads were made. Local MP4s cache on demand. Caption availability for YouTube is publisher-controlled; local caption transcription remains a follow-up. Automated embed tests stub playback, so they do not guarantee continued publisher availability.
 

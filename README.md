@@ -10,9 +10,9 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.6. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.7. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
-**The collection contains 53 transformations, 19 customer review excerpts, 16 videos, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
+**The collection contains 53 transformations, 18 customer review excerpts, 16 videos, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
 See [Corporate brand alignment and source map](docs/BRAND-SOURCES.md) for the exact resources, slogans, and implementation decisions. The corporate resources require Marketing Team approval for new marketing materials. This app has been aligned to those resources but has not been submitted or approved by corporate Marketing.
 
@@ -90,7 +90,7 @@ Open `src/data/projects.js`. Find the closing `];` at the bottom of the `project
 - **location:** a town or neighborhood. Use an empty string `''` if unavailable.
 - **additionalImages:** use `[]` when there are none. Only add photographs of that same project.
 - **attribution:** identify `Spray-Net network project` or the actual franchise.
-- **comparisonMode:** use `paired` when original camera angles differ substantially, or `slider` for similar framing. Customers can switch between views.
+- **Comparison layout:** Every project opens with the slider centered at 50%. Customers can switch to side-by-side during that visit; reopening the project resets it to the slider. No per-project comparison setting is needed.
 - **imageAspectRatio:** optional CSS ratio such as `4 / 3` or `3 / 4` to preserve the photo orientation.
 - **review / videoUrl:** use `''` when unavailable. A project video accepts a local MP4 path or a valid YouTube embed URL.
 - **rating:** a whole number from `1` to `5`, or `null` when unavailable. It is displayed with a project review.
@@ -299,6 +299,10 @@ Corporate reference images live in `public/media/information/`; their titles, su
 
 ## September 13 Media Expansion — Portfolio 1.0.6
 
-The portfolio now includes **53 transformations, 19 authentic review excerpts, and 16 videos**. The offline shell and local images total approximately 29 MB on first installation. Thirteen new films embed the official Spray-Net YouTube channel; thumbnails work offline, but playback requires internet. Sixteen reviews have verified five-star ratings; three original testimonials retain unreported ratings.
+This release added 37 transformations, 16 authentic review excerpts, and 13 videos. The current portfolio has **53 transformations, 18 review excerpts, and 16 videos** after the September 14 removal. The offline shell and local images total approximately 29 MB on first installation. New films embed the official Spray-Net YouTube channel; thumbnails work offline, but playback requires internet. Fifteen remaining reviews have verified five-star ratings; three original testimonials retain unreported ratings.
 
 Source filenames and checksums are recorded in `docs/media-sources.json` and `docs/review-sources.json`. Verified video metadata is in `docs/video-sources.json`. See `docs/MEDIA-SOURCES.md` for the selection record. Keep these records updated when adding media.
+
+## September 14 Fixes — Portfolio 1.0.7
+
+Removed the Marietta review (18 reviews remain), replaced the ambiguous quote icon throughout the app, and made all transformations open with the slider centered at 50%. Side-by-side remains an optional viewing mode for the current visit. The Sherry Holmes film now shows its verified 2:37 runtime.
