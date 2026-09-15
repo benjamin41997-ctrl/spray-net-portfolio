@@ -1057,6 +1057,12 @@
     padding: 34px;
     margin: 5px 0 25px;
   }
+  .brand-emblem {
+    display: block;
+    flex-shrink: 0;
+    object-fit: contain;
+    border-radius: 50%;
+  }
   .review-mark {
     display: grid;
     place-items: center;
@@ -2020,8 +2026,9 @@
       width: 54px;
       height: 54px;
     }
-    .review-mark svg {
-      width: 29px;
+    .review-mark .brand-emblem {
+      width: 38px;
+      height: 38px;
     }
     .reviews-intro h2 {
       font-size: 24px;

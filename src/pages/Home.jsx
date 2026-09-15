@@ -1,5 +1,6 @@
 import { brand } from '../data/brand';
 import Icon from '../components/Icon';
+import BrandEmblem from '../components/BrandEmblem';
 import Photo from '../components/Photo';
 
 export default function Home() {
@@ -68,7 +69,7 @@ export default function Home() {
         </a>
         <a className="small-nav-card review-nav" href="#/reviews">
           <span className="nav-card-icon">
-            <Icon name="quote" size={25} />
+            <BrandEmblem size={36} />
           </span>
           <div>
             <span className="small-caps">IN THEIR WORDS</span>

@@ -4,6 +4,7 @@ import { closeOverlay, updateQuery } from '../lib/navigation';
 import PageHeader from '../components/PageHeader';
 import Stars from '../components/Stars';
 import Icon from '../components/Icon';
+import BrandEmblem from '../components/BrandEmblem';
 import Photo from '../components/Photo';
 import Lightbox from '../components/Lightbox';
 
@@ -24,7 +25,7 @@ export default function Reviews({ route }) {
       />
       <div className="reviews-intro">
         <span className="review-mark">
-          <Icon name="quote" size={42} />
+          <BrandEmblem size={54} />
         </span>
         <div>
           <h2>

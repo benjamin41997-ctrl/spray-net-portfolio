@@ -306,3 +306,7 @@ Source filenames and checksums are recorded in `docs/media-sources.json` and `do
 ## September 14 Fixes — Portfolio 1.0.7
 
 Removed the Marietta review (18 reviews remain), replaced the ambiguous quote icon throughout the app, and made all transformations open with the slider centered at 50%. Side-by-side remains an optional viewing mode for the current visit. The Sherry Holmes film now shows its verified 2:37 runtime.
+
+## Portfolio 1.0.8
+
+Decorative quotation icons on the home review card, reviews introduction, and Why Spray-Net article notes now use the existing Spray-Net emblem. The shared BrandEmblem component uses the local, offline-cached branding asset.

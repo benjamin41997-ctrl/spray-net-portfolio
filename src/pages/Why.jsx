@@ -2,6 +2,7 @@ import { content, statistics } from '../data/content';
 import { brand } from '../data/brand';
 import PageHeader from '../components/PageHeader';
 import Icon from '../components/Icon';
+import BrandEmblem from '../components/BrandEmblem';
 import Photo from '../components/Photo';
 import Lightbox from '../components/Lightbox';
 import { resources } from '../data/resources';
@@ -74,7 +75,7 @@ export default function Why({ article, route }) {
             </section>
           ))}
           <div className="article-note">
-            <Icon name="quote" />
+            <BrandEmblem size={32} />
             <p>
               Your home is unique. Your representative is here to answer questions about your
               specific project.
