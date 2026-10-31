@@ -29,6 +29,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Validate content and build
         run: pnpm build
+      - name: Test secure image service
+        run: pnpm test:api
       - name: Install test browsers
         run: pnpm exec playwright install --with-deps chromium webkit
       - name: Test tablet navigation and offline support

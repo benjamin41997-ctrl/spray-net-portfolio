@@ -1,4 +1,4 @@
-import { Component, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRoute } from './lib/navigation';
 import { mediaUrl } from './lib/media';
 import { hasAppUpdate, subscribeToAppUpdate, refreshPortfolio } from './lib/appUpdates';
@@ -16,6 +16,9 @@ import ProjectDetail from './pages/ProjectDetail';
 import Reviews from './pages/Reviews';
 import Videos from './pages/Videos';
 import Why from './pages/Why';
+import VisualizerProvider, { useVisualizer } from './components/VisualizerProvider';
+
+const Visualizer = lazy(() => import('./pages/Visualizer'));
 
 class ErrorBoundary extends Component {
   state = { failed: false };
@@ -55,13 +58,17 @@ function NotFound() {
   );
 }
 
-export default function App() {
+function Portfolio() {
   const route = useRoute();
+  const visualizer = useVisualizer();
   const online = useOnline();
   const updateAvailable = useSyncExternalStore(subscribeToAppUpdate, hasAppUpdate);
   const [session, setSession] = useState(0);
   const [offlineReady, setOfflineReady] = useState(false);
-  const reset = useCallback(() => setSession((value) => value + 1), []);
+  const reset = useCallback(() => {
+    window.dispatchEvent(new Event('portfolio-session-reset'));
+    setSession((value) => value + 1);
+  }, []);
   useSessionReset(settings.inactivityMinutes, reset);
   const previousPath = useRef(null);
   const section = route.path.split('/')[1];
@@ -70,7 +77,7 @@ export default function App() {
   const video = section === 'videos' && videos.find((item) => item.id === id);
   const article = section === 'why' && content.find((item) => item.id === id);
   useEffect(() => {
-    document.title = `${project?.title || video?.title || article?.title || { projects: 'Transformations', reviews: 'Customer Reviews', videos: 'Process Videos', why: 'Why Spray-Net' }[section] || 'Spray-Net Portfolio'} · South Charlotte`;
+    document.title = `${project?.title || video?.title || article?.title || { projects: 'Transformations', reviews: 'Customer Reviews', videos: 'Process Videos', why: 'Why Spray-Net', visualize: 'Design Visualizer' }[section] || 'Spray-Net Portfolio'} · South Charlotte`;
     if (previousPath.current !== route.path) {
       const initial = previousPath.current === null;
       previousPath.current = route.path;
@@ -96,6 +103,7 @@ export default function App() {
   else if (route.path === '/videos') page = <Videos />;
   else if (video && route.path === `/videos/${video.id}`) page = <Videos video={video} />;
   else if (route.path === '/why') page = <Why />;
+  else if (route.path === '/visualize') page = <Suspense fallback={<p role="status">Opening the Design Studio…</p>}><Visualizer /></Suspense>;
   else if (article && route.path === `/why/${article.id}`)
     page = <Why article={article} route={route} />;
   else page = <NotFound />;
@@ -134,6 +142,9 @@ export default function App() {
           <a href="#/why" aria-current={section === 'why' ? 'page' : undefined}>
             Why Spray-Net
           </a>
+          <a href="#/visualize" aria-current={section === 'visualize' ? 'page' : undefined}>
+            Visualizer
+          </a>
         </nav>
         <a
           href="#/"
@@ -145,6 +156,12 @@ export default function App() {
           <span>Home</span>
         </a>
       </header>
+      {route.path !== '/visualize' && (visualizer.busy || visualizer.looks.length > 0) && (
+        <div className="update-banner" role="status">
+          <span>{visualizer.busy ? 'Your design preview is being created.' : 'Your design preview is ready.'}</span>
+          <a className="button button-dark" href="#/visualize">Return to Your Design</a>
+        </div>
+      )}
       {updateAvailable && (
         <div className="update-banner" role="status">
           <span>A new portfolio is ready.</span>
@@ -171,7 +188,7 @@ export default function App() {
       </main>
       <footer className="app-footer">
         <span className="offline-status">
-          <span>Portfolio 1.0.8</span>
+          <span>Portfolio 1.1.0</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />
@@ -182,4 +199,8 @@ export default function App() {
       </footer>
     </>
   );
+}
+
+export default function App() {
+  return <VisualizerProvider><Portfolio /></VisualizerProvider>;
 }

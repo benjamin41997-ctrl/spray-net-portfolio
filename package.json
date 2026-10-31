@@ -12,7 +12,9 @@
     "build": "node scripts/validate-content.mjs && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "validate": "node scripts/validate-content.mjs",
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:api": "node --test server/*.test.mjs",
+    "api": "node --env-file-if-exists=.env server/index.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

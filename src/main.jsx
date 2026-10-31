@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { offerAppUpdate } from './lib/appUpdates';
 import './styles.css';
+import './visualizer.css';
 
 // The worker can activate while an old tab is open. Offer a page refresh without
 // interrupting a consultation, including updates installed by another window.

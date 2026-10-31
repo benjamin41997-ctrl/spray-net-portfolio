@@ -1,8 +1,8 @@
 # Spray-Net Portfolio
 
-A tablet-first, installable portfolio for Spray-Net South Charlotte. Built with React, Vite, and a Workbox service worker. No backend, database, accounts, API keys, analytics, or paid services.
+A tablet-first, installable portfolio for Spray-Net South Charlotte, built with React, Vite, and a Workbox service worker. The portfolio and local color browsing work offline. The optional AI Design Visualizer uses a separate authenticated image service and billable OpenAI image edits; its API key stays on the server. Customers do not need accounts.
 
-The portfolio includes cabinet and exterior galleries, instant filters, an accessible before/after slider, fullscreen image viewing, reviews and review screenshots, local MP4 and YouTube playback, seven informational pages, and an optional inactivity reset. All navigation stays in the app. The home icon and logo always return to the start.
+The portfolio includes cabinet and exterior galleries, instant filters, an accessible before/after slider, fullscreen images, reviews, local MP4 and YouTube playback, seven informational pages, a guided kitchen/exterior visualizer, and an optional inactivity reset. The home icon and logo always return to the start.
 
 ## Start here
 
@@ -10,7 +10,7 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.0.7. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.1.0. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
 **The collection contains 53 transformations, 18 customer review excerpts, 16 videos, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
@@ -194,7 +194,7 @@ Edit `statistics` at the top of the same file to change the Why Spray-Net highli
 
 The header's `public/branding/logo.png` is an unchanged copy of the supplied corporate `Horizontal Logo for Skin.png`, including “Custom Chemistry. Smarter Painting.” Do not redraw, recolor, stretch, or append text inside the logo. South Charlotte is displayed separately. If corporate supplies an updated asset, replace this PNG or update `logo` in `src/data/settings.js` to its new local path. Preserve the original aspect ratio and clear space. The alternate supplied wordmark and emblem source are retained under `assets/branding/`.
 
-Change `brandName` and `locationName` in `settings.js` if needed. `demoMode` is `false`. The home screen ends after its five navigation cards; the footer shows only the version and offline indicator. Project provenance stays in the maintenance records; keep unverified job locations blank.
+Change `brandName` and `locationName` in `settings.js` if needed. `demoMode` is `false`. The home screen ends after its six navigation cards; the footer shows only the version and offline indicator. Project provenance stays in the maintenance records; keep unverified job locations blank.
 
 For the home-screen icon, replace these files with PNGs of the exact dimensions:
 
@@ -310,3 +310,31 @@ Removed the Marietta review (18 reviews remain), replaced the ambiguous quote ic
 ## Portfolio 1.0.8
 
 Decorative quotation icons on the home review card, reviews introduction, and Why Spray-Net article notes now use the existing Spray-Net emblem. The shared BrandEmblem component uses the local, offline-cached branding asset.
+
+## Design Visualizer — Portfolio 1.1.0
+
+Open **Visualizer** from the header or **Visualize Your Home** on the home screen. Choose Kitchen & Cabinets or Home Exterior, take/select a clear photo, choose surfaces and colors, then select Create My Preview or Create Detailed Preview. There is no prompt to type. The original photo is reused for each rendering so successive edits do not compound earlier changes. You can browse the portfolio while generation continues and return through the status banner.
+
+### Connect a tablet
+
+The private setup files are in the ignored `.visualizer-local/` directory. They contain a limited rendering access token, not the OpenAI key. Keep them private and out of GitHub. Scan `connect-tablet.png` or open `connect-tablet.html` to connect a browser without typing. The app immediately removes the token from the address and stores it only for that browser session.
+
+For an installed iPad/Android app, open **Consultation Tools → Connect From Setup File** and select your private `tablet-connection.json` from Files/OneDrive. This connects the installed app itself; scanning a QR may instead open the regular browser. A new browser/app session may need reconnection. You can also enter the public service address and private tablet access code manually. Disconnect clears the session token. No OpenAI key belongs in the tablet form.
+
+### Colors and surfaces
+
+The picker includes 824 verified catalog colors: 50 Spray-Net core colors, 376 Sherwin-Williams named catalog matches, and 398 Benjamin Moore named catalog matches. These matching collections are the entries verified in Spray-Net's October 2026 files, not complete manufacturer decks. Swatches are digital approximations. Colors are filtered by the documented coating system for the selected surface; choose the siding material before coloring siding. Confirm the final selection using physical samples and the project's coating requirements. See [Color sources](docs/COLOR-SOURCES.md).
+
+Kitchen controls support one-color or separate upper/lower cabinets, a separate island, hardware style and finish, and optional backsplash/countertop ideas. Exterior controls cover siding, brick, stucco, front/garage doors, window frames, soffits, fascia, vents, columns, and trim. Unselected features stay unchanged in the server's predefined editing instructions. AI may still alter details, so check each result against the original.
+
+### Save and follow up
+
+Each completed preview automatically stores its original photo, rendered image, choices, date, and optional consultation label in IndexedDB on that device. **Consultation Tools → Saved Previews on This Tablet** reopens them. **Save Image** exports a file; **Share Image** opens supported device sharing. No email is sent automatically. Photos are not synchronized to this PC or another tablet, and clearing the browser's site data removes saved images. Export the ones needed for follow-up. Storage failures are shown explicitly with a Save Image option.
+
+**Start a New Consultation** clears the active photo, choices, and visible saved gallery while preserving the device library. The inactivity reset does the same. Saved photos never appear on the home screen or in the next consultation automatically.
+
+### API and testing
+
+The public app remains on GitHub Pages. The image service is a separate Cloudflare Worker with a persistent Durable Object usage counter. Its default allowance is 20 attempts per UTC day and 12 per rolling hour, across connected tablets, with one active request. Failed/dispatched requests count, so accidental repeated taps and retries cannot silently multiply spending. Fast previews use GPT Image 2.5 Flare at medium quality; detailed previews use Sunburst at high quality. Provider latency and access vary. API details, environment variables, key rotation, deployment and model sources are in [Visualizer API](docs/VISUALIZER-API.md).
+
+Run `pnpm build`, `pnpm test:api`, and `pnpm test`. API/unit and browser tests use stubs and never make paid calls. Browser tests cover payloads, original-photo reuse, navigation during generation, offline behavior, tablet pairing, camera orientation, local persistence and reset privacy. Run a separately authorized real image smoke test after service deployment to verify provider access and inspect its result.

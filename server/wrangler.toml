@@ -1,0 +1,25 @@
+name = "spray-net-visualizer-api"
+main = "worker.mjs"
+compatibility_date = "2026-05-22"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+VISUALIZER_ALLOWED_ORIGINS = "https://benjamin41997-ctrl.github.io"
+VISUALIZER_MAX_DAILY_RENDERS = "20"
+VISUALIZER_MAX_HOURLY_RENDERS = "12"
+VISUALIZER_MIN_INTERVAL_SECONDS = "5"
+VISUALIZER_TIMEOUT_SECONDS = "240"
+VISUALIZER_PREVIEW_MODEL = "gpt-image-2.5-flare"
+VISUALIZER_DETAIL_MODEL = "gpt-image-2.5-sunburst"
+
+[[durable_objects.bindings]]
+name = "VISUALIZER_GATE"
+class_name = "VisualizerGate"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VisualizerGate"]
+
+[observability]
+enabled = false

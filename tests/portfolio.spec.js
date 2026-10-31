@@ -248,6 +248,7 @@ test('responsive layouts, loaded images, and no external navigation', async ({ p
       '/videos',
       '/why',
       '/why/paint-comparison',
+      '/visualize',
     ]) {
       await page.goto(`./#${route}`);
       await expect(page.locator('main h1')).toBeVisible();
@@ -310,6 +311,7 @@ test('major screens meet automated WCAG AA accessibility checks', async ({ page,
     '/videos',
     '/why',
     '/why/warranty',
+    '/visualize',
   ]) {
     await page.goto(`./#${route}`);
     await page.emulateMedia({ reducedMotion: 'reduce' });

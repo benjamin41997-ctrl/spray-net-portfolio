@@ -6,6 +6,7 @@ import { videos } from '../src/data/videos.js';
 import { settings } from '../src/data/settings.js';
 import { resources } from '../src/data/resources.js';
 import { youtubeEmbed } from '../src/lib/media.js';
+import { colors } from '../src/data/colors.js';
 
 const errors = [];
 const publicDir = new URL('../public/', import.meta.url);
@@ -50,6 +51,12 @@ uniqueIds(projects, 'Projects');
 uniqueIds(reviews, 'Reviews');
 uniqueIds(videos, 'Videos');
 uniqueIds(content, 'Content');
+uniqueIds(colors, 'Color catalog');
+for (const color of colors) {
+  check(Boolean(color.name && color.code && color.brand && color.source), `Color ${color.id}: missing source information.`);
+  check(/^#[0-9a-f]{6}$/i.test(color.hex), `Color ${color.id}: invalid digital swatch.`);
+  check(Array.isArray(color.systems) && color.systems.length > 0 && color.systems.every(system => ['kitchen','brick','vinyl','elasto','dw','mat','satin'].includes(system)), `Color ${color.id}: unknown coating system.`);
+}
 for (const project of projects) {
   const label = `Project ${project.id}`;
   for (const key of [

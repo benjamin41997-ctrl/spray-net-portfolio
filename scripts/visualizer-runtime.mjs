@@ -1,0 +1,12 @@
+import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const runtime = path.join(root, '.visualizer-local');
+process.env.CLOUDFLARE_CF_FETCH_ENABLED ||= 'false';
+process.env.WRANGLER_SEND_METRICS ||= 'false';
+process.env.WRANGLER_WRITE_LOGS ||= 'false';
+process.env.WRANGLER_LOG_PATH ||= path.join(runtime, 'wrangler/logs');
+process.env.WRANGLER_REGISTRY_PATH ||= path.join(runtime, 'wrangler/registry');
+process.env.MINIFLARE_REGISTRY_PATH ||= path.join(runtime, 'miniflare');
+for (const name of ['wrangler/logs', 'wrangler/registry', 'miniflare']) mkdirSync(path.join(runtime, name), { recursive: true });

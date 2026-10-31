@@ -100,6 +100,15 @@ export default function Home() {
           </div>
           <Icon name="arrow" />
         </a>
+        <a className="small-nav-card visualizer-nav" href="#/visualize">
+          <span className="nav-card-icon"><Icon name="sparkles" size={28} /></span>
+          <div>
+            <span className="small-caps">MAKE IT YOURS</span>
+            <h2>Visualize Your Home</h2>
+            <p>Your Photo. Your Colors. A New Possibility.</p>
+          </div>
+          <Icon name="arrow" />
+        </a>
       </section>
     </>
   );
