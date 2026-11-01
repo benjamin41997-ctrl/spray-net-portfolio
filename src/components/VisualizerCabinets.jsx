@@ -12,7 +12,7 @@ export default function VisualizerCabinets({layout, tone, light, dark, onLayout,
       </div>}
     </div>
     {twoTone && <div className="viz-tone-targets" role="group" aria-label="Cabinet colors">
-      {[['light',light,layout==='island'?'Cabinets':'Wall'],['dark',dark,layout==='island'?'Island':'Base']].map(([id,color,label])=><button key={id} className={`viz-tone-target ${tone===id?'selected':''}`} aria-label={id==='light'?'Choose Lighter Color':'Choose Darker Color'} aria-describedby={`viz-tone-${id}`} aria-pressed={tone===id} disabled={disabled} onClick={()=>onTone(id)}><span className="viz-tone-chip" style={{background:color?.hex || '#eef3f7'}}/><span><strong>{label}</strong><span id={`viz-tone-${id}`}>{color?.name || (id==='light'?'Lighter Color':'Darker Color')}</span></span></button>)}
+      {[['light',light,layout==='island'?'Cabinets':'Wall'],['dark',dark,layout==='island'?'Island':'Base']].map(([id,color,label])=><button key={id} className={`viz-tone-target ${tone===id?'selected':''}`} aria-label={`Choose ${id==='light'?'Lighter':'Darker'} Color for ${label}: ${color?.name || (id==='light'?'Lighter Color':'Darker Color')}`} aria-pressed={tone===id} disabled={disabled} onClick={()=>onTone(id)}><span className="viz-tone-chip" style={{background:color?.hex || '#eef3f7'}}/><span><strong>{label}</strong><span id={`viz-tone-${id}`}>{color?.name || (id==='light'?'Lighter Color':'Darker Color')}</span></span></button>)}
     </div>}
   </div>;
 }

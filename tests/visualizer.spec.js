@@ -76,7 +76,7 @@ async function selectColor(page, surface, color) {
     const labels={siding:'Siding',frontDoor:'Front Door',garageDoor:'Garage Door',windows:'Windows',soffits:'Soffits',fascia:'Fascia',brick:'Brick',stucco:'Stucco',trim:'Trim',vents:'Vents',columns:'Columns'};
     await exterior.getByRole('button',{name:labels[surface],exact:true}).click();
   } else {
-    const target=page.getByRole('button',{name:['lowerCabinets','island'].includes(surface)?'Choose Darker Color':'Choose Lighter Color',exact:true});
+    const target=page.getByRole('button',{name:new RegExp(['lowerCabinets','island'].includes(surface)?'^Choose Darker Color':'^Choose Lighter Color')});
     if(await target.count())await target.click();
   }
   await page.getByLabel('Find a Color', { exact: true }).fill(color.name);
@@ -104,7 +104,7 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   await page.getByRole('button',{name:'Wall & Base',exact:true}).click();
   await selectColor(page, 'upperCabinets', kitchenColors[0]);
   await selectColor(page, 'lowerCabinets', kitchenColors[1]);
-  await page.getByRole('button',{name:'Hardware, Backsplash & Countertops',exact:true}).click();
+  await page.getByRole('button',{name:'Hardware & Finishes',exact:true}).click();
   await page.getByLabel('Hardware Style', { exact: true }).selectOption('bar');
   await page.getByLabel('Hardware Finish', { exact: true }).selectOption('matte-black');
   await page.getByLabel('Backsplash', { exact: true }).selectOption('white-subway');
@@ -368,8 +368,8 @@ test('one tone covers all cabinets and two-tone layouts always put the darker ch
   await selectColor(page,'cabinets',black);
   await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeDisabled();
   await selectColor(page,'island',white);
-  await expect(page.getByRole('button',{name:'Choose Lighter Color',exact:true})).toContainText(white.name);
-  await expect(page.getByRole('button',{name:'Choose Darker Color',exact:true})).toContainText(black.name);
+  await expect(page.getByRole('button',{name:/^Choose Lighter Color/})).toContainText(white.name);
+  await expect(page.getByRole('button',{name:/^Choose Darker Color/})).toContainText(black.name);
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
   expect(api.renders[0].body.design.surfaces).toEqual({cabinets:white.id,island:black.id});
   await page.getByRole('button',{name:'Wall & Base',exact:true}).click();
@@ -377,7 +377,7 @@ test('one tone covers all cabinets and two-tone layouts always put the darker ch
   expect(api.renders[1].body.design.surfaces).toEqual({upperCabinets:white.id,lowerCabinets:black.id,island:black.id});
   await page.getByRole('button',{name:'One Tone',exact:true}).click();
   await expect(page.getByRole('group',{name:'Two-tone layout',exact:true})).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Choose Darker Color',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:/^Choose Darker Color/})).toHaveCount(0);
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,3);
   expect(api.renders[2].body.design.surfaces).toEqual({cabinets:white.id});
 });
@@ -429,10 +429,10 @@ test('compact color controls and hardware dialog meet automated accessibility ch
   test.skip(process.platform==='win32' && browserName==='webkit','Windows WebKit accessibility execution is unreliable; Linux CI covers it.');
   await stubService(page);await openAndConnect(page);await uploadPhoto(page);
   await page.getByRole('button',{name:'Two Tone',exact:true}).click();
-  let results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+  let results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
   expect(results.violations).toEqual([]);
-  await page.getByRole('button',{name:'Hardware, Backsplash & Countertops',exact:true}).click();
-  results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+  await page.getByRole('button',{name:'Hardware & Finishes',exact:true}).click();
+  results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
   expect(results.violations).toEqual([]);
   await page.getByRole('button',{name:'Done',exact:true}).click();
 });

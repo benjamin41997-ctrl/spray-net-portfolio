@@ -142,7 +142,7 @@ export default function Visualizer() {
         <div className="viz-actions">
         {v.photo && !archived && <button className="button" disabled={v.busy || loadingPhoto} onClick={() => fileInput.current?.click()}>Add Photos</button>}
         {originalUrl && <button className="button" onClick={() => setFullscreen(true)}>View Fullscreen</button>}
-          {current && <button className="button" aria-label={before ? 'Show Design Preview' : 'Show Original'} aria-pressed={before} onClick={() => setBefore(!before)}>{before ? 'After' : 'Before'}</button>}
+          {current && <button className="button" aria-label={before ? 'Show Design Preview' : 'Show Original'} aria-pressed={before} onClick={() => setBefore(!before)}>{before ? 'Show Design Preview' : 'Show Original'}</button>}
         </div>
         {v.saveWarning && <p className="viz-error" role="alert">{v.saveWarning}</p>}
         {(toolsOpen || v.saveWarning) && current && <div className="viz-actions"><button className="button" onClick={() => exportCurrent(false)}>Save Image</button><button className="button" onClick={() => exportCurrent(true)}>Share Image</button></div>}

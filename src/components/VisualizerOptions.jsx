@@ -8,7 +8,7 @@ export const finishOptions={
 export default function VisualizerOptions({design,onChange,disabled}) {
   const [open,setOpen]=useState(false);const dialog=useRef(null);
   useEffect(()=>{if(open)dialog.current?.showModal();else dialog.current?.close();},[open]);
-  return <><button className="button viz-options-button" aria-label="Hardware, Backsplash & Countertops" disabled={disabled} onClick={()=>setOpen(true)}>Hardware &amp; Finishes</button>
+  return <><button className="button viz-options-button" disabled={disabled} onClick={()=>setOpen(true)}>Hardware &amp; Finishes</button>
     <dialog ref={dialog} className="viz-options-dialog" aria-labelledby="viz-options-title" onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}>
       <h2 id="viz-options-title">Hardware &amp; Finishes</h2>
       <div className="viz-options-grid">{Object.entries(finishOptions).map(([key,item])=><label className="viz-label" key={key}>{item.label}<select aria-label={item.label} disabled={disabled || (key==='hardwareFinish'&&design.hardwareStyle==='none')} value={design[key]} onChange={e=>onChange(d=>({...d,[key]:e.target.value,...(key==='hardwareStyle'&&e.target.value==='none'?{hardwareFinish:'keep'}:{})}))}>{Object.entries(item.options).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></label>)}</div>
