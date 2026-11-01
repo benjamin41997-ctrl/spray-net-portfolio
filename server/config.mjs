@@ -33,6 +33,8 @@ export function loadConfig(env = process.env) {
   const accessToken = env.VISUALIZER_ACCESS_TOKEN?.trim() || '';
   const operatorToken = env.VISUALIZER_OPERATOR_TOKEN?.trim() || '';
   const tabletPassword = env.VISUALIZER_TABLET_PASSWORD?.trim() || '';
+  const fastTestMode = env.VISUALIZER_FAST_TEST_MODE ?? 'false';
+  if (!['true','false'].includes(fastTestMode)) throw new Error('VISUALIZER_FAST_TEST_MODE must be true or false.');
   if (tabletPassword && (tabletPassword.length < 12 || tabletPassword.length > 128 || /[\u0000-\u001F]/.test(tabletPassword))) throw new Error('VISUALIZER_TABLET_PASSWORD must contain 12–128 characters without control characters.');
   if (operatorToken && !/^[A-Za-z0-9_-]{43,128}$/.test(operatorToken)) throw new Error('VISUALIZER_OPERATOR_TOKEN must be a random 43–128 character secret.');
   if (accessToken && !/^[A-Za-z0-9_-]{43,128}$/.test(accessToken)) {
@@ -46,6 +48,7 @@ export function loadConfig(env = process.env) {
     accessToken,
     operatorToken,
     tabletPassword,
+    fastTestMode:fastTestMode === 'true',
     allowedOrigins,
     configured: Boolean(apiKey && accessToken && allowedOrigins.size && maxDaily),
     maxDaily,

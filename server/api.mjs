@@ -1,6 +1,7 @@
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, MAX_RESPONSE_BYTES, validateImage } from './images.mjs';
 import { secretMatches, tabletCredentials } from './pairing.mjs';
+import { renderProfile } from './renderProfile.mjs';
 
 const operatorAuthorized = (request, config, paired) => secretMatches(request.headers.get('x-visualizer-operator'), config.operatorToken) || secretMatches(request.headers.get('x-visualizer-operator'), paired?.operatorToken);
 
@@ -55,7 +56,7 @@ async function parseBody(request) {
 async function render(body, design, request, config, fetchImpl) {
   const timeout = AbortSignal.timeout(config.timeoutMs);
   const signal = AbortSignal.any([request.signal, timeout]);
-  const model = design.quality === 'detail' ? config.detailModel : config.previewModel;
+  const {model,quality} = renderProfile(config, design.quality);
   try {
     const upstream = await fetchImpl('https://api.openai.com/v1/images/edits', {
       method: 'POST',
@@ -66,7 +67,7 @@ async function render(body, design, request, config, fetchImpl) {
         images: [{ image_url: body.image }],
         prompt: buildPrompt(design.design, design.customPrompt),
         model,
-        quality: design.quality === 'detail' ? 'high' : 'medium',
+        quality,
         size: 'auto',
         n: 1,
         output_format: 'webp',
@@ -107,7 +108,7 @@ export function createApi({ config, catalog, reserve, reserveConnection, fetchIm
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.2', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.3', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {

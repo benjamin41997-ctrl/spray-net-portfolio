@@ -54,6 +54,7 @@ test('configuration is fail-closed and accepts only exact approved origins and m
   assert.throws(() => loadConfig({ VISUALIZER_ALLOWED_ORIGINS: 'https://example.com/path' }));
   assert.throws(() => loadConfig({ VISUALIZER_ALLOWED_ORIGINS: 'http://example.com' }));
   assert.throws(() => loadConfig({ VISUALIZER_PREVIEW_MODEL: 'arbitrary-model' }));
+  assert.throws(() => loadConfig({ VISUALIZER_FAST_TEST_MODE: 'yes' }));
   assert.throws(() => loadConfig({ VISUALIZER_MAX_DAILY_RENDERS: '2000' }));
   assert.equal(loadConfig({ VISUALIZER_ALLOWED_ORIGINS: 'http://127.0.0.1:5173' }).allowedOrigins.size, 1);
 });
@@ -219,6 +220,23 @@ test('detail mode selects the configured precise model and high quality', async 
   const upstream = JSON.parse(h.calls[0][1].body);
   assert.equal(upstream.model, 'gpt-image-2.5-sunburst');
   assert.equal(upstream.quality, 'high');
+});
+
+test('fast testing forces Flare low quality for regular, detailed and custom requests', async () => {
+  const operatorToken = 'test-fast-operator-'.padEnd(43,'x');
+  const fastConfig = {...config,fastTestMode:true,previewModel:'gpt-image-2.5-sunburst',detailModel:'gpt-image-2.5-sunburst',operatorToken};
+  for (const quality of ['preview','detail']) for (const custom of [false,true]) {
+    const h = harness({config:fastConfig});
+    const result = await h.api(request({...payload(),quality,...(custom?{customPrompt:'Make only the island sage green.'}:{})},{headers:{'X-Visualizer-Operator':operatorToken}}));
+    assert.equal(result.status,200);
+    assert.equal(result.headers.get('X-Visualizer-Render-Mode'),'fast-test');
+    const upstream = JSON.parse(h.calls[0][1].body);
+    assert.equal(upstream.model,'gpt-image-2.5-flare');
+    assert.equal(upstream.quality,'low');
+    assert.equal(upstream.n,1);
+    assert.equal(h.calls.length,1); assert.equal(h.reservations,1);
+    assert.equal((await result.json()).model,'gpt-image-2.5-flare');
+  }
 });
 
 test('custom instructions require a separate operator code before reserving paid usage', async () => {

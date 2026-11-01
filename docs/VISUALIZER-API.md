@@ -10,7 +10,7 @@ The salesperson enters one tablet password in the hidden tools. The service retu
 - Exterior siding, brick, stucco, entry doors, garage doors, window frames, soffits, fascia, vents, columns, and trim.
 - Up to eight uploaded photos per consultation, one selected original per request, without previous conversation history. Uploading and switching angles incur no API usage. Each change starts from that angle's original.
 - Server-built instructions preserve layout, camera view, lighting, appliances and unselected surfaces. Ordinary rendering accepts verified color IDs and a small set of options. Custom instructions require a separate operator credential; clients cannot change model, source URL or output size.
-- Fast preview: `gpt-image-2.5-flare`, medium quality. Detailed rendering: `gpt-image-2.5-sunburst`, high quality. Both return one WebP.
+- **Current UI test mode:** every request uses `gpt-image-2.5-flare` at `low` quality, including detailed/custom requests. One WebP is returned. With fast test mode disabled, the configured tiers are Flare/medium and Sunburst/high.
 - No automatic retries. A timed-out or cancelled request may still incur provider usage, so every dispatched attempt consumes one quota slot.
 - Photos and renderings are never written to the API filesystem or Durable Object storage. The server stores usage timestamps/counts only. The photograph is sent to OpenAI to create the rendering. The portfolio manages local saved designs on the tablet separately.
 
@@ -97,6 +97,7 @@ For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep on
 | `VISUALIZER_MAX_HOURLY_RENDERS` | 12, permitted range 1–60 |
 | `VISUALIZER_MIN_INTERVAL_SECONDS` | 5, permitted range 1–60 |
 | `VISUALIZER_TIMEOUT_SECONDS` | 240, permitted range 30–300 |
+| `VISUALIZER_FAST_TEST_MODE` | `true` in the deployment/example; forces Flare/low for all tiers. Unset or `false` restores configured tiers |
 | `VISUALIZER_PREVIEW_MODEL` | `gpt-image-2.5-flare` |
 | `VISUALIZER_DETAIL_MODEL` | `gpt-image-2.5-sunburst` |
 | `VISUALIZER_USAGE_FILE` | Node only: `server/.local/usage.json` |
@@ -160,3 +161,11 @@ OpenAI API schema and model choices were checked against the [image edits refere
 ## Live Smoke Tests — October 31, 2026
 
 The deployed authenticated service produced a cabinet recolor using GPT Image 2.5 Flare in 13 seconds and an exterior window-frame edit using GPT Image 2.5 Sunburst in 32 seconds. Both results were visually compared with their original library photos. These are two observations, not a latency guarantee. The originals and results are kept in ignored local QA files; no homeowner data was used. AI edits can alter unselected details, so confirm each output with the homeowner.
+
+## Fast Rendering During UI Testing — November 1, 2026
+
+The deployment sets `VISUALIZER_FAST_TEST_MODE="true"`. `server/renderProfile.mjs` enforces `gpt-image-2.5-flare` and `quality: "low"` for every ordinary, detailed and operator-custom request. The browser cannot raise the model or quality while this flag is enabled. Output count remains one; size stays `auto` to preserve the photograph framing. No automatic retry or fallback to a larger model is added.
+
+OpenAI describes [Flare as its fastest image model](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare), and the [image guide recommends low quality for quick drafts](https://developers.openai.com/api/docs/guides/image-generation). These settings prioritize draft speed; exact latency and charges still depend on input and service conditions. Verified against the official documentation on November 1, 2026.
+
+To restore the configured preview/detailed models, set the flag to `false` in `server/wrangler.toml` and redeploy the Worker. Keep device/operator/password secrets unchanged so existing tablets stay activated. The `X-Visualizer-Render-Mode` response header reports `fast-test` or `standard`. API tests cover all four regular/custom and preview/detail combinations, including a configuration whose ordinary model variables point to Sunburst, and confirm that fast test mode still forces Flare/low.
