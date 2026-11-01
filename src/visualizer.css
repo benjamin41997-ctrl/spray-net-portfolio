@@ -1,5 +1,7 @@
 @layer components {
   .visualizer-app { height:100%; min-height:0; display:grid; grid-template-rows:44px minmax(0,1fr); gap:10px; }
+  .visualizer-app.is-exterior { grid-template-rows:44px 44px minmax(0,1fr); }
+  .visualizer-app.is-exterior.with-tools { grid-template-rows:44px auto 44px minmax(540px,calc(100dvh - 240px)); }
   .visualizer-app.with-tools { height:auto; min-height:100%; grid-template-rows:44px auto minmax(540px,calc(100dvh - 190px)); }
   .viz-toolbar, .viz-actions, .viz-selection, .viz-look-strip, .viz-layout-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .viz-toolbar { justify-content:space-between; }
@@ -9,7 +11,10 @@
   .viz-canvas-column { min-width:0; min-height:0; display:flex; flex-direction:column; gap:8px; }
   .viz-photo-stage { flex:1; min-height:120px; position:relative; border-radius:16px; background:#eef3f7; overflow:hidden; display:grid; place-items:center; }
   .viz-photo-stage > img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
-  .viz-upload-intro { display:grid; gap:12px; padding:20px; width:min(100%,270px); }
+  .viz-upload-intro { display:grid; gap:10px; padding:16px; width:min(100%,490px); text-align:center; }
+  .viz-upload-intro h2 { font-size:24px; }
+  .viz-upload-intro p { font-size:16px; line-height:1.4; }
+  .viz-upload-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:4px; }
   .viz-actions { flex-shrink:0; }
   .viz-workspace .button, .viz-tools .button { min-height:44px; padding:9px 13px; font-size:16px; }
   .viz-controls { min-width:0; min-height:0; padding:12px; border:1px solid #d5dfe6; border-radius:16px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
@@ -21,7 +26,7 @@
   .viz-text-button { background:none; border:0; color:#003965; font:inherit; font-weight:700; min-height:44px; padding:6px; text-decoration:underline; text-underline-offset:4px; }
   .viz-palette-tools { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.9fr) minmax(0,1fr); gap:7px; }
   .viz-palette-tools label { min-width:0; }
-  .viz-workspace input:not([type=file]), .viz-workspace select, .viz-tools input:not([type=file]), .viz-options-dialog select { width:100%; min-width:0; min-height:44px; padding:8px 9px; border:1px solid #97a7b3; border-radius:9px; font:inherit; font-size:16px; color:#003965; background:#fff; }
+  .viz-workspace input:not([type=file]), .viz-workspace select, .viz-tools input:not([type=file]) { width:100%; min-width:0; min-height:44px; padding:8px 9px; border:1px solid #97a7b3; border-radius:9px; font:inherit; font-size:16px; color:#003965; background:#fff; }
   .viz-swatches { flex:1; min-height:76px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; align-content:start; overflow:auto; padding:3px; overscroll-behavior:contain; }
   .viz-swatch { text-align:left; border:2px solid #d5dfe6; border-radius:10px; background:#fff; padding:6px; color:#003965; min-width:0; min-height:82px; }
   .viz-swatch.selected { border-color:#003965; box-shadow:0 0 0 1px #003965; }
@@ -31,6 +36,12 @@
   .viz-swatches :focus-visible { outline-offset:0; }
   .viz-more, .viz-palette-empty { grid-column:1/-1; }
   .viz-palette-empty { padding:12px; line-height:1.5; }
+  .viz-main-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .viz-main-options .button { font-size:18px; font-weight:800; min-height:48px; }
+  .viz-wizard-prompt { display:grid; grid-template-columns:auto 1fr; gap:3px 9px; align-items:center; padding:7px 10px; background:#f2f6f8; border-radius:9px; }
+  .viz-wizard-prompt > span { font-size:14px; }
+  .viz-wizard-prompt h3 { font-size:20px; }
+  .viz-wizard-prompt p { grid-column:1/-1; font-size:15px; line-height:1.3; }
   .viz-cabinet-layout { display:grid; gap:8px; }
   .viz-tone-targets { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .viz-tone-target { min-width:0; min-height:58px; display:flex; gap:9px; align-items:center; padding:7px 9px; border:2px solid #d5dfe6; border-radius:10px; background:#fff; color:#003965; text-align:left; }
@@ -40,13 +51,14 @@
   .viz-tone-target strong { display:block; font-size:16px; }
   .viz-tone-target span span { display:block; font-size:14px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .viz-exterior-steps { display:grid; gap:8px; min-width:0; }
-  .viz-step-tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; overscroll-behavior-x:contain; }
-  .viz-step-tabs button { display:flex; gap:7px; align-items:center; flex:0 0 auto; }
-  .viz-step-color { width:16px; height:16px; border-radius:50%; border:1px solid #8799a5; }
+  .viz-step-tabs { display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:3px; min-width:0; }
+  .visualizer-app .viz-step-tabs .chip { position:relative; min-width:0; padding:8px 3px; white-space:nowrap; }
+  .viz-step-tabs .chip.has-color::after { content:''; position:absolute; height:3px; left:10px; right:10px; bottom:3px; border-radius:3px; background:var(--step-color); border:1px solid #8799a5; }
+  .viz-step-tabs :focus-visible { outline-offset:-3px; }
   .viz-step-actions { display:grid; grid-template-columns:auto 1fr; gap:8px; }
   .viz-generate { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .viz-generate button { min-width:0; }
-  .viz-options-button { width:100%; }
+  .viz-controls > .viz-hardware-panel { flex:1; min-height:0; overflow:auto; padding:0 4px; }
   .viz-label { display:grid; gap:8px; font-size:16px; font-weight:700; margin-top:16px; }
   .viz-label span { font-weight:400; }
   .viz-notice, .viz-error { padding:8px 10px; border-radius:9px; background:#eef3f7; font-size:14px; line-height:1.4; max-height:65px; overflow:auto; }
@@ -81,10 +93,8 @@
   .visualizer-nav { grid-column:1/-1; background:#003965; color:white; }
   .visualizer-nav .nav-card-icon { background:#ffffff20; color:white; }
   .visualizer-nav p, .visualizer-nav .small-caps { color:white; }
-  .viz-options-dialog { width:min(620px,calc(100% - 32px)); max-height:calc(100dvh - 32px); padding:24px; border:0; border-radius:18px; margin:auto; color:#003965; overflow:auto; }
-  .viz-options-dialog::backdrop, .viz-fullscreen::backdrop { background:#002744bd; }
-  .viz-options-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
-  .viz-options-dialog > .button { width:100%; }
+  .viz-fullscreen::backdrop { background:#002744bd; }
+  .viz-options-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding-bottom:14px; }
   .viz-fullscreen { position:fixed; inset:0; width:100%; height:100%; max-width:100%; max-height:100%; padding:18px; border:0; background:#002744; color:#fff; }
   .viz-fullscreen[open] { display:flex; flex-direction:column; gap:16px; }
   .viz-fullscreen .button { align-self:flex-end; flex-shrink:0; }
@@ -94,7 +104,7 @@
 @layer responsive {
   @media(min-width:761px) and (max-width:1250px) { .app-header { flex-wrap:wrap; gap:10px 24px; padding-bottom:8px; } .home-control { margin-left:auto; } .main-nav { order:3; flex:0 0 100%; display:grid; grid-template-columns:repeat(5,auto); margin-left:0; } }
   @media(min-width:700px) and (max-aspect-ratio:1/1) { .viz-workspace { grid-template-columns:1fr; grid-template-rows:minmax(0,.33fr) minmax(0,.67fr); gap:10px; } }
-  @media(max-width:699px) { .visualizer-app, .visualizer-app.with-tools { height:auto; grid-template-rows:44px auto; } .viz-workspace { grid-template-columns:1fr; grid-template-rows:260px 650px; } .visualizer-app.with-tools { grid-template-rows:44px auto auto; } .viz-palette-tools { grid-template-columns:1fr 1fr; } .viz-palette-tools label:first-child { grid-column:1/-1; } .viz-options-grid { grid-template-columns:1fr; } .viz-saved-list { grid-template-columns:1fr 1fr; } }
+  @media(max-width:699px) { .visualizer-app.is-exterior { grid-template-rows:44px 44px auto; } .visualizer-app.is-exterior.with-tools { grid-template-rows:44px auto 44px auto; } .viz-step-tabs { display:flex; overflow:auto; } .visualizer-app .viz-step-tabs .chip { flex:0 0 80px; } .visualizer-app, .visualizer-app.with-tools { height:auto; grid-template-rows:44px auto; } .viz-workspace { grid-template-columns:1fr; grid-template-rows:340px 700px; } .visualizer-app.with-tools { grid-template-rows:44px auto auto; } .viz-palette-tools { grid-template-columns:1fr 1fr; } .viz-palette-tools label:first-child { grid-column:1/-1; } .viz-options-grid { grid-template-columns:1fr; } .viz-saved-list { grid-template-columns:1fr 1fr; } }
   @media(prefers-reduced-motion:reduce) { .viz-spinner { animation:none; } }
 }
 /* Scope the compact app chrome to the studio; portfolio pages keep their navigation. */

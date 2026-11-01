@@ -134,7 +134,7 @@ Optional top-level `customPrompt` accepts up to 1,500 characters of text. Nonemp
 Omit surface keys that should stay unchanged; do not send empty color IDs. Accepted surfaces:
 
 - Kitchen: `cabinets`, `upperCabinets`, `lowerCabinets`, `island`. Use either `cabinets` or separate upper/lower keys.
-- Exterior: `siding`, `brick`, `stucco`, `frontDoor`, `garageDoor`, `windows`, `soffits`, `fascia`, `vents`, `columns`, `trim`.
+- Exterior: `siding`, `siding2`, `brick`, `stucco`, `frontDoor`, `garageDoor`, `windows`, `soffits`, `fascia`, `vents`, `columns`, `trim`.
 
 Kitchen options default to `keep` when omitted:
 
@@ -175,3 +175,9 @@ To restore the configured preview/detailed models, set the flag to `false` in `s
 One Tone sends only `cabinets`, which includes island cabinetry unless a separate island selection is supplied. Two Tone Island sends `cabinets` plus `island`. Wall & Base sends `upperCabinets`, `lowerCabinets` and an `island` color equal to the lower/base choice. The tablet orders the two selected swatches by relative sRGB luminance so the darker one is used for island/base cabinetry. Operator custom instructions remain available for exceptional requests.
 
 The exterior wizard edits one existing surface key per step; navigating does not render or erase other selections. `sidingMaterial: "auto"` accepts the union of catalog VINYL/MAT/SATIN references for a siding visualization while preserving the depicted material. This is a design reference, not a coating specification. No changes were made to passwords, token lifetime, usage limits or fast-test model enforcement.
+
+## Secondary Siding and Guided Kitchen Selection
+
+The customer exterior row now contains `siding`, `siding2`, `frontDoor`, `garageDoor`, `soffits`, `fascia`, `windows`, `trim` and `vents`. The API retains brick/stucco/columns compatibility for existing data and custom workflows, while those choices are absent from the customer row. `siding2` shares the primary siding reference rules and accepts an independent color. Prompts distinguish the primary/largest siding area from an existing distinct profile, material, gable or accent section; they forbid inventing a secondary area.
+
+Kitchen panel selection is browser UI state and adds no API fields. The guided sequence starts with island/base color and advances to cabinet/wall color. Existing `cabinets`, `upperCabinets`, `lowerCabinets` and `island` payload mapping is preserved. Opening a panel, moving a step or selecting a color never creates an image request; only an explicit render button does so.

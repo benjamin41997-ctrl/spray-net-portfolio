@@ -1,7 +1,7 @@
 import { colorsById } from '../data/colors.js';
 
-export const surfaceNames = {cabinets:'Cabinets',upperCabinets:'Wall Cabinets',lowerCabinets:'Base Cabinets',island:'Island',siding:'Siding',frontDoor:'Front Door',garageDoor:'Garage Door',soffits:'Soffits',fascia:'Fascia',windows:'Windows',trim:'Trim',brick:'Brick',stucco:'Stucco',vents:'Vents',columns:'Columns'};
-export const exteriorSurfaces = ['siding','frontDoor','garageDoor','soffits','fascia','windows','trim','brick','stucco','vents','columns'];
+export const surfaceNames = {cabinets:'Cabinets',upperCabinets:'Wall Cabinets',lowerCabinets:'Base Cabinets',island:'Island',siding:'Siding 1',siding2:'Siding 2',frontDoor:'Front Door',garageDoor:'Garage Door',soffits:'Soffits',fascia:'Fascia',windows:'Windows',trim:'Trim',brick:'Brick',stucco:'Stucco',vents:'Vents',columns:'Columns'};
+export const exteriorSurfaces = ['siding','siding2','frontDoor','garageDoor','soffits','fascia','windows','trim','vents'];
 export const cabinetLayout = surfaces => Object.hasOwn(surfaces,'upperCabinets') || Object.hasOwn(surfaces,'lowerCabinets') ? 'wall-base' : Object.hasOwn(surfaces,'island') ? 'island' : 'one-tone';
 export function cabinetTones(surfaces) {
   return cabinetLayout(surfaces) === 'wall-base'

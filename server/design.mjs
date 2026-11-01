@@ -15,7 +15,8 @@ const surfaces = {
     island: 'island cabinetry only, excluding its countertop',
   },
   exterior: {
-    siding: 'exterior siding only',
+    siding: 'exterior siding only; if a separate secondary siding color is specified, apply this color to the primary or largest siding area and exclude the secondary area',
+    siding2: 'the existing secondary siding area, identified by a distinct siding profile, material, gable or accent section; preserve primary siding and do not invent a secondary area if none is visibly distinct',
     brick: 'brick masonry only; preserve mortar, texture and masonry detail',
     stucco: 'stucco surfaces only; preserve their texture',
     frontDoor: 'the front entry door only',
@@ -68,7 +69,7 @@ export function validateDesign(body, catalog) {
       : surface === 'brick' ? ['brick']
         : surface === 'stucco' ? ['elasto']
           : ['frontDoor', 'garageDoor', 'windows'].includes(surface) ? ['dw']
-            : surface === 'siding' ? (sidingMaterial === 'auto' ? ['vinyl','mat','satin'] : sidingMaterial === 'vinyl' ? ['vinyl'] : ['mat', 'satin'])
+            : ['siding','siding2'].includes(surface) ? (sidingMaterial === 'auto' ? ['vinyl','mat','satin'] : sidingMaterial === 'vinyl' ? ['vinyl'] : ['mat', 'satin'])
               : ['mat', 'satin', 'dw'];
     const officialReference = color.referenceOnly && color.source === 'sherwin-williams-official';
     if (!officialReference && !systems.some(system => color.systems?.includes(system))) invalid('This color is not available for the selected surface. Choose another color from its deck.');
@@ -97,7 +98,7 @@ export function buildPrompt(design, customPrompt = '') {
     'Make only the changes listed below. Do not redesign, stage, declutter, add objects, remove architecture, widen openings or add text, labels, borders or logos. Preserve original surface textures and realistic highlights.',
     'Color codes and sRGB swatches are target references, not a reason to flatten lighting. Render each selected color in the existing light. If a selected feature is not visible, do not invent it.',
   ];
-  if (design.mode === 'exterior' && design.surfaces.some(item => item.surface === 'siding')) {
+  if (design.mode === 'exterior' && design.surfaces.some(item => ['siding','siding2'].includes(item.surface))) {
     instructions.push(design.sidingMaterial === 'auto' ? 'Recolor the existing siding without replacing it or changing its material, profile or texture.' : `The selected siding is ${design.sidingMaterial === 'vinyl' ? 'vinyl' : 'aluminum, fiber cement or engineered wood'}; recolor its existing appearance without replacing or changing its material or texture.`);
   }
   for (const { surface, color } of design.surfaces) {

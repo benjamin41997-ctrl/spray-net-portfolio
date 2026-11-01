@@ -10,7 +10,7 @@ import { useOperatorUnlock } from '../hooks/useOperatorUnlock';
 import VisualizerPhotos from '../components/VisualizerPhotos';
 import VisualizerConnection from '../components/VisualizerConnection';
 import VisualizerCabinets from '../components/VisualizerCabinets';
-import VisualizerExteriorSteps from '../components/VisualizerExteriorSteps';
+import VisualizerExteriorSteps, {ExteriorStepNavigation} from '../components/VisualizerExteriorSteps';
 import VisualizerPalette from '../components/VisualizerPalette';
 import VisualizerOptions, {finishOptions} from '../components/VisualizerOptions';
 import {cabinetLayout, cabinetTones, cabinetSurfaces, exteriorSurfaces, surfaceNames} from '../lib/visualizerDesign';
@@ -35,7 +35,8 @@ async function exportImage(record, share = false) {
 export default function Visualizer() {
   const v = useVisualizer(); const online = useOnline();
   const [surface, setSurface] = useState('cabinets');
-  const [tone, setTone] = useState('light'); const [paletteSession, setPaletteSession] = useState(0);
+  const [tone, setTone] = useState('dark'); const [paletteSession, setPaletteSession] = useState(0);
+  const [kitchenPanel, setKitchenPanel] = useState('colors');
   const [toolsOpen, setToolsOpen] = useState(false);
   const [operatorReady, setOperatorReady] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
@@ -79,17 +80,21 @@ export default function Visualizer() {
   const activeSurface = v.design.mode === 'exterior' ? (exteriorSurfaces.includes(surface) ? surface : 'siding')
     : !twoTone ? 'cabinets' : tone === 'light' ? (layout === 'wall-base' ? 'upperCabinets' : 'cabinets') : (layout === 'wall-base' ? 'lowerCabinets' : 'island');
   const collection = useMemo(() => {
-    const systems = v.design.mode === 'kitchen' ? ['kitchen'] : ({brick:['brick'],stucco:['elasto'],frontDoor:['dw'],garageDoor:['dw'],windows:['dw'],siding:['vinyl','mat','satin']}[activeSurface] || ['mat','satin','dw']);
+    const systems = v.design.mode === 'kitchen' ? ['kitchen'] : ({brick:['brick'],stucco:['elasto'],frontDoor:['dw'],garageDoor:['dw'],windows:['dw'],siding:['vinyl','mat','satin'],siding2:['vinyl','mat','satin']}[activeSurface] || ['mat','satin','dw']);
     return colors.filter(c => c.referenceOnly || c.systems.some(system => systems.includes(system)));
   }, [v.design.mode, activeSurface]);
   const selectedColor = colors.find(c => c.id === v.design.surfaces[activeSurface]);
   const changes = Object.entries(v.design.surfaces).filter(([,value]) => value);
-  const hasChanges = (changes.length > 0 || Object.keys(finishOptions).some(key => v.design[key] !== 'keep')) && (!twoTone || Boolean(tones.light && tones.dark));
-  const setColor = id => v.setDesign(d => {
-    if (d.mode === 'exterior') return {...d,surfaces:{...d.surfaces,[activeSurface]:id}};
-    const current=cabinetTones(d.surfaces); const next=tone==='light'?{...current,light:id}:{...current,dark:id};
-    return {...d,surfaces:cabinetSurfaces(cabinetLayout(d.surfaces),next.light,next.dark)};
-  });
+  const hasChanges = (changes.length > 0 || Object.keys(finishOptions).some(key => v.design[key] !== 'keep')) && (!twoTone || !changes.length || Boolean(tones.light && tones.dark));
+  const setColor = id => {
+    v.setDesign(d => {
+      if (d.mode === 'exterior') return {...d,surfaces:{...d.surfaces,[activeSurface]:id}};
+      if (cabinetLayout(d.surfaces)==='one-tone') return {...d,surfaces:cabinetSurfaces('one-tone',id)};
+      const current=cabinetTones(d.surfaces); const next=tone==='light'?{...current,light:id}:{...current,dark:id};
+      return {...d,surfaces:cabinetSurfaces(cabinetLayout(d.surfaces),next.light,next.dark)};
+    });
+    if (twoTone && tone==='dark' && id) setTone('light');
+  };
   async function upload(files) {
     const batch = Array.from(files || []); if (!batch.length || v.busy || loadingPhoto) return;
     if (batch.length + v.photos.length > 8) { v.setError('Add up to 8 photos per consultation. Start a new consultation for another project.'); return; }
@@ -103,13 +108,17 @@ export default function Visualizer() {
     v.addPhotos(prepared); setArchived(null); setBefore(false); setLoadingPhoto(false);
     if (failures.length) v.setError(failures.join(' '));
   }
-  function switchMode(mode) { if (mode === v.design.mode) return; v.setDesign(newDesign(mode)); setSurface('siding'); setTone('light'); setPaletteSession(n=>n+1); }
-  function changeLayout(nextLayout) { if (nextLayout === layout) return; v.setDesign(d => {const current=cabinetTones(d.surfaces);return {...d,surfaces:cabinetSurfaces(nextLayout,current.light,current.dark)};});setTone('light'); }
+  function switchMode(mode) { if (mode === v.design.mode) return; v.setDesign(newDesign(mode)); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); }
+  function changeLayout(nextLayout) {
+    setTone(nextLayout==='one-tone'?'light':'dark');
+    if(nextLayout===layout)return;
+    v.setDesign(d=>{const current=cabinetTones(d.surfaces);return {...d,surfaces:cabinetSurfaces(nextLayout,current.light,current.dark)};});
+  }
   async function loadSaved() { const epoch = photoEpoch.current; try { const records = await listRenders(); if (epoch !== photoEpoch.current) return; setSaved(records); setToolMessage('Saved previews are stored on this device only.'); } catch(e) { if (epoch === photoEpoch.current) setToolMessage(e.message); } }
   async function removeSaved() { if (!archived || !window.confirm('Delete this saved preview from this tablet?')) return; try { await deleteRender(archived.id); setArchived(null); await loadSaved(); } catch(e) { setToolMessage(e.message); } }
   async function exportCurrent(share) { try { await exportImage(current, share); } catch(e) { if(e.name !== 'AbortError') setToolMessage('Unable to export this image. Please try Save Image.'); } }
   function showPreview(quality, manual = '') { setBefore(false); v.generate(quality, manual); }
-  return <div className={`visualizer-app ${toolsOpen?'with-tools':''}`}>
+  return <div className={`visualizer-app ${v.design.mode==='exterior'?'is-exterior':''} ${toolsOpen?'with-tools':''}`}>
     <h1 className="sr-only" tabIndex={-1}>Design Visualizer</h1>
     <div className="viz-toolbar"><div className="chips" role="group" aria-label="Project type">
       {['kitchen','exterior'].map(mode => <button {...unlock} key={mode} className={`chip ${v.design.mode === mode ? 'selected' : ''}`} aria-pressed={v.design.mode === mode} disabled={v.busy} onClick={event => { if (!unlock.onClick(event)) switchMode(mode); }}>{mode === 'kitchen' ? 'Kitchen & Cabinets' : 'Home Exterior'}</button>)}
@@ -126,12 +135,13 @@ export default function Visualizer() {
       <label className="viz-label">Custom Instructions<textarea maxLength={1500} rows={4} value={customPrompt} disabled={!operatorReady || v.busy} onChange={e => setCustomPrompt(e.target.value)} placeholder="For example: Keep the upper cabinets white and make only the island a muted sage green. Keep the countertop unchanged." /></label>
       <small>{customPrompt.length} / 1,500 characters</small><div className="viz-actions"><button className="button button-dark" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('preview',customPrompt)}>Create Custom Preview</button><button className="button" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('detail',customPrompt)}>Create Detailed Custom Preview</button></div></div>
         <label className="viz-label">Consultation Label <span>(Optional)</span><input value={v.label} maxLength={100} placeholder="For finding these previews later" onChange={e => v.setLabel(e.target.value)} /></label>
-        <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setCustomPrompt(''); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('light'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>
+        <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setCustomPrompt(''); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>
     </section>}
+    {v.design.mode==='exterior' && <VisualizerExteriorSteps active={activeSurface} surfaces={v.design.surfaces} onSelect={setSurface} disabled={v.busy}/>}
     <div className="viz-workspace">
       <section className="viz-canvas-column" aria-label="Your design preview">
         <div className="viz-photo-stage">
-          {originalUrl ? <img src={current && !before ? previewUrl : originalUrl} alt={current && !before ? 'AI design preview of the selected finishes' : 'Original photo of your home'} /> : <div className="viz-upload-intro"><button className="button button-dark" onClick={() => cameraInput.current?.click()}>Take a Photo</button><button className="button" onClick={() => fileInput.current?.click()}>Choose Photos</button></div>}
+          {originalUrl ? <img src={current && !before ? previewUrl : originalUrl} alt={current && !before ? 'AI design preview of the selected finishes' : 'Original photo of your home'} /> : <div className="viz-upload-intro"><h2>Preview Your Home</h2><p>See how new colors and finishes could look in your kitchen or on your home’s exterior.</p><p>Take a photo or choose your photos, then pick your colors and finishes. Tap Create My Preview to see your idea and explore another look.</p><div className="viz-upload-actions"><button className="button button-dark" onClick={() => cameraInput.current?.click()}>Take a Photo</button><button className="button" onClick={() => fileInput.current?.click()}>Choose Photos</button></div></div>}
           {current && <span className="viz-save-status">{current.saved === false ? 'Not Yet Saved' : 'Saved on This Tablet'}</span>}
           {v.busy && <div className="viz-working" role="status"><span className="viz-spinner" /><strong>Creating Your Preview</strong><span>{elapsed}s elapsed · You can browse the portfolio while we work.</span><button onClick={v.cancel}>Stop Waiting</button></div>}
         </div>
@@ -150,11 +160,19 @@ export default function Visualizer() {
       </section>
       <section className="viz-controls" id="visualizer-finishes" aria-label="Choose your finishes">
         <h2 className="sr-only">Choose Your Finishes</h2>
-        {v.design.mode === 'kitchen' ? <VisualizerCabinets layout={layout} tone={tone} light={colors.find(c=>c.id===tones.light)} dark={colors.find(c=>c.id===tones.dark)} onLayout={changeLayout} onTone={setTone} disabled={v.busy}/>
-          : <VisualizerExteriorSteps active={activeSurface} surfaces={v.design.surfaces} onSelect={setSurface} disabled={v.busy}/>}
-        {!twoTone && <div className="viz-selection"><div>{v.design.mode==='exterior' && <span>{surfaceNames[activeSurface]}</span>}<strong>{selectedColor?.name || 'Keep Existing Finish'}</strong></div><button className="viz-text-button" disabled={v.busy} onClick={()=>setColor('')}>Keep Existing</button></div>}
-        <VisualizerPalette key={paletteSession} collection={collection} selectedId={selectedColor?.id} onSelect={setColor} disabled={v.busy} target={surfaceNames[activeSurface]}/>
-        {v.design.mode === 'kitchen' && <VisualizerOptions design={v.design} onChange={v.setDesign} disabled={v.busy}/>}
+        {v.design.mode==='kitchen' && <div className="viz-main-options" role="group" aria-label="Kitchen design options">
+          <button className={`button ${kitchenPanel==='colors'?'button-dark':''}`} aria-pressed={kitchenPanel==='colors'} disabled={v.busy} onClick={()=>setKitchenPanel('colors')}>Color Options</button>
+          <button className={`button ${kitchenPanel==='hardware'?'button-dark':''}`} aria-pressed={kitchenPanel==='hardware'} disabled={v.busy} onClick={()=>setKitchenPanel('hardware')}>Hardware Finishes</button>
+        </div>}
+        {v.design.mode==='kitchen' && kitchenPanel==='hardware' ? <>
+          <VisualizerOptions design={v.design} onChange={v.setDesign} disabled={v.busy}/>
+          {twoTone && changes.length>0 && !(tones.light&&tones.dark) && <p className="viz-notice">Choose both cabinet colors in Color Options to finish your two-tone preview.</p>}
+        </> : <>
+          {v.design.mode==='kitchen' ? <VisualizerCabinets layout={layout} tone={tone} light={colors.find(c=>c.id===tones.light)} dark={colors.find(c=>c.id===tones.dark)} onLayout={changeLayout} onTone={setTone} disabled={v.busy}/>
+            : <ExteriorStepNavigation active={activeSurface} onSelect={setSurface} disabled={v.busy}/>}
+          {!twoTone && <div className="viz-selection"><div>{v.design.mode==='exterior' && <span>{surfaceNames[activeSurface]}{activeSurface==='siding'?' · Main Area':activeSurface==='siding2'?' · Accent Area':''}</span>}<strong>{selectedColor?.name || 'Keep Existing Finish'}</strong></div><button className="viz-text-button" disabled={v.busy} onClick={()=>setColor('')}>Keep Existing</button></div>}
+          <VisualizerPalette key={paletteSession} collection={collection} selectedId={selectedColor?.id} onSelect={setColor} disabled={v.busy} target={surfaceNames[activeSurface]}/>
+        </>}
         {!online && <p className="viz-notice">Connect to the internet to create a new preview. Saved images and color selections still work offline.</p>}
         {!connected && online && <p className="viz-notice">Ask your representative to connect this tablet.</p>}
         {v.error && <p className="viz-error" role="alert">{v.error}</p>}

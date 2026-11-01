@@ -289,6 +289,18 @@ test('siding without a material choice accepts the combined deck and preserves t
   }
 });
 
+test('primary and secondary siding keep independent colors without inventing new siding areas', async () => {
+  const body={...payload(),design:{mode:'exterior',surfaces:{siding:'white',siding2:'vinyl'}}};
+  const validated=validateDesign(body,catalog);
+  assert.deepEqual(validated.design.surfaces.map(item=>[item.surface,item.color.id]),[['siding','white'],['siding2','vinyl']]);
+  const prompt=buildPrompt(validated.design);
+  assert.match(prompt,/primary or largest siding area/);
+  assert.match(prompt,/existing secondary siding area/);
+  assert.match(prompt,/do not invent a secondary area/);
+  const h=harness();const result=await h.api(request(body));
+  assert.equal(result.status,200);assert.equal(h.calls.length,1);
+});
+
 test('one request at a time; validation failure releases the lock', async () => {
   let finish;
   const h = harness({ fetchImpl: () => new Promise(resolve => { finish = resolve; }) });
