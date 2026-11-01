@@ -1,21 +1,34 @@
 # Visualizer Color Catalog
 
-Verified on October 30, 2026. Customer-facing color data lives in `src/data/colors.js`.
+Spray-Net catalog verified October 30, 2026; official Sherwin-Williams reference expansion verified November 1, 2026. Customer-facing colors are merged in `src/data/colors.js` from the catalog and `src/data/sherwinWilliams.js`.
 
 ## Included Colors
 
-The visualizer includes **824 colors** with a verified catalog name, a displayed digital swatch, and at least one active Spray-Net coating record:
+The visualizer includes **2,179 unique colors**:
 
 | Collection | Colors |
 | --- | ---: |
 | Spray-Net core deck | 50 |
-| Sherwin-Williams named catalog matches | 376 |
+| Sherwin-Williams references | 1,731 |
 | Benjamin Moore named catalog matches | 398 |
-| Total, without duplicate container sizes | 824 |
+| Total, without duplicate color IDs | 2,179 |
 
-**505** colors have an active kitchen coating entry; **587** have at least one active exterior coating entry. Those counts overlap. Exterior availability differs by coating system and should be filtered using the `systems` property, not inferred from the color name or from `collections: ['exterior']` alone.
+The original **824** catalog entries include 376 Sherwin-Williams named matches. Of these 824, **505** have an active kitchen coating entry and **587** have an active exterior entry. Counts overlap. The expansion adds **1,355** unique Sherwin-Williams colors: 1,726 official manufacturer references overlap 371 catalog IDs, and five older catalog matches are retained. Original coating associations remain in `systems`; reference-only additions have no invented coating associations.
 
-These are the verified colors available from the supplied library. The matching collections are **not complete current Sherwin-Williams or Benjamin Moore manufacturer decks**. Their brand labels identify the named color reference in Spray-Net's catalog; they do not imply that those manufacturers supply the Spray-Net coating.
+The collections are **not claimed to be complete current manufacturer decks**. Brand labels identify color references; they do not imply those manufacturers supply Spray-Net's coating. Manufacturer references can be used for visual design on either project type; that does not confirm a coating match or substrate suitability.
+
+## Official Sherwin-Williams References
+
+The [manufacturer's downloadable palettes page](https://www.sherwin-williams.com/painting-contractors/2020-color-forecast/color-tools/downloadable-color-palettes) links two Excel ZIP downloads used here:
+
+| Official download | Workbook | Colors |
+| --- | --- | ---: |
+| [ColorSnap](https://images.sherwin-williams.com/content_images/SW-XCL-SHERWIN-WILLIAMS-COLORC.zip) | `SW-ColorSnap-Color-Swatches-for-SW-Site-locator-031319.xlsx` | 1,526 |
+| [Designer Color Collection](https://images.sherwin-williams.com/content_images/sw-xcl-sherwin-williams-ede.zip) | `Emerald Designer Edition Digital Data.xlsx` | 200 |
+
+The ColorSnap filename is dated 2019; it remains the official linked download on the verification date. Every imported row has a valid unique SW code, manufacturer name, RGB triplet, and matching published hexadecimal value. The importer computes HEX from RGB and rejects disagreement. Archive/workbook SHA-256 values, original URLs, date, and counts are stored in `sherwinWilliamsSource`. No third-party color list or guessed name-to-RGB mapping is used.
+
+When an official code overlaps the local catalog, its published name/code/HEX wins; the local swatch and source remain in `catalogHex` and `catalogSource`. Official rows carry `referenceOnly: true` and `source: 'sherwin-williams-official'`. The app shows a final-match reminder for selected references. Server validation permits these trusted references for visualization; it continues checking coating systems for the remaining catalog colors.
 
 ## Authoritative Local Sources
 
@@ -48,11 +61,11 @@ Container sizes are collapsed into one color. Coating variants sharing the same 
 
 **RGB/hex values are digital approximations from catalog artwork, not calibrated paint measurements.** Lighting, camera processing, display settings, sheen, existing substrate, and the rendering model affect the result. Show a short reminder to confirm final colors with physical samples. A rendering is a design preview and must not be described as a guaranteed color match or as approval that a coating is suitable for a particular home.
 
-The color `family` field is a browsing aid derived from the swatch and name. It is not a manufacturer's official color-family classification. Names remain grounded in the catalog; bilingual descriptors are reduced to English where unambiguous. `code` retains Spray-Net's catalog reference, including the `G-` or `MATCH-` prefix, rather than inventing an external manufacturer's formatted code.
+The color `family` field is a browsing aid derived from the swatch and name, not an official manufacturer classification. Local catalog names retain their source wording; official Sherwin-Williams references use manufacturer names and formatted `SW 7008` codes. Other catalog codes retain their `G-` or `MATCH-` prefixes.
 
 ## Data Contract
 
-The module exports `colors`, `colorsById`, `colorSource`, `colorBrands`, and `colorFamilies`.
+The merged module exports `colors`, `colorsById`, `colorSource`, `colorBrands`, and `colorFamilies`. Manufacturer metadata and raw reference rows are exported as `sherwinWilliamsSource` and `sherwinWilliamsColors` from `src/data/sherwinWilliams.js`.
 
 Each color contains:
 
@@ -99,14 +112,23 @@ Run from the repository root:
 python scripts/import-colors.py --catalog-dir '..\Franchisee Site - Documents\English\Distribution\Fishbowl & Lilypad Inventory\Product Color Catalogs'
 ```
 
-The importer writes `src/data/colors.js` and prints counts. It uses a temporary directory for intermediate image associations. A cached extraction can be supplied using `--cached-swatches <records.json>` during review; the original PDFs and CSV remain required for source hashes and active-item validation.
+The importer writes `src/data/colors.js`, preserving the manufacturer-reference merge, and prints base catalog counts. It uses a temporary directory for intermediate image associations. A cached extraction can be supplied using `--cached-swatches <records.json>` during review; the original PDFs and CSV remain required for source hashes and active-item validation.
+
+To refresh the official manufacturer references, download the two official ZIP links above into an ignored local directory as `colorsnap.zip` and `designer.zip`, then run:
+
+```powershell
+python scripts/import-sherwin.py --source-dir .visualizer-local/colors
+```
+
+This read-only XLSX parser uses Python's standard library and writes only the public color reference module. It verifies all RGB/HEX pairs, unique codes, and source checksums before writing. When adopting newer official downloads, update the verification date and review any changed workbook layout in the importer.
 
 Before replacing the deck, review a representative sample of swatch images beside the generated hex colors, check duplicate IDs and applicability, and update this document's counts/date. Do not add colors by guessing RGB from a name or by importing an unverified third-party list.
 
 ## Validation Performed
 
-- All 824 IDs are unique; all names and collections are present; all hex values have valid six-digit RGB format.
-- Every included coating-system association is backed by an active record in the CSV.
+- All 2,179 merged IDs are unique; all names and collections are present; all hex values have valid six-digit RGB format.
+- All 1,726 official manufacturer RGB values agree with their published HEX values. No manufacturer reference invents coating availability.
+- Every retained catalog coating-system association is backed by an active record in the CSV.
 - The core kitchen and brick source pages were rendered and visually inspected.
 - A deterministic sample of 24 original swatch images across the coating catalogs was compared visually with its generated hex chip; the chips matched the displayed source swatches.
 - Raw formula, price, inventory, personal-match, and private contact fields are not exported.

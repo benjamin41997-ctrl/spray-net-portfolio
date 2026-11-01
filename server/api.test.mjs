@@ -57,7 +57,7 @@ test('health reveals configuration only, session validates device token', async 
   const health = await h.api(request(undefined, { path: '/api/health', method: 'GET', headers: { Authorization: '' } }));
   assert.deepEqual(await health.json(), { configured: true });
   const session = await h.api(request(undefined, { path: '/api/session', method: 'GET' }));
-  assert.deepEqual(await session.json(), { ready: true });
+  assert.deepEqual(await session.json(), { ready: true, operatorAuthorized:false });
   const denied = await h.api(request(undefined, { path: '/api/session', method: 'GET', headers: { Authorization: 'Bearer invalid' } }));
   assert.equal(denied.status, 401);
   assert.equal(h.calls.length, 0);
@@ -159,6 +159,34 @@ test('detail mode selects the configured precise model and high quality', async 
   const upstream = JSON.parse(h.calls[0][1].body);
   assert.equal(upstream.model, 'gpt-image-2.5-sunburst');
   assert.equal(upstream.quality, 'high');
+});
+
+test('custom instructions require a separate operator code before reserving paid usage', async () => {
+  const operatorToken = 'operator-test-secret-'.padEnd(43,'z');
+  const custom = {...payload(), customPrompt:'Use a muted sage island and add a herringbone backsplash.',design:{mode:'kitchen',surfaces:{}}};
+  const h = harness({config:{...config,operatorToken}});
+  for (const code of ['',token,'wrong-code']) {
+    const result = await h.api(request(custom,{headers:{'X-Visualizer-Operator':code}}));
+    assert.equal(result.status,403); assert.equal((await result.json()).error.code,'operator_required');
+  }
+  assert.equal(h.reservations,0); assert.equal(h.calls.length,0);
+  const result = await h.api(request(custom,{headers:{'X-Visualizer-Operator':operatorToken}}));
+  assert.equal(result.status,200); assert.equal(h.reservations,1);
+  const prompt = JSON.parse(h.calls[0][1].body).prompt;
+  assert.ok(prompt.includes(custom.customPrompt));
+  assert.ok(prompt.includes('Preserve camera position'));
+  assert.ok(!prompt.includes(operatorToken));
+  const tooLong=await h.api(request({...custom,customPrompt:'x'.repeat(1501)},{headers:{'X-Visualizer-Operator':operatorToken}}));
+  assert.equal(tooLong.status,400); assert.equal(h.reservations,1);
+  const session=await h.api(request(undefined,{path:'/api/session',method:'GET',headers:{'X-Visualizer-Operator':operatorToken}}));
+  assert.deepEqual(await session.json(),{ready:true,operatorAuthorized:true});
+});
+
+test('manufacturer references remain usable without inventing coating availability', () => {
+  const official={id:'sw-9999',name:'Published Reference',brand:'Sherwin-Williams',hex:'#AABBCC',code:'SW 9999',source:'sherwin-williams-official',referenceOnly:true,collections:['kitchen','exterior'],systems:[]};
+  const design={...payload(),design:{mode:'exterior',surfaces:{siding:official.id},sidingMaterial:'vinyl'}};
+  assert.equal(validateDesign(design,[...catalog,official]).design.surfaces[0].color.id,official.id);
+  assert.throws(()=>validateDesign(design,[...catalog,{...official,source:'unverified'}]));
 });
 
 test('two-tone and individual exterior surfaces stay explicit in the prompt', () => {

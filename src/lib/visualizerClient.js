@@ -2,9 +2,10 @@ import { visualizerApiUrl } from '../data/visualizerSettings';
 
 const endpointKey = 'spray-net-render-endpoint';
 const tokenKey = 'spray-net-render-access';
+const operatorKey = 'spray-net-render-operator';
 export function connectionSettings() {
   try {
-    return { endpoint: localStorage.getItem(endpointKey) || import.meta.env.VITE_VISUALIZER_API_URL || visualizerApiUrl, token: sessionStorage.getItem(tokenKey) || '' };
+    return { endpoint: localStorage.getItem(endpointKey) || import.meta.env.VITE_VISUALIZER_API_URL || visualizerApiUrl, token: sessionStorage.getItem(tokenKey) || '', operatorToken:sessionStorage.getItem(operatorKey) || '' };
   } catch { return { endpoint: '', token: '' }; }
 }
 export function normalizeEndpoint(value) {
@@ -15,15 +16,17 @@ export function normalizeEndpoint(value) {
   }
   return url.href.replace(/\/$/, '');
 }
-export function saveConnection(endpoint, token) {
+export function saveConnection(endpoint, token, operatorToken = '') {
   localStorage.setItem(endpointKey, normalizeEndpoint(endpoint));
   sessionStorage.setItem(tokenKey, token.trim());
+  if (operatorToken) sessionStorage.setItem(operatorKey, operatorToken.trim());
+  else sessionStorage.removeItem(operatorKey);
 }
-export function forgetConnection() { sessionStorage.removeItem(tokenKey); }
-export async function callVisualizer(path, { endpoint, token, body, signal }) {
+export function forgetConnection() { sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(operatorKey); }
+export async function callVisualizer(path, { endpoint, token, operatorToken, body, signal }) {
   const response = await fetch(`${normalizeEndpoint(endpoint)}${path}`, {
     method: body ? 'POST' : 'GET', mode: 'cors', cache: 'no-store', credentials: 'omit',
-    headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    headers: { Authorization: `Bearer ${token}`, ...(operatorToken && (path === '/api/session' || body?.customPrompt) ? { 'X-Visualizer-Operator':operatorToken } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}), signal,
   });
   const data = await response.json().catch(() => null);

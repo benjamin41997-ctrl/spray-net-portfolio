@@ -105,7 +105,7 @@ function restoreRecord(record) {
  * Resolves only after IndexedDB has committed both images and the design.
  * Browser storage is not a backup: clearing site data removes saved images.
  */
-export async function saveRender({ originalPhoto, renderPhoto, design, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
+export async function saveRender({ originalPhoto, renderPhoto, design, photoId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
   assertImage(originalPhoto, 'Original photo');
   assertImage(renderPhoto, 'Rendering');
   if (!design || typeof design !== 'object' || Array.isArray(design)) {
@@ -121,6 +121,7 @@ export async function saveRender({ originalPhoto, renderPhoto, design, consultat
     originalPhoto,
     renderPhoto,
     design: structuredClone(design),
+    ...(typeof photoId === 'string' && photoId.length <= 128 ? {photoId} : {}),
   };
   // Some WebKit environments cannot persist native Blob objects in IndexedDB.
   // Store lossless bytes and reconstruct Blobs at this module's API boundary.

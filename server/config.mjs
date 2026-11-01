@@ -31,6 +31,8 @@ function allowedOrigin(value) {
 export function loadConfig(env = process.env) {
   const apiKey = env.OPENAI_API_KEY?.trim() || '';
   const accessToken = env.VISUALIZER_ACCESS_TOKEN?.trim() || '';
+  const operatorToken = env.VISUALIZER_OPERATOR_TOKEN?.trim() || '';
+  if (operatorToken && !/^[A-Za-z0-9_-]{43,128}$/.test(operatorToken)) throw new Error('VISUALIZER_OPERATOR_TOKEN must be a random 43–128 character secret.');
   if (accessToken && !/^[A-Za-z0-9_-]{43,128}$/.test(accessToken)) {
     throw new Error('VISUALIZER_ACCESS_TOKEN must be a random 43–128 character base64url or hex secret.');
   }
@@ -40,6 +42,7 @@ export function loadConfig(env = process.env) {
   return {
     apiKey,
     accessToken,
+    operatorToken,
     allowedOrigins,
     configured: Boolean(apiKey && accessToken && allowedOrigins.size && maxDaily),
     maxDaily,

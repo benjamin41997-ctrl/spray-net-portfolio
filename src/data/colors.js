@@ -1,3 +1,5 @@
+import { sherwinWilliamsColors } from './sherwinWilliams.js';
+import { mergeColorCatalog } from '../lib/colorCatalog.js';
 // Verified customer color data. Regenerate from the local catalog with scripts/import-colors.py.
 // Screen swatches are digital approximations, not calibrated paint measurements.
 export const colorSource = {
@@ -42,7 +44,7 @@ export const colorSource = {
   ]
 };
 
-export const colors = [
+const catalogColors = [
   {"id":"sn-oc65","name":"Chantilly Lace","code":"G-OC65","hex":"#F5F7F2","brand":"Spray-Net","collections":["kitchen","exterior"],"family":"White","source":"spray-net-oct-2026","coatingSystems":["BRICK","D+W","ELASTO","KITCHEN","MAT","SATIN"],"systems":["brick","dw","elasto","kitchen","mat","satin"],"swatchSource":"KITCHEN OCT 2026.pdf","swatchSku":"G-OC65K","catalogMatch":false,"digitalApproximation":true},
   {"id":"sn-hc167","name":"Amherst Gray","code":"G-HC167","hex":"#767771","brand":"Spray-Net","collections":["kitchen"],"family":"Gray","source":"spray-net-oct-2026","coatingSystems":["KITCHEN"],"systems":["kitchen"],"swatchSource":"KITCHEN OCT 2026.pdf","swatchSku":"G-HC167K","catalogMatch":false,"digitalApproximation":true},
   {"id":"sn-780f5","name":"Anonymous","code":"G-780F5","hex":"#828385","brand":"Spray-Net","collections":["exterior"],"family":"Gray","source":"spray-net-oct-2026","coatingSystems":["BRICK","D+W","ELASTO","MAT","VINYL"],"systems":["brick","dw","elasto","mat","vinyl"],"swatchSource":"BRICK OCT 2026.pdf","swatchSku":"G-780F5B","catalogMatch":false,"digitalApproximation":true},
@@ -868,6 +870,8 @@ export const colors = [
   {"id":"bm-202150","name":"Yellow Lotus","code":"MATCH-202150","hex":"#FFED9F","brand":"Benjamin Moore","collections":["exterior"],"family":"Beige / Tan","source":"spray-net-oct-2026","coatingSystems":["MAT"],"systems":["mat"],"swatchSource":"MAT OCT 2026.pdf","swatchSku":"MATCH-202150M","catalogMatch":true,"digitalApproximation":true},
   {"id":"bm-hc133","name":"Yorktowne Green","code":"MATCH-HC133","hex":"#475A5E","brand":"Benjamin Moore","collections":["kitchen","exterior"],"family":"Green","source":"spray-net-oct-2026","coatingSystems":["KITCHEN","VINYL"],"systems":["kitchen","vinyl"],"swatchSource":"VINYL OCT 2026.pdf","swatchSku":"MATCH-HC133V","catalogMatch":true,"digitalApproximation":true},
 ];
+
+export const colors = mergeColorCatalog(catalogColors, sherwinWilliamsColors);
 
 export const colorBrands = [...new Set(colors.map((color) => color.brand))];
 export const colorFamilies = ['White', 'Black', 'Gray', 'Blue', 'Green', 'Beige / Tan', 'Other'];

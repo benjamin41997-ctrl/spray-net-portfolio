@@ -55,7 +55,7 @@ uniqueIds(colors, 'Color catalog');
 for (const color of colors) {
   check(Boolean(color.name && color.code && color.brand && color.source), `Color ${color.id}: missing source information.`);
   check(/^#[0-9a-f]{6}$/i.test(color.hex), `Color ${color.id}: invalid digital swatch.`);
-  check(Array.isArray(color.systems) && color.systems.length > 0 && color.systems.every(system => ['kitchen','brick','vinyl','elasto','dw','mat','satin'].includes(system)), `Color ${color.id}: unknown coating system.`);
+  check(Array.isArray(color.systems) && (color.systems.length > 0 || (color.referenceOnly && color.source === 'sherwin-williams-official')) && color.systems.every(system => ['kitchen','brick','vinyl','elasto','dw','mat','satin'].includes(system)), `Color ${color.id}: unknown coating system.`);
 }
 for (const project of projects) {
   const label = `Project ${project.id}`;

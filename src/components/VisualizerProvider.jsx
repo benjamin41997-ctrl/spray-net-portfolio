@@ -6,7 +6,9 @@ const Context = createContext(null);
 export const useVisualizer = () => useContext(Context);
 export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'other', surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
 export default function VisualizerProvider({ children }) {
-  const [photo, setPhoto] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [photoId, setPhotoId] = useState(null);
+  const photo = photos.find(item => item.id === photoId) || null;
   const [design, setDesign] = useState(newDesign);
   const [looks, setLooks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -18,17 +20,24 @@ export default function VisualizerProvider({ children }) {
   const epoch = useRef(0);
   const reset = () => {
     epoch.current += 1; controller.current?.abort(); controller.current = null;
-    setPhoto(null); setDesign(newDesign()); setLooks([]); setSelectedId(null); setLabel(''); setBusy(false); setError(''); setSaveWarning('');
+    setPhotos([]); setPhotoId(null); setDesign(newDesign()); setLooks([]); setSelectedId(null); setLabel(''); setBusy(false); setError(''); setSaveWarning('');
   };
   useEffect(() => {
     window.addEventListener('portfolio-session-reset', reset);
     return () => { window.removeEventListener('portfolio-session-reset', reset); controller.current?.abort(); };
   }, []);
-  const choosePhoto = (next) => {
-    epoch.current += 1; controller.current?.abort(); controller.current = null;
-    setPhoto(next); setLooks([]); setSelectedId(null); setBusy(false); setError(''); setSaveWarning('');
+  const addPhotos = (next) => {
+    if (controller.current || !next.length) return;
+    const added = next.map(item => ({ ...item, id:crypto.randomUUID() }));
+    setPhotos(current => [...current, ...added]);
+    if (!photoId) { setPhotoId(added[0].id); setSelectedId(null); }
+    setError(''); setSaveWarning('');
   };
-  async function generate(quality) {
+  const selectPhoto = (id) => {
+    if (controller.current) return;
+    setPhotoId(id); setSelectedId(looks.find(item => item.photoId === id)?.id || null); setError(''); setSaveWarning('');
+  };
+  async function generate(quality, customPrompt = '') {
     if (!photo || controller.current) return;
     const generation = epoch.current;
     const abort = new AbortController(); controller.current = abort;
@@ -36,10 +45,11 @@ export default function VisualizerProvider({ children }) {
     setBusy(true); setError(''); setSaveWarning('');
     try {
       const submittedDesign = { ...design, surfaces: Object.fromEntries(Object.entries(design.surfaces).filter(([, value]) => value)) };
-      const data = await callVisualizer('/api/render', { ...connectionSettings(), signal: abort.signal, body: { image: photo.dataUrl, design: submittedDesign, quality } });
+      const manual = customPrompt.trim();
+      const data = await callVisualizer('/api/render', { ...connectionSettings(), signal: abort.signal, body: { image: photo.dataUrl, design: submittedDesign, quality, ...(manual ? {customPrompt:manual} : {}) } });
       const renderPhoto = imageDataBlob(data.image);
       if (epoch.current !== generation) return;
-      const record = { id: crypto.randomUUID(), originalPhoto: photo.blob, renderPhoto, design: structuredClone(submittedDesign), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
+      const record = { id: crypto.randomUUID(), photoId:photo.id, originalPhoto: photo.blob, renderPhoto, design: structuredClone({...submittedDesign,...(manual ? {customPrompt:manual} : {})}), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
       let saved = false;
       try { await saveRender(record); saved = true; }
       catch (e) { if (epoch.current === generation) setSaveWarning(e.message || 'This preview could not be saved on this tablet. Use Save Image before leaving.'); }
@@ -52,5 +62,5 @@ export default function VisualizerProvider({ children }) {
       if (epoch.current === generation) { setBusy(false); controller.current = null; }
     }
   }
-  return <Context.Provider value={{ photo, choosePhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
 }

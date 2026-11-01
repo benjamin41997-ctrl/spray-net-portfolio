@@ -3,6 +3,7 @@ import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, MAX_RESPONSE_BYTES, validateImage } from './images.mjs';
 
 const digest = value => createHash('sha256').update(value).digest();
+const operatorAuthorized = (request, config) => Boolean(config.operatorToken && timingSafeEqual(digest(request.headers.get('x-visualizer-operator') || ''), digest(config.operatorToken)));
 
 function authorize(request, config) {
   const supplied = request.headers.get('authorization') || '';
@@ -64,7 +65,7 @@ async function render(body, design, request, config, fetchImpl) {
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         images: [{ image_url: body.image }],
-        prompt: buildPrompt(design.design),
+        prompt: buildPrompt(design.design, design.customPrompt),
         model,
         quality: design.quality === 'detail' ? 'high' : 'medium',
         size: 'auto',
@@ -106,7 +107,7 @@ async function render(body, design, request, config, fetchImpl) {
 export function createApi({ config, catalog, reserve, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
   let busy = false;
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-10-31.2', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.1', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -120,9 +121,9 @@ export function createApi({ config, catalog, reserve, fetchImpl = (input, init) 
       if (request.method === 'OPTIONS') {
         const method = request.headers.get('access-control-request-method');
         const requestedHeaders = (request.headers.get('access-control-request-headers') || '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
-        if (!origin || !['GET', 'POST'].includes(method) || requestedHeaders.some(value => !['authorization', 'content-type'].includes(value))) throw new ApiError(403, 'preflight_denied', 'This request is not allowed.');
+        if (!origin || !['GET', 'POST'].includes(method) || requestedHeaders.some(value => !['authorization', 'content-type', 'x-visualizer-operator'].includes(value))) throw new ApiError(403, 'preflight_denied', 'This request is not allowed.');
         headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
-        headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
+        headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, X-Visualizer-Operator';
         headers['Access-Control-Max-Age'] = '600';
         return new Response(null, { status: 204, headers });
       }
@@ -130,12 +131,13 @@ export function createApi({ config, catalog, reserve, fetchImpl = (input, init) 
       if (path === '/api/health') return json({ configured: config.configured });
       if (!config.configured) throw new ApiError(503, 'not_configured', 'Ask your representative to connect the rendering service.');
       authorize(request, config);
-      if (path === '/api/session') return json({ ready: true });
+      if (path === '/api/session') return json({ ready: true, operatorAuthorized:operatorAuthorized(request, config) });
       if (busy) throw new ApiError(429, 'render_in_progress', 'A rendering is already being created. Please wait for it to finish.', 10);
       busy = true;
       acquired = true;
       const body = await parseBody(request);
       const design = validateDesign(body, catalog);
+      if (design.customPrompt && !operatorAuthorized(request, config)) throw new ApiError(403, 'operator_required', 'Custom instructions require the representative’s private operator setup code.');
       validateImage(body.image);
       // Reserve before making the billable request. Failed/aborted attempts also count.
       await reserve();

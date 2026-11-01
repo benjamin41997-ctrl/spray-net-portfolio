@@ -174,10 +174,12 @@ source_info={'id':'spray-net-oct-2026','label':'Spray-Net October 2026 Color Cat
 'swatchNote':'Digital swatches are sampled from the Spray-Net catalog images. Confirm final selections with physical samples.',
 'matchNote':'Named Sherwin-Williams and Benjamin Moore colors are matches listed in the Spray-Net catalog; these are not complete manufacturer decks.',
 'files':[{'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in source_files]}
-js='// Verified customer color data. Regenerate from the local catalog with scripts/import-colors.py.\n'
+js="import { sherwinWilliamsColors } from './sherwinWilliams.js';\nimport { mergeColorCatalog } from '../lib/colorCatalog.js';\n"
+js+='// Verified customer color data. Regenerate from the local catalog with scripts/import-colors.py.\n'
 js+='// Screen swatches are digital approximations, not calibrated paint measurements.\n'
 js+='export const colorSource = '+json.dumps(source_info,indent=2)+';\n\n'
-js+='export const colors = [\n'+''.join('  '+json.dumps(c,ensure_ascii=False,separators=(',',':'))+',\n' for c in colors)+'];\n\n'
+js+='const catalogColors = [\n'+''.join('  '+json.dumps(c,ensure_ascii=False,separators=(',',':'))+',\n' for c in colors)+'];\n\n'
+js+="export const colors = mergeColorCatalog(catalogColors, sherwinWilliamsColors);\n"
 js+='export const colorBrands = [...new Set(colors.map((color) => color.brand))];\n'
 js+='export const colorFamilies = [\'White\', \'Black\', \'Gray\', \'Blue\', \'Green\', \'Beige / Tan\', \'Other\'];\n'
 js+='export const colorsById = new Map(colors.map((color) => [color.id, color]));\n'

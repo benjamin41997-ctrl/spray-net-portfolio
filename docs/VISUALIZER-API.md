@@ -8,8 +8,8 @@ The tablet uses a random, revocable device token. It authorizes rendering throug
 
 - Kitchen cabinet colors, separate upper/lower cabinets, a separate island, hardware style/finish, and optional backsplash/countertop concepts.
 - Exterior siding, brick, stucco, entry doors, garage doors, window frames, soffits, fascia, vents, columns, and trim.
-- One original photograph per request, without previous conversation history. Each change starts from the original, so repeated edits do not accumulate image damage.
-- Server-built instructions preserve the layout, camera view, lighting, appliances and unselected surfaces. Only catalog color IDs and a small set of options are accepted; clients cannot submit their own prompt, model, URL or output size.
+- Up to eight uploaded photos per consultation, one selected original per request, without previous conversation history. Uploading and switching angles incur no API usage. Each change starts from that angle's original.
+- Server-built instructions preserve layout, camera view, lighting, appliances and unselected surfaces. Ordinary rendering accepts verified color IDs and a small set of options. Custom instructions require a separate operator credential; clients cannot change model, source URL or output size.
 - Fast preview: `gpt-image-2.5-flare`, medium quality. Detailed rendering: `gpt-image-2.5-sunburst`, high quality. Both return one WebP.
 - No automatic retries. A timed-out or cancelled request may still incur provider usage, so every dispatched attempt consumes one quota slot.
 - Photos and renderings are never written to the API filesystem or Durable Object storage. The server stores usage timestamps/counts only. The photograph is sent to OpenAI to create the rendering. The portfolio manages local saved designs on the tablet separately.
@@ -35,6 +35,18 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'
 ```
 
 Store the token in your password manager, then enter the API origin and token in the portfolio's representative connection controls. The token is not the OpenAI key. A token must contain 43–128 base64url or hexadecimal characters; a short PIN is intentionally rejected. Rotate it with the same `wrangler secret put` command if a tablet is lost or the token is disclosed, and reconnect authorized tablets.
+
+### Optional operator setup
+
+Custom instructions stay disabled until a separate `VISUALIZER_OPERATOR_TOKEN` is configured. Generate a new random 32-byte base64url secret, distinct from the tablet token, and store it through a secure prompt/pipe:
+
+```powershell
+wrangler secret put VISUALIZER_OPERATOR_TOKEN --config server/wrangler.toml
+```
+
+Keep the ordinary tablet setup file and QR unchanged. Create a separate private `operator-connection.json` in the ignored `.visualizer-local/` folder with the same `endpoint` and `token`, plus `operatorToken`. Import it through **Consultation Tools → Connect From Setup File**, or enter the operator code manually. Never commit it, publish it, put it in a QR/URL, or send it to a homeowner. The optional code stays in session storage and Disconnect removes it.
+
+Open the hidden menu by holding **Kitchen & Cabinets** or **Home Exterior** for five seconds, or tapping either button eight times within six seconds. The gesture hides salesperson controls; the API credential separately authorizes custom rendering. Closing tools clears the typed custom prompt. Custom and ordinary renders share the same model settings, one-image output, daily/hourly quota, concurrency limit, and original-photo flow. There is no separate prompt-generation model call.
 
 Set `VISUALIZER_ALLOWED_ORIGINS` to exact HTTPS **origins**, not full page URLs. For GitHub Pages this is `https://benjamin41997-ctrl.github.io`, without `/spray-net-portfolio/`. There is no wildcard CORS setting. An origin restriction is supplementary; the device token is the authorization boundary.
 
@@ -64,6 +76,7 @@ For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep on
 | --- | --- |
 | `OPENAI_API_KEY` | Required server secret |
 | `VISUALIZER_ACCESS_TOKEN` | Required random device secret, 43–128 characters |
+| `VISUALIZER_OPERATOR_TOKEN` | Optional separate random operator secret, 43–128 characters; custom prompts disabled without it |
 | `VISUALIZER_ALLOWED_ORIGINS` | Required comma-separated exact HTTPS origins; localhost HTTP allowed for development |
 | `VISUALIZER_MAX_DAILY_RENDERS` | Required, 1–200; resets at midnight UTC |
 | `VISUALIZER_MAX_HOURLY_RENDERS` | 12, permitted range 1–60 |
@@ -79,7 +92,7 @@ Model overrides are restricted to the two GPT Image 2.5 models above or their `2
 
 ## API contract
 
-`GET /api/health` returns `{ "configured": true }` without authentication. This reports configuration presence, not a successful billable model call. `GET /api/session` requires `Authorization: Bearer <device token>` and returns `{ "ready": true }` for a valid connection.
+`GET /api/health` returns `{ "configured": true }` without authentication. This reports configuration presence, not a successful billable model call. `GET /api/session` requires `Authorization: Bearer <device token>` and returns `{ "ready": true, "operatorAuthorized": false }`. An additional valid `X-Visualizer-Operator` header sets `operatorAuthorized` to `true`.
 
 `POST /api/render` requires the same authorization header and `Content-Type: application/json`:
 
@@ -98,7 +111,9 @@ Model overrides are restricted to the two GPT Image 2.5 models above or their `2
 }
 ```
 
-The prepared image must be JPEG, PNG or WebP, at most 6 MiB decoded. File signatures and canonical base64 are checked. The total request is limited to 8 MiB plus 16 KiB. Remote URLs, SVG, compressed request bodies, unknown fields and free-text prompts are rejected. The UI reduces camera photos before upload; an original phone photo may be larger than this API limit.
+The prepared image must be JPEG, PNG or WebP, at most 6 MiB decoded. File signatures and canonical base64 are checked. The total request is limited to 8 MiB plus 16 KiB. Remote URLs, SVG, compressed request bodies and unknown fields are rejected. The UI reduces camera photos before upload; an original phone photo may be larger than this API limit.
+
+Optional top-level `customPrompt` accepts up to 1,500 characters of text. Nonempty custom text additionally requires the separate `X-Visualizer-Operator` secret. Missing/wrong operator authorization returns HTTP 403 `operator_required` before a quota reservation or provider call. A valid manual request may omit preset changes. Server instructions constrain edits to renovation of the supplied home and preserve unspecified features. The prompt is saved locally with that result; ordinary rendering never inherits it.
 
 Omit surface keys that should stay unchanged; do not send empty color IDs. Accepted surfaces:
 
@@ -112,7 +127,7 @@ Kitchen options default to `keep` when omitted:
 - `backsplash`: `keep`, `white-subway`, `marble`, `warm-neutral`.
 - `countertop`: `keep`, `white-quartz`, `marble`, `dark-stone`, `butcher-block`.
 
-Exterior requests cannot change kitchen options. At least one visible design change must be selected. Catalog IDs are validated against `src/data/colors.js`, including their collection and coating-system membership. An optional `design.sidingMaterial` is `vinyl` or `other` (the default, for aluminum/fiber cement/engineered wood). Changing this material requires choosing a color from the corresponding siding deck. Brick uses the BRICK deck, stucco ELASTO, and doors/window frames D+W. Other siding uses MAT/SATIN; trim, soffits, fascia, vents and columns accept MAT/SATIN/D+W. The representative still confirms the actual substrate and coating specification.
+Exterior requests cannot change kitchen options. At least one visible preset change or authorized custom instruction is required. Color IDs are validated against `src/data/colors.js`. Official Sherwin-Williams rows with `referenceOnly: true` and source `sherwin-williams-official` are accepted for visual design without asserting coating availability; other IDs must match collection and coating system. An optional `design.sidingMaterial` is `vinyl` or `other` (aluminum/fiber cement/engineered wood). Brick uses BRICK, stucco ELASTO, doors/window frames D+W, other siding MAT/SATIN, and trim/soffits/fascia/vents/columns MAT/SATIN/D+W. The representative confirms the actual substrate, color match and coating specification.
 
 Success returns `{ "image": "data:image/webp;base64,...", "requestId": "...", "model": "..." }`. Errors return `{ "error": { "code": "...", "message": "..." } }` with a matching HTTP status. Responses use `Cache-Control: no-store`; upstream error bodies, prompts and credentials are never returned. Rate-limit errors may include `Retry-After`. Do not automatically retry a rendering request.
 
