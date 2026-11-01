@@ -3,12 +3,14 @@ import { Readable } from 'node:stream';
 import { colors } from '../src/data/colors.js';
 import { createApi } from './api.mjs';
 import { loadConfig } from './config.mjs';
-import { acquireLedgerLock, UsageLedger } from './quota.mjs';
+import { acquireLedgerLock, ConnectionLedger, UsageLedger } from './quota.mjs';
+import { connectionFingerprint } from './pairing.mjs';
 
 const config = loadConfig();
 const release = config.configured ? acquireLedgerLock(config.dataFile) : () => {};
 const ledger = new UsageLedger(config.dataFile, config);
-const handle = createApi({ config, catalog: colors, reserve: () => ledger.reserve() });
+const connections = new ConnectionLedger(`${config.dataFile}.connections`);
+const handle = createApi({ config, catalog: colors, reserve: () => ledger.reserve(), reserveConnection: request => connections.reserve(connectionFingerprint(request)) });
 
 const server = createServer(async (incoming, outgoing) => {
   const controller = new AbortController();

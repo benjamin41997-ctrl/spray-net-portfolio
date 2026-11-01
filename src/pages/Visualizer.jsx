@@ -6,10 +6,11 @@ import { colors } from '../data/colors';
 import { useOnline } from '../hooks/useOnline';
 import { preparePhoto } from '../lib/visualizerPhoto';
 import { listRenders, deleteRender } from '../lib/visualizerStorage';
-import { callVisualizer, connectionSettings, saveConnection, forgetConnection } from '../lib/visualizerClient';
+import { callVisualizer, connectionSettings, saveConnection } from '../lib/visualizerClient';
 import { navigate } from '../lib/navigation';
 import { useOperatorUnlock } from '../hooks/useOperatorUnlock';
 import VisualizerPhotos from '../components/VisualizerPhotos';
+import VisualizerConnection from '../components/VisualizerConnection';
 
 const surfaceNames = { cabinets: 'All Cabinets', upperCabinets: 'Upper Cabinets', lowerCabinets: 'Lower Cabinets', island: 'Island', siding: 'Siding', brick: 'Brick', stucco: 'Stucco', frontDoor: 'Front Door', garageDoor: 'Garage Door', windows: 'Window Frames', soffits: 'Soffits', fascia: 'Fascia', vents: 'Vents', columns: 'Columns', trim: 'Trim' };
 const exteriorSurfaces = ['siding', 'brick', 'stucco', 'frontDoor', 'garageDoor', 'windows', 'soffits', 'fascia', 'vents', 'columns', 'trim'];
@@ -41,15 +42,15 @@ export default function Visualizer() {
   const [surface, setSurface] = useState('cabinets');
   const [search, setSearch] = useState(''); const [family, setFamily] = useState('All');
   const [brand, setBrand] = useState('All'); const [shown, setShown] = useState(36);
-  const [toolsOpen, setToolsOpen] = useState(false); const [settings, setSettings] = useState(connectionSettings);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [operatorReady, setOperatorReady] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
-  const [connected, setConnected] = useState(false); const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [toolMessage, setToolMessage] = useState(''); const [saved, setSaved] = useState([]); const [archived, setArchived] = useState(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false); const [before, setBefore] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const fullscreenDialog = useRef(null);
-  const fileInput = useRef(null); const cameraInput = useRef(null); const connectionInput = useRef(null); const photoEpoch = useRef(0);
+  const fileInput = useRef(null); const cameraInput = useRef(null); const photoEpoch = useRef(0);
   const current = archived || v.looks.find(r => r.id === v.selectedId);
   const angleLooks = v.looks.filter(r => r.photoId === v.photo?.id);
   const unlock = useOperatorUnlock(() => setToolsOpen(true));
@@ -65,16 +66,14 @@ export default function Visualizer() {
     navigate('/visualize', { replace: true });
     let active = true;
     async function pair() {
-      setConnecting(true);
       try {
         if (code.length > 2048) throw new Error('This tablet setup link is invalid.');
         const parsed = JSON.parse(atob(code.replace(/-/g,'+').replace(/_/g,'/')));
         if (typeof parsed.endpoint !== 'string' || !/^[A-Za-z0-9_-]{43,128}$/.test(parsed.token || '')) throw new Error('This tablet setup link is invalid.');
         const session = await callVisualizer('/api/session', { ...parsed, signal: AbortSignal.timeout(15_000) });
         if (!active) return;
-        saveConnection(parsed.endpoint, parsed.token, parsed.operatorToken); setSettings(parsed); setConnected(true); setOperatorReady(Boolean(session.operatorAuthorized)); setToolMessage('This tablet is connected.');
+        saveConnection(parsed.endpoint, parsed.token, parsed.operatorToken); setConnected(true); setOperatorReady(Boolean(session.operatorAuthorized)); setToolMessage('This tablet is connected.');
       } catch (e) { if (active) { setToolsOpen(true); setToolMessage(e.message || 'Unable to connect this tablet.'); } }
-      finally { if (active) setConnecting(false); }
     }
     pair(); return () => { active = false; };
   }, []);
@@ -108,21 +107,6 @@ export default function Visualizer() {
   }
   function switchMode(mode) { if (mode === v.design.mode) return; v.setDesign(newDesign(mode)); setSurface(mode === 'kitchen' ? 'cabinets' : 'siding'); setSearch(''); setFamily('All'); setBrand('All'); }
   function changeLayout(split) { if (split === twoTone) return; v.setDesign(d => { const next = { ...d.surfaces }; delete next.cabinets; delete next.upperCabinets; delete next.lowerCabinets; if (split) { next.upperCabinets = ''; next.lowerCabinets = ''; } return { ...d, surfaces: next }; }); setSurface(split ? 'upperCabinets' : 'cabinets'); }
-  async function connect(event, next = settings) {
-    event?.preventDefault(); setConnecting(true); setToolMessage('');
-    try { const session = await callVisualizer('/api/session', { ...next, token: next.token.trim(), signal: AbortSignal.timeout(15_000) }); saveConnection(next.endpoint, next.token, next.operatorToken); setSettings(next); setConnected(true); setOperatorReady(Boolean(session.operatorAuthorized)); setToolMessage('Connected. This tablet is ready to create previews.'); }
-    catch (e) { setConnected(false); setOperatorReady(false); setToolMessage(e.message || 'Unable to connect. Check the service address and access code.'); }
-    finally { setConnecting(false); }
-  }
-  async function importConnection(file) {
-    try {
-      if (!file || file.size > 4096) throw new Error('Choose your small tablet-connection.json setup file.');
-      const next = JSON.parse(await file.text());
-      if (typeof next.endpoint !== 'string' || !/^[A-Za-z0-9_-]{43,128}$/.test(next.token || '')) throw new Error('This is not a valid tablet connection file.');
-      if (next.operatorToken && !/^[A-Za-z0-9_-]{43,128}$/.test(next.operatorToken)) throw new Error('Invalid operator setup code.');
-      await connect(null, { endpoint:next.endpoint, token:next.token, operatorToken:next.operatorToken || '' });
-    } catch(e) { setToolMessage(e.message || 'Unable to read the connection file.'); }
-  }
   async function loadSaved() { const epoch = photoEpoch.current; try { const records = await listRenders(); if (epoch !== photoEpoch.current) return; setSaved(records); setToolMessage('Saved previews are stored on this device only.'); } catch(e) { if (epoch === photoEpoch.current) setToolMessage(e.message); } }
   async function removeSaved() { if (!archived || !window.confirm('Delete this saved preview from this tablet?')) return; try { await deleteRender(archived.id); setArchived(null); await loadSaved(); } catch(e) { setToolMessage(e.message); } }
   async function exportCurrent(share) { try { await exportImage(current, share); } catch(e) { if(e.name !== 'AbortError') setToolMessage('Unable to export this image. Please try Save Image.'); } }
@@ -136,15 +120,14 @@ export default function Visualizer() {
       {['kitchen','exterior'].map(mode => <button {...unlock} key={mode} className={`chip ${v.design.mode === mode ? 'selected' : ''}`} aria-pressed={v.design.mode === mode} disabled={v.busy} onClick={event => { if (!unlock.onClick(event)) switchMode(mode); }}>{mode === 'kitchen' ? 'Kitchen & Cabinets' : 'Home Exterior'}</button>)}
     </div></div>
     {toolsOpen && <section className="viz-tools" aria-label="Consultation tools">
-      <div className="viz-tools-heading"><h2>Consultation Tools</h2><button className="button" onClick={closeTools}>Close Tools</button></div><p>Connect this tablet once per browser session. Your OpenAI key stays on the server.</p>
-      <form onSubmit={connect} className="viz-connect"><label>Image Service Address<input type="url" value={settings.endpoint} required placeholder="https://your-image-service.example" onChange={e => setSettings(s => ({...s, endpoint:e.target.value}))} /></label><label>Tablet Access Code<input type="password" autoComplete="off" value={settings.token} required onChange={e => setSettings(s => ({...s, token:e.target.value}))} /></label><label>Operator Access Code <span>(Optional)</span><input type="password" autoComplete="off" value={settings.operatorToken || ''} onChange={e => setSettings(c => ({...c,operatorToken:e.target.value}))} /></label><button className="button button-dark" disabled={connecting || !online}>{connecting ? 'Connecting…' : 'Connect Tablet'}</button></form>
-      <div className="viz-actions"><button className="button" disabled={connecting || !online} onClick={() => connectionInput.current?.click()}>Connect From Setup File</button><button className="button" onClick={loadSaved}>Saved Previews on This Tablet</button><button className="button" onClick={() => { forgetConnection(); setConnected(false); setOperatorReady(false); setSettings(s => ({ ...s, token:'', operatorToken:'' })); setToolMessage('Tablet disconnected. Saved images remain on this device.'); }}>Disconnect</button></div>
-      <input className="sr-only" ref={connectionInput} type="file" accept="application/json,.json" aria-label="Tablet connection setup file" onChange={e => { importConnection(e.target.files?.[0]); e.target.value=''; }} />
+      <div className="viz-tools-heading"><h2>Consultation Tools</h2><button className="button" onClick={closeTools}>Close Tools</button></div>
+      <VisualizerConnection connected={connected} online={online} onConnected={data => {setConnected(true);setOperatorReady(Boolean(data.operatorAuthorized));setToolMessage('');}} onForgotten={() => {setConnected(false);setOperatorReady(false);setCustomPrompt('');setToolMessage('');}} />
+      <div className="viz-actions"><button className="button" onClick={loadSaved}>Saved Previews on This Tablet</button></div>
       <p role="status">{toolMessage}</p>
       {!!saved.length && <div className="viz-saved-list">{saved.map(record => <SavedThumb key={record.id} record={record} onSelect={r => { setArchived(r); setBefore(false); }} />)}</div>}
       {archived && <div className="viz-actions"><button className="button" onClick={() => setArchived(null)}>Back to Current Consultation</button><button className="button" onClick={removeSaved}>Delete Selected Preview</button></div>}
       <div className="viz-custom-prompt"><h3>Custom Design Instructions</h3><p>Render the selected photo with your specific changes. Each button creates one image using the normal usage allowance.</p>
-      {!operatorReady && <p>Import your private operator setup file or enter its operator access code to enable custom instructions.</p>}
+      {!operatorReady && <p>Activate this tablet with your password to enable custom instructions.</p>}
       <label className="viz-label">Custom Instructions<textarea maxLength={1500} rows={4} value={customPrompt} disabled={!operatorReady || v.busy} onChange={e => setCustomPrompt(e.target.value)} placeholder="For example: Keep the upper cabinets white and make only the island a muted sage green. Keep the countertop unchanged." /></label>
       <small>{customPrompt.length} / 1,500 characters</small><div className="viz-actions"><button className="button button-dark" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('preview',customPrompt)}>Create Custom Preview</button><button className="button" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('detail',customPrompt)}>Create Detailed Custom Preview</button></div></div>
         <label className="viz-label">Consultation Label <span>(Optional)</span><input value={v.label} maxLength={100} placeholder="For finding these previews later" onChange={e => v.setLabel(e.target.value)} /></label>

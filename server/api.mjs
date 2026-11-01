@@ -1,13 +1,12 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, MAX_RESPONSE_BYTES, validateImage } from './images.mjs';
+import { secretMatches, tabletCredentials } from './pairing.mjs';
 
-const digest = value => createHash('sha256').update(value).digest();
-const operatorAuthorized = (request, config) => Boolean(config.operatorToken && timingSafeEqual(digest(request.headers.get('x-visualizer-operator') || ''), digest(config.operatorToken)));
+const operatorAuthorized = (request, config, paired) => secretMatches(request.headers.get('x-visualizer-operator'), config.operatorToken) || secretMatches(request.headers.get('x-visualizer-operator'), paired?.operatorToken);
 
-function authorize(request, config) {
+function authorize(request, config, paired) {
   const supplied = request.headers.get('authorization') || '';
-  if (!timingSafeEqual(digest(supplied), digest(`Bearer ${config.accessToken}`))) {
+  if (!secretMatches(supplied, `Bearer ${config.accessToken}`) && !(paired?.token && secretMatches(supplied, `Bearer ${paired.token}`))) {
     throw new ApiError(401, 'unauthorized', 'Ask your representative to connect this tablet before rendering.');
   }
 }
@@ -104,10 +103,11 @@ async function render(body, design, request, config, fetchImpl) {
   }
 }
 
-export function createApi({ config, catalog, reserve, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
+export function createApi({ config, catalog, reserve, reserveConnection, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
   let busy = false;
+  const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.1', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.2', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -117,7 +117,7 @@ export function createApi({ config, catalog, reserve, fetchImpl = (input, init) 
         headers['Access-Control-Allow-Origin'] = origin;
       }
       const path = new URL(request.url).pathname;
-      if (!['/api/health', '/api/session', '/api/render'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
+      if (!['/api/health', '/api/session', '/api/render', '/api/connect'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
       if (request.method === 'OPTIONS') {
         const method = request.headers.get('access-control-request-method');
         const requestedHeaders = (request.headers.get('access-control-request-headers') || '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
@@ -127,17 +127,29 @@ export function createApi({ config, catalog, reserve, fetchImpl = (input, init) 
         headers['Access-Control-Max-Age'] = '600';
         return new Response(null, { status: 204, headers });
       }
-      if ((path === '/api/render' && request.method !== 'POST') || (path !== '/api/render' && request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
+      if ((['/api/render','/api/connect'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
       if (path === '/api/health') return json({ configured: config.configured });
       if (!config.configured) throw new ApiError(503, 'not_configured', 'Ask your representative to connect the rendering service.');
-      authorize(request, config);
-      if (path === '/api/session') return json({ ready: true, operatorAuthorized:operatorAuthorized(request, config) });
+      if (path === '/api/connect') {
+        if (!origin) throw new ApiError(403, 'origin_denied', 'Connect from the portfolio app.');
+        if (!paired || !reserveConnection) throw new ApiError(503, 'password_not_configured', 'Ask your representative to finish tablet password setup.');
+        await reserveConnection(request);
+        if (!/^application\/json(?:\s*;.*)?$/i.test(request.headers.get('content-type') || '')) throw new ApiError(415, 'unsupported_type', 'Enter the tablet password to connect.');
+        const text = await readBounded(request.body, 1024, new ApiError(413, 'invalid_password', 'Enter the tablet password to connect.'), AbortSignal.any([request.signal, AbortSignal.timeout(10_000)]));
+        let body;
+        try { body = JSON.parse(text); } catch { throw new ApiError(400, 'invalid_password', 'Enter the tablet password to connect.'); }
+        if (!body || Array.isArray(body) || typeof body.password !== 'string' || body.password.length > 128 || Object.keys(body).some(key => key !== 'password')) throw new ApiError(400, 'invalid_password', 'Enter the tablet password to connect.');
+        if (!secretMatches(body.password.trim(), config.tabletPassword)) throw new ApiError(401, 'invalid_password', 'That password is incorrect. Please try again.');
+        return json({ready:true, ...paired, operatorAuthorized:Boolean(paired.operatorToken)});
+      }
+      authorize(request, config, paired);
+      if (path === '/api/session') return json({ ready: true, operatorAuthorized:operatorAuthorized(request, config, paired) });
       if (busy) throw new ApiError(429, 'render_in_progress', 'A rendering is already being created. Please wait for it to finish.', 10);
       busy = true;
       acquired = true;
       const body = await parseBody(request);
       const design = validateDesign(body, catalog);
-      if (design.customPrompt && !operatorAuthorized(request, config)) throw new ApiError(403, 'operator_required', 'Custom instructions require the representative’s private operator setup code.');
+      if (design.customPrompt && !operatorAuthorized(request, config, paired)) throw new ApiError(403, 'operator_required', 'Connect this tablet with the representative’s password to use custom instructions.');
       validateImage(body.image);
       // Reserve before making the billable request. Failed/aborted attempts also count.
       await reserve();

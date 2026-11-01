@@ -6,6 +6,8 @@ import { projects } from '../src/data/projects.js';
 const endpoint = 'https://visualizer-test.invalid';
 const accessCode = 'test-tablet-code-' + 'a'.repeat(32);
 const operatorCode = 'test-operator-code-' + 'b'.repeat(32);
+const tabletPassword = 'test-tablet-password';
+const connectionKey = 'spray-net-render-connection-v1';
 const kitchenColors = colors.filter(color => color.collections.includes('kitchen')).slice(0, 3);
 const exteriorColors = colors.filter(color => color.systems.includes('dw') && color.systems.includes('mat')).slice(0, 3);
 const photo = await readFile(new URL(`../public/${projects[0].beforeImage}`, import.meta.url));
@@ -14,6 +16,7 @@ const generatedImage = `data:image/webp;base64,${(await readFile(new URL(`../pub
 test.use({ serviceWorkers: 'block' });
 
 async function stubService(page, { holdFirstRender = false } = {}) {
+  await page.addInitScript(endpoint => localStorage.setItem('spray-net-render-endpoint',endpoint),endpoint);
   const renders = [];
   let release;
   const firstRenderGate = new Promise(resolve => { release = resolve; });
@@ -26,6 +29,11 @@ async function stubService(page, { holdFirstRender = false } = {}) {
     };
     if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers });
+      return;
+    }
+    if (request.url().endsWith('/api/connect')) {
+      const valid = request.postDataJSON().password === tabletPassword;
+      await route.fulfill({status:valid?200:401,contentType:'application/json',headers,body:JSON.stringify(valid?{ready:true,token:accessCode,operatorToken:operatorCode,operatorAuthorized:true}:{error:{message:'That password is incorrect. Please try again.'}})});
       return;
     }
     if (request.url().endsWith('/api/render')) {
@@ -49,10 +57,9 @@ async function openAndConnect(page) {
   await page.goto('./#/visualize');
   await expect(page.getByRole('heading', { name: 'Your Home. Your Colors.' })).toBeVisible();
   await openTools(page);
-  await page.getByLabel('Image Service Address').fill(endpoint);
-  await page.getByLabel('Tablet Access Code').fill(accessCode);
-  await page.getByRole('button', { name: 'Connect Tablet', exact: true }).click();
-  await expect(page.getByText('Connected. This tablet is ready to create previews.')).toBeVisible();
+  await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);
+  await page.getByRole('button', { name: 'Activate This Tablet', exact: true }).click();
+  await expect(page.getByText('Tablet Connected',{exact:true})).toBeVisible();
   await page.getByRole('button', { name:'Close Tools', exact:true }).click();
 }
 
@@ -113,7 +120,9 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   expect(api.renders[1].body.design.surfaces.island).toBe(kitchenColors[1].id);
   expect(unexpectedRequests).toEqual([]);
   expect(await page.evaluate(() => localStorage.getItem('spray-net-render-access'))).toBeNull();
-  expect(await page.evaluate(() => sessionStorage.getItem('spray-net-render-access'))).toBe(accessCode);
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).token,connectionKey)).toBe(accessCode);
+  expect(await page.evaluate(() => sessionStorage.getItem('spray-net-render-access'))).toBeNull();
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(tabletPassword);
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Picture Your Transformation' })).toBeVisible();
@@ -212,14 +221,14 @@ test('new consultations clear previous customer photos and filters without delet
   await expect(page.locator('a[target="_blank"]')).toHaveCount(0);
 });
 
-test('private tablet pairing connects without typing and removes the access code from the address', async ({ page }) => {
+test('legacy tablet pairing still connects and can reconnect by password without a setup file', async ({ page }) => {
   const api = await stubService(page);
   const encoded = Buffer.from(JSON.stringify({ endpoint, token: accessCode })).toString('base64url');
   const outgoingUrls = [];
   page.on('request', request => outgoingUrls.push(request.url()));
   await page.goto(`./#/visualize?tablet=${encoded}`);
   await expect(page).toHaveURL(/#\/visualize$/);
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('spray-net-render-access'))).toBe(accessCode);
+  await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key) || '{}').token,connectionKey)).toBe(accessCode);
   expect(await page.evaluate(() => localStorage.getItem('spray-net-render-access'))).toBeNull();
   await expect(page.getByRole('heading', { name:'Consultation Tools', exact:true })).toHaveCount(0);
   await uploadPhoto(page);
@@ -229,13 +238,11 @@ test('private tablet pairing connects without typing and removes the access code
   expect(api.renders[0].authorization).toBe(`Bearer ${accessCode}`);
   expect(outgoingUrls.some(url => url.includes(accessCode) || url.includes(encoded))).toBe(false);
   await openTools(page);
-  await page.getByRole('button', { name: 'Disconnect', exact: true }).click();
-  await page.getByLabel('Tablet connection setup file', { exact: true }).setInputFiles({
-    name: 'tablet-connection.json', mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify({ endpoint, token: accessCode })),
-  });
-  await expect(page.getByText('Connected. This tablet is ready to create previews.')).toBeVisible();
-  expect(await page.evaluate(() => sessionStorage.getItem('spray-net-render-access'))).toBe(accessCode);
+  await page.getByRole('button', { name: 'Forget This Tablet', exact: true }).click();
+  await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);
+  await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
+  await expect(page.getByText('Tablet Connected',{exact:true})).toBeVisible();
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).token,connectionKey)).toBe(accessCode);
 });
 
 test('multiple uploaded angles render independently without generating on upload', async ({ page }) => {
@@ -279,11 +286,12 @@ test('operator menu requires a five-second hold and hides its controls again whe
 });
 
 test('custom prompts stay in operator controls and do not carry into normal renders', async ({page}) => {
-  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  const api=await stubService(page);await page.goto('./#/visualize');
   await openTools(page);await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
-  await page.getByLabel('Operator Access Code').fill(operatorCode);
-  await page.getByRole('button',{name:'Connect Tablet',exact:true}).click();
+  await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);
+  await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
   await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeEnabled();
+  await uploadPhoto(page);
   const text='Make the island a muted sage green and keep the existing countertop.';
   await page.getByLabel('Custom Instructions',{exact:true}).fill(text);expect(api.renders).toHaveLength(0);
   await page.getByRole('button',{name:'Create Custom Preview',exact:true}).click();await expectSaved(page);
@@ -303,4 +311,41 @@ test('official Sherwin-Williams references can be found with compact color codes
   const refs=colors.filter(color=>color.brand==='Sherwin-Williams');
   expect(refs).toHaveLength(1731);expect(new Set(colors.map(color=>color.id)).size).toBe(colors.length);
   expect(colors.find(color=>color.id==='sw-7008').hex).toBe('#EDEAE0');
+});
+
+test('password access survives a fresh browser session until Forget This Tablet is used', async ({page,context,browser}) => {
+  await stubService(page);await openAndConnect(page);
+  const stored=await context.storageState();
+  expect(JSON.stringify(stored)).not.toContain(tabletPassword);
+  const next=await browser.newContext({storageState:stored,serviceWorkers:'block'});
+  try {
+    const reopened=await next.newPage();await stubService(reopened);await reopened.goto(page.url());
+    await openTools(reopened);
+    await expect(reopened.getByText('Tablet Connected',{exact:true})).toBeVisible();
+    await expect(reopened.getByLabel('Custom Instructions',{exact:true})).toBeEnabled();
+    await expect(reopened.getByLabel('Tablet Password',{exact:true})).toHaveCount(0);
+    await reopened.getByRole('button',{name:'Forget This Tablet',exact:true}).click();
+    await expect(reopened.getByLabel('Tablet Password',{exact:true})).toBeVisible();
+    expect(await reopened.evaluate(key=>localStorage.getItem(key),connectionKey)).toBeNull();
+    await reopened.reload();await openTools(reopened);
+    await expect(reopened.getByLabel('Tablet Password',{exact:true})).toBeVisible();
+    await expect(reopened.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
+  } finally {await next.close();}
+});
+
+test('incorrect passwords and unavailable persistent storage never claim the tablet is activated', async ({page}) => {
+  await stubService(page);await page.goto('./#/visualize');await openTools(page);
+  await page.getByLabel('Tablet Password',{exact:true}).fill('an-incorrect-password');
+  await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
+  await expect(page.getByText('That password is incorrect. Please try again.',{exact:true})).toBeVisible();
+  expect(await page.evaluate(key=>localStorage.getItem(key),connectionKey)).toBeNull();
+  await page.evaluate(key=>{
+    const original=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(name,value){if(name===key)throw new DOMException('Full','QuotaExceededError');return original.call(this,name,value);};
+  },connectionKey);
+  await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);
+  await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
+  await expect(page.getByText('This browser cannot remember tablet access. Allow site storage, then try again.',{exact:true})).toBeVisible();
+  await expect(page.getByText('Tablet Connected',{exact:true})).toHaveCount(0);
+  await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
 });

@@ -2,7 +2,7 @@
 
 The public portfolio stays on GitHub Pages. A separate, authenticated API sends a homeowner photo and a fixed design instruction to OpenAI. **Never put the OpenAI key in React, a `VITE_` variable, GitHub Pages, or the tablet connection code.**
 
-The tablet uses a random, revocable device token. It authorizes rendering through this service but does not reveal the OpenAI key. Treat the token as a secret: anyone who has it can use the limited rendering allowance. There is no customer account or sign-in flow.
+The salesperson enters one tablet password in the hidden tools. The service returns separate revocable access tokens for normal and custom rendering. The app remembers those tokens locally across browser/app restarts and never saves the password. There is no customer account or sign-in flow, and the OpenAI key stays on the server.
 
 ## What is implemented
 
@@ -36,7 +36,21 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'
 
 Store the token in your password manager, then enter the API origin and token in the portfolio's representative connection controls. The token is not the OpenAI key. A token must contain 43–128 base64url or hexadecimal characters; a short PIN is intentionally rejected. Rotate it with the same `wrangler secret put` command if a tablet is lost or the token is disclosed, and reconnect authorized tablets.
 
-### Optional operator setup
+### One-Time Tablet Password
+
+Set `VISUALIZER_TABLET_PASSWORD` as a Cloudflare secret using a secure prompt or stdin pipe:
+
+```powershell
+wrangler secret put VISUALIZER_TABLET_PASSWORD --config server/wrangler.toml
+```
+
+Use a private password of 12–128 characters. It is not committed, placed in a `VITE_` variable, returned by the API, or saved in tablet storage. Keep its recovery copy outside version control. In the installed app, hold **Kitchen & Cabinets** for five seconds (or tap eight times within six seconds), enter **Tablet Password**, and select **Activate This Tablet**. No JSON file is needed.
+
+`POST /api/connect` accepts only `{ "password": "..." }` from an allowed browser origin, with a 1 KiB body limit. On success it returns `{ "ready": true, "token": "...", "operatorToken": "...", "operatorAuthorized": true }` with `Cache-Control: no-store`. A wrong password returns 401. Each attempt is reserved durably before verification: at most six per network address and 100 across the service per ten minutes. Only a SHA-256 address fingerprint and timestamps are retained for this limiter; no passwords or photos are logged or stored. Storage failures block connection. Activation makes no OpenAI request and consumes no image allowance.
+
+The lasting credentials are separate HMAC-SHA-256 derivatives of the password and the existing device/operator server secrets. They have no calendar expiry and survive deployments while those secrets remain unchanged. Password rotation invalidates password-issued connections; activating again restores access. Rotating the underlying device/operator secrets also revokes their corresponding legacy connections. Keep those master secrets private. The app stores one atomic connection record in localStorage, requests browser persistence where available, and offers **Forget This Tablet** to remove access. Site-data clearing, browser eviction and private browsing can still remove it.
+
+### Operator Service Secret
 
 Custom instructions stay disabled until a separate `VISUALIZER_OPERATOR_TOKEN` is configured. Generate a new random 32-byte base64url secret, distinct from the tablet token, and store it through a secure prompt/pipe:
 
@@ -44,7 +58,7 @@ Custom instructions stay disabled until a separate `VISUALIZER_OPERATOR_TOKEN` i
 wrangler secret put VISUALIZER_OPERATOR_TOKEN --config server/wrangler.toml
 ```
 
-Keep the ordinary tablet setup file and QR unchanged. Create a separate private `operator-connection.json` in the ignored `.visualizer-local/` folder with the same `endpoint` and `token`, plus `operatorToken`. Import it through **Consultation Tools → Connect From Setup File**, or enter the operator code manually. Never commit it, publish it, put it in a QR/URL, or send it to a homeowner. The optional code stays in session storage and Disconnect removes it.
+The service uses this operator secret to derive the custom-render access token returned after password verification. Neither master secret needs to be entered on a tablet. The old setup-file importer and multi-field connection form are removed. Legacy private QR links still work, immediately remove their credentials from the address, and now remember access locally. Existing session-only connections migrate to remembered storage automatically.
 
 Open the hidden menu by holding **Kitchen & Cabinets** or **Home Exterior** for five seconds, or tapping either button eight times within six seconds. The gesture hides salesperson controls; the API credential separately authorizes custom rendering. Closing tools clears the typed custom prompt. Custom and ordinary renders share the same model settings, one-image output, daily/hourly quota, concurrency limit, and original-photo flow. There is no separate prompt-generation model call.
 
@@ -77,6 +91,7 @@ For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep on
 | `OPENAI_API_KEY` | Required server secret |
 | `VISUALIZER_ACCESS_TOKEN` | Required random device secret, 43–128 characters |
 | `VISUALIZER_OPERATOR_TOKEN` | Optional separate random operator secret, 43–128 characters; custom prompts disabled without it |
+| `VISUALIZER_TABLET_PASSWORD` | Optional private 12–128 character password; required for one-password activation |
 | `VISUALIZER_ALLOWED_ORIGINS` | Required comma-separated exact HTTPS origins; localhost HTTP allowed for development |
 | `VISUALIZER_MAX_DAILY_RENDERS` | Required, 1–200; resets at midnight UTC |
 | `VISUALIZER_MAX_HOURLY_RENDERS` | 12, permitted range 1–60 |

@@ -2,6 +2,7 @@ import { colors } from '../src/data/colors.js';
 import { createApi } from './api.mjs';
 import { loadConfig } from './config.mjs';
 import { reserveAttempt } from './limits.mjs';
+import { connectionFingerprint, reserveConnectionAttempt } from './pairing.mjs';
 
 export class VisualizerGate {
   constructor(state, env) {
@@ -9,6 +10,10 @@ export class VisualizerGate {
     this.handle = createApi({
       config,
       catalog: colors,
+      reserveConnection: request => state.storage.transaction(async transaction => {
+        const previous = await transaction.get('connectionAttempts');
+        await transaction.put('connectionAttempts', reserveConnectionAttempt(previous, connectionFingerprint(request)));
+      }),
       reserve: () => state.storage.transaction(async transaction => {
         const previous = await transaction.get('usage');
         const next = reserveAttempt(previous, config);

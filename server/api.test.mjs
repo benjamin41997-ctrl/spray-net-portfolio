@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import test from 'node:test';
 import { createApi } from './api.mjs';
 import { loadConfig } from './config.mjs';
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, validateImage } from './images.mjs';
 import { reserveAttempt } from './limits.mjs';
-import { acquireLedgerLock, UsageLedger } from './quota.mjs';
+import { acquireLedgerLock, ConnectionLedger, UsageLedger } from './quota.mjs';
+import { connectionFingerprint, reserveConnectionAttempt, tabletCredentials } from './pairing.mjs';
 
 const token = 'test-device-token-'.padEnd(43, 'x');
 const origin = 'https://portfolio.example.com';
@@ -20,6 +22,8 @@ const catalog = [
 // Small, genuine WebP used as both a typed input and a mocked provider result.
 const webp = 'UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
 const image = `data:image/webp;base64,${webp}`;
+const password = 'unit-test-tablet-password';
+const passwordConfig = {...config, tabletPassword:password, operatorToken:'test-operator-'.padEnd(43,'z')};
 const payload = () => ({ image, quality: 'preview', design: { mode: 'kitchen', surfaces: { cabinets: 'white', island: 'navy' }, hardwareStyle: 'bar', hardwareFinish: 'brass', backsplash: 'keep', countertop: 'keep' } });
 const request = (body = payload(), options = {}) => new Request(`https://api.example.com${options.path || '/api/render'}`, {
   method: options.method || 'POST',
@@ -31,13 +35,15 @@ const response = () => new Response(JSON.stringify({ data: [{ b64_json: webp }] 
 function harness(options = {}) {
   const calls = [];
   let reservations = 0;
+  let connectionAttempts = 0;
   const api = createApi({
     config: options.config || config,
     catalog,
     reserve: options.reserve || (() => { reservations += 1; }),
+    reserveConnection: options.reserveConnection || (() => { connectionAttempts += 1; }),
     fetchImpl: options.fetchImpl || (async (...args) => { calls.push(args); return response(); }),
   });
-  return { api, calls, get reservations() { return reservations; } };
+  return { api, calls, get reservations() { return reservations; }, get connectionAttempts() {return connectionAttempts;} };
 }
 
 test('configuration is fail-closed and accepts only exact approved origins and models', () => {
@@ -69,6 +75,60 @@ test('unconfigured service never sends a paid request', async () => {
   assert.equal(result.status, 503);
   assert.equal((await result.json()).error.code, 'not_configured');
   assert.equal(h.calls.length, 0);
+});
+
+test('one tablet password issues lasting separate credentials without spending render allowance', async () => {
+  const h = harness({config:passwordConfig});
+  const connect = body => h.api(request(body,{path:'/api/connect',headers:{Authorization:''}}));
+  const wrong = await connect({password:'incorrect-password'});
+  assert.equal(wrong.status,401); assert.ok(!(await wrong.text()).includes(password));
+  const response = await connect({password});
+  assert.equal(response.status,200); assert.equal(response.headers.get('Cache-Control'),'no-store');
+  const result = await response.json();
+  assert.equal(result.operatorAuthorized,true);
+  assert.notEqual(result.token,passwordConfig.accessToken); assert.notEqual(result.operatorToken,passwordConfig.operatorToken);
+  assert.notEqual(result.token,result.operatorToken); assert.ok(!JSON.stringify(result).includes(password));
+  const headers = {Authorization:`Bearer ${result.token}`,'X-Visualizer-Operator':result.operatorToken};
+  const session = await h.api(request(undefined,{path:'/api/session',method:'GET',headers}));
+  assert.deepEqual(await session.json(),{ready:true,operatorAuthorized:true});
+  assert.equal(h.reservations,0); assert.equal(h.calls.length,0); assert.equal(h.connectionAttempts,2);
+  const restarted = harness({config:{...passwordConfig}});
+  assert.deepEqual(tabletCredentials({...passwordConfig}),{token:result.token,operatorToken:result.operatorToken});
+  assert.equal((await restarted.api(request(undefined,{path:'/api/session',method:'GET',headers}))).status,200);
+  const custom = await restarted.api(request({...payload(),customPrompt:'Make the lower cabinets sage green.'},{headers}));
+  assert.equal(custom.status,200); assert.equal(restarted.reservations,1);
+  const rotated = harness({config:{...passwordConfig,tabletPassword:'a-different-tablet-password'}});
+  assert.equal((await rotated.api(request(undefined,{path:'/api/session',method:'GET',headers}))).status,401);
+});
+
+test('password endpoint rejects missing origins, oversized bodies and failed rate storage before issuing access', async () => {
+  assert.throws(()=>loadConfig({VISUALIZER_TABLET_PASSWORD:'1234'}));
+  const h = harness({config:passwordConfig});
+  assert.equal((await harness().api(request({password},{path:'/api/connect'}))).status,503);
+  assert.equal((await h.api(request({password},{path:'/api/connect',headers:{Origin:''}}))).status,403);
+  assert.equal((await h.api(request({password,extra:true},{path:'/api/connect'}))).status,400);
+  assert.equal((await h.api(request(null,{path:'/api/connect',raw:'x'.repeat(1025)}))).status,413);
+  assert.equal((await h.api(request({password},{path:'/api/connect',method:'GET'}))).status,405);
+  const denied = harness({config:passwordConfig,reserveConnection:()=>{throw new Error('storage unavailable');}});
+  assert.equal((await denied.api(request({password},{path:'/api/connect'}))).status,503);
+  assert.equal(h.reservations,0); assert.equal(h.calls.length,0); assert.equal(denied.calls.length,0);
+});
+
+test('password guessing allowance survives restarts and expires independently from paid quota', () => {
+  const folder = mkdtempSync(join(tmpdir(),'spray-net-connection-test-'));
+  try {
+    const file = join(folder,'connections.json');
+    const key = connectionFingerprint(request()); const now = Date.UTC(2026,10,1,12);
+    for(let i=0;i<6;i++) new ConnectionLedger(file).reserve(key,now+i);
+    assert.throws(()=>new ConnectionLedger(file).reserve(key,now+10),error=>error.code==='connection_limit');
+    assert.equal(new ConnectionLedger(file).reserve(key,now+600_010).attempts.length,1);
+    writeFileSync(file,'invalid json');
+    assert.throws(()=>new ConnectionLedger(file).reserve(key,now+600_011),error=>error.status===503);
+    assert.throws(()=>reserveConnectionAttempt({version:1,attempts:[{key,time:now+1}]},key,now),error=>error.status===503);
+    let attempts;
+    for(let i=0;i<100;i++) attempts=reserveConnectionAttempt(attempts,connectionFingerprint(new Request('https://example.com',{headers:{'cf-connecting-ip':String(i)}})),now);
+    assert.throws(()=>reserveConnectionAttempt(attempts,key,now),error=>error.code==='connection_limit');
+  } finally {rmSync(folder,{recursive:true,force:true});}
 });
 
 test('denies missing credentials, wrong origins, unexpected preflight headers and methods', async () => {
