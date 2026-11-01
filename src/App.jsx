@@ -109,7 +109,7 @@ function Portfolio() {
     page = <Why article={article} route={route} />;
   else page = <NotFound />;
   return (
-    <>
+    <div className={route.path === '/visualize' ? 'portfolio-app is-visualizing' : 'portfolio-app'}>
       <a
         href="#main"
         className="skip-link"
@@ -189,7 +189,7 @@ function Portfolio() {
       </main>
       <footer className="app-footer">
         <span className="offline-status">
-          <span>Portfolio 1.2.2</span>
+          <span>Portfolio 1.3.0</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />
@@ -199,7 +199,7 @@ function Portfolio() {
         </span>
         <OfflineVideoStatus compact />
       </footer>
-    </>
+    </div>
   );
 }
 

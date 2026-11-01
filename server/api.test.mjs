@@ -280,6 +280,15 @@ test('two-tone and individual exterior surfaces stay explicit in the prompt', ()
   assert.match(buildPrompt(vinyl.design), /selected siding is vinyl/);
 });
 
+test('siding without a material choice accepts the combined deck and preserves the existing material', () => {
+  for(const id of ['white','vinyl']) {
+    const result=validateDesign({...payload(),design:{mode:'exterior',surfaces:{siding:id}}},catalog);
+    assert.equal(result.design.sidingMaterial,'auto');
+    assert.match(buildPrompt(result.design),/without replacing it or changing its material/);
+    assert.doesNotMatch(buildPrompt(result.design),/selected siding is/);
+  }
+});
+
 test('one request at a time; validation failure releases the lock', async () => {
   let finish;
   const h = harness({ fetchImpl: () => new Promise(resolve => { finish = resolve; }) });

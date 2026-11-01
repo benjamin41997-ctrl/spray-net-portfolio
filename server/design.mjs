@@ -56,8 +56,8 @@ export function validateDesign(body, catalog) {
   const design = body.design;
   keysOnly(design, ['mode', 'surfaces', 'sidingMaterial', ...Object.keys(options)]);
   if (!Object.hasOwn(surfaces, design.mode)) invalid('Choose a kitchen or exterior design.');
-  const sidingMaterial = design.sidingMaterial ?? 'other';
-  if (!['vinyl', 'other'].includes(sidingMaterial)) invalid('Choose a siding material.');
+  const sidingMaterial = design.sidingMaterial ?? 'auto';
+  if (!['auto', 'vinyl', 'other'].includes(sidingMaterial)) invalid('Choose a valid siding option.');
   keysOnly(design.surfaces, Object.keys(surfaces[design.mode]));
   const chosen = [];
   for (const [surface, colorId] of Object.entries(design.surfaces)) {
@@ -68,7 +68,7 @@ export function validateDesign(body, catalog) {
       : surface === 'brick' ? ['brick']
         : surface === 'stucco' ? ['elasto']
           : ['frontDoor', 'garageDoor', 'windows'].includes(surface) ? ['dw']
-            : surface === 'siding' ? (sidingMaterial === 'vinyl' ? ['vinyl'] : ['mat', 'satin'])
+            : surface === 'siding' ? (sidingMaterial === 'auto' ? ['vinyl','mat','satin'] : sidingMaterial === 'vinyl' ? ['vinyl'] : ['mat', 'satin'])
               : ['mat', 'satin', 'dw'];
     const officialReference = color.referenceOnly && color.source === 'sherwin-williams-official';
     if (!officialReference && !systems.some(system => color.systems?.includes(system))) invalid('This color is not available for the selected surface. Choose another color from its deck.');
@@ -98,7 +98,7 @@ export function buildPrompt(design, customPrompt = '') {
     'Color codes and sRGB swatches are target references, not a reason to flatten lighting. Render each selected color in the existing light. If a selected feature is not visible, do not invent it.',
   ];
   if (design.mode === 'exterior' && design.surfaces.some(item => item.surface === 'siding')) {
-    instructions.push(`The selected siding is ${design.sidingMaterial === 'vinyl' ? 'vinyl' : 'aluminum, fiber cement or engineered wood'}; recolor its existing appearance without replacing or changing its material or texture.`);
+    instructions.push(design.sidingMaterial === 'auto' ? 'Recolor the existing siding without replacing it or changing its material, profile or texture.' : `The selected siding is ${design.sidingMaterial === 'vinyl' ? 'vinyl' : 'aluminum, fiber cement or engineered wood'}; recolor its existing appearance without replacing or changing its material or texture.`);
   }
   for (const { surface, color } of design.surfaces) {
     instructions.push(`Recolor ${surfaces[design.mode][surface]} to ${color.brand} ${color.name}${color.code ? ` (${color.code})` : ''}, sRGB ${color.hex}.`);

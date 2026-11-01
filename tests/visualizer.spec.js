@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFile, readdir } from 'node:fs/promises';
 import { colors } from '../src/data/colors.js';
 import { projects } from '../src/data/projects.js';
+import AxeBuilder from '@axe-core/playwright';
 
 const endpoint = 'https://visualizer-test.invalid';
 const accessCode = 'test-tablet-code-' + 'a'.repeat(32);
@@ -55,7 +56,7 @@ async function openTools(page) {
 
 async function openAndConnect(page) {
   await page.goto('./#/visualize');
-  await expect(page.getByRole('heading', { name: 'Your Home. Your Colors.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Design Visualizer', exact:true })).toBeAttached();
   await openTools(page);
   await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);
   await page.getByRole('button', { name: 'Activate This Tablet', exact: true }).click();
@@ -70,7 +71,14 @@ async function uploadPhoto(page) {
 }
 
 async function selectColor(page, surface, color) {
-  await page.getByLabel('Choose a Surface', { exact: true }).selectOption(surface);
+  const exterior=page.getByRole('group',{name:'Exterior surfaces',exact:true});
+  if(await exterior.count()) {
+    const labels={siding:'Siding',frontDoor:'Front Door',garageDoor:'Garage Door',windows:'Windows',soffits:'Soffits',fascia:'Fascia',brick:'Brick',stucco:'Stucco',trim:'Trim',vents:'Vents',columns:'Columns'};
+    await exterior.getByRole('button',{name:labels[surface],exact:true}).click();
+  } else {
+    const target=page.getByRole('button',{name:['lowerCabinets','island'].includes(surface)?'Choose Darker Color':'Choose Lighter Color',exact:true});
+    if(await target.count())await target.click();
+  }
   await page.getByLabel('Find a Color', { exact: true }).fill(color.name);
   await page.getByTitle(`${color.brand} ${color.name} ${color.code}`, { exact: true }).click();
 }
@@ -92,19 +100,20 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   await openTools(page);
   await page.getByLabel('Consultation Label').fill('Kitchen Follow-Up');
   await page.getByRole('button', { name:'Close Tools', exact:true }).click();
-  await page.getByRole('button', { name: 'Two-Tone', exact: true }).click();
+  await page.getByRole('button', { name: 'Two Tone', exact: true }).click();
+  await page.getByRole('button',{name:'Wall & Base',exact:true}).click();
   await selectColor(page, 'upperCabinets', kitchenColors[0]);
   await selectColor(page, 'lowerCabinets', kitchenColors[1]);
-  await selectColor(page, 'island', kitchenColors[2]);
-  await page.getByText('Hardware, Backsplash & Countertops', { exact: true }).click();
+  await page.getByRole('button',{name:'Hardware, Backsplash & Countertops',exact:true}).click();
   await page.getByLabel('Hardware Style', { exact: true }).selectOption('bar');
   await page.getByLabel('Hardware Finish', { exact: true }).selectOption('matte-black');
   await page.getByLabel('Backsplash', { exact: true }).selectOption('white-subway');
   await page.getByLabel('Countertops', { exact: true }).selectOption('white-quartz');
+  await page.getByRole('button',{name:'Done',exact:true}).click();
   await page.getByRole('button', { name: 'Create My Preview', exact: true }).click();
   await expectSaved(page);
   expect(api.renders[0].body.design).toEqual({
-    mode: 'kitchen', sidingMaterial: 'other', surfaces: { upperCabinets: kitchenColors[0].id, lowerCabinets: kitchenColors[1].id, island: kitchenColors[2].id },
+    mode: 'kitchen', sidingMaterial: 'auto', surfaces: { upperCabinets: kitchenColors[0].id, lowerCabinets: kitchenColors[1].id, island: kitchenColors[1].id },
     hardwareStyle: 'bar', hardwareFinish: 'matte-black', backsplash: 'white-subway', countertop: 'white-quartz',
   });
   expect(api.renders[0].body.quality).toBe('preview');
@@ -112,12 +121,12 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   expect(api.renders[0].body.image).toMatch(/^data:image\/jpeg;base64,/);
   expect(api.renders[0].body.image).not.toBe(generatedImage);
 
-  await selectColor(page, 'island', kitchenColors[1]);
+  await selectColor(page, 'lowerCabinets', kitchenColors[2]);
   await page.getByRole('button', { name: 'Create Detailed Preview', exact: true }).click();
   await expectSaved(page, 2);
   expect(api.renders[1].body.image).toBe(api.renders[0].body.image);
   expect(api.renders[1].body.quality).toBe('detail');
-  expect(api.renders[1].body.design.surfaces.island).toBe(kitchenColors[1].id);
+  expect(api.renders[1].body.design.surfaces.island).toBe(kitchenColors[2].id);
   expect(unexpectedRequests).toEqual([]);
   expect(await page.evaluate(() => localStorage.getItem('spray-net-render-access'))).toBeNull();
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).token,connectionKey)).toBe(accessCode);
@@ -125,7 +134,7 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(tabletPassword);
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Picture Your Transformation' })).toBeVisible();
+  await expect(page.getByRole('button',{name:'Choose Photos',exact:true})).toBeVisible();
   await expect(page.locator('.viz-saved-item')).toHaveCount(0);
   await expect(page.getByText('Kitchen Follow-Up', { exact: true })).toHaveCount(0);
   await openTools(page);
@@ -146,6 +155,7 @@ test('a rendering continues while the customer browses the portfolio and returns
   await selectColor(page, 'cabinets', kitchenColors[0]);
   await page.getByRole('button', { name: 'Create My Preview', exact: true }).click();
   await expect.poll(() => api.renders.length).toBe(1);
+  await page.getByRole('link',{name:'Home',exact:true}).click();
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Reviews', exact: true }).click();
   await expect(page.getByText('Your design preview is being created.', { exact: true })).toBeVisible();
   api.release();
@@ -171,7 +181,7 @@ test('exterior surfaces are independent and going offline blocks paid generation
   await page.getByRole('button', { name: 'Create My Preview', exact: true }).click();
   await expectSaved(page);
   expect(api.renders[0].body.design.mode).toBe('exterior');
-  expect(api.renders[0].body.design.sidingMaterial).toBe('other');
+  expect(api.renders[0].body.design.sidingMaterial).toBe('auto');
   expect(api.renders[0].body.design.surfaces).toEqual({ siding: exteriorColors[0].id, frontDoor: exteriorColors[1].id, windows: exteriorColors[2].id, soffits: exteriorColors[0].id });
   await context.setOffline(true);
   await expect(page.getByText('Connect to the internet to create a new preview. Saved images and color selections still work offline.')).toBeVisible();
@@ -200,7 +210,7 @@ test('new consultations clear previous customer photos and filters without delet
   await expect(page.locator('.viz-saved-item')).toHaveCount(1);
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Start a New Consultation', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Picture Your Transformation' })).toBeVisible();
+  await expect(page.getByRole('button',{name:'Choose Photos',exact:true})).toBeVisible();
   await expect(page.getByRole('heading', { name:'Consultation Tools', exact:true })).toHaveCount(0);
   await expect(page.locator('.viz-saved-item')).toHaveCount(0);
   await expect(page.getByText('Previous Customer', { exact: true })).toHaveCount(0);
@@ -264,7 +274,7 @@ test('multiple uploaded angles render independently without generating on upload
   await page.getByRole('button',{name:'Select Photo 1',exact:true}).click();await expectSaved(page);
   await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('.viz-photo-stage img')).toHaveCSS('object-fit','contain');
-  expect(await page.locator('.viz-photo-stage img').evaluate(node=>node.getBoundingClientRect().height)).toBeLessThanOrEqual(340);
+  expect(await page.locator('.viz-photo-stage img').evaluate(node=>node.getBoundingClientRect().bottom<=innerHeight)).toBe(true);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
 });
 
@@ -348,4 +358,81 @@ test('incorrect passwords and unavailable persistent storage never claim the tab
   await expect(page.getByText('This browser cannot remember tablet access. Allow site storage, then try again.',{exact:true})).toBeVisible();
   await expect(page.getByText('Tablet Connected',{exact:true})).toHaveCount(0);
   await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
+});
+
+test('one tone covers all cabinets and two-tone layouts always put the darker choice on the island or base', async ({page}) => {
+  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  await expect(page.getByLabel('Choose a Surface',{exact:true})).toHaveCount(0);
+  const white=colors.find(c=>c.id==='sw-7008'),black=colors.find(c=>c.id==='sw-6258');
+  await page.getByRole('button',{name:'Two Tone',exact:true}).click();
+  await selectColor(page,'cabinets',black);
+  await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeDisabled();
+  await selectColor(page,'island',white);
+  await expect(page.getByRole('button',{name:'Choose Lighter Color',exact:true})).toContainText(white.name);
+  await expect(page.getByRole('button',{name:'Choose Darker Color',exact:true})).toContainText(black.name);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[0].body.design.surfaces).toEqual({cabinets:white.id,island:black.id});
+  await page.getByRole('button',{name:'Wall & Base',exact:true}).click();
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,2);
+  expect(api.renders[1].body.design.surfaces).toEqual({upperCabinets:white.id,lowerCabinets:black.id,island:black.id});
+  await page.getByRole('button',{name:'One Tone',exact:true}).click();
+  await expect(page.getByRole('group',{name:'Two-tone layout',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Choose Darker Color',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,3);
+  expect(api.renders[2].body.design.surfaces).toEqual({cabinets:white.id});
+});
+
+test('exterior steps retain colors and skip unchanged areas without a siding material dropdown', async ({page}) => {
+  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
+  await expect(page.getByLabel('Siding Material',{exact:true})).toHaveCount(0);
+  await expect(page.getByLabel('Choose a Surface',{exact:true})).toHaveCount(0);
+  const steps=page.getByRole('group',{name:'Exterior surfaces',exact:true});
+  await expect(steps.getByRole('button',{name:'Siding',exact:true})).toHaveAttribute('aria-pressed','true');
+  await selectColor(page,'siding',exteriorColors[0]);
+  await page.getByRole('button',{name:'Next: Front Door',exact:true}).click();
+  await expect(page.getByLabel('Find a Color',{exact:true})).toHaveValue('');
+  await selectColor(page,'frontDoor',exteriorColors[1]);
+  await page.getByRole('button',{name:'Next: Garage Door',exact:true}).click();
+  await page.getByRole('button',{name:'Next: Soffits',exact:true}).click();
+  await selectColor(page,'soffits',exteriorColors[2]);
+  await page.getByRole('button',{name:'Back',exact:true}).click();
+  await expect(steps.getByRole('button',{name:'Garage Door',exact:true})).toHaveAttribute('aria-pressed','true');
+  await steps.getByRole('button',{name:'Siding',exact:true}).click();
+  await expect(page.locator('.viz-selection strong')).toHaveText(exteriorColors[0].name);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[0].body.design.surfaces).toEqual({siding:exteriorColors[0].id,frontDoor:exteriorColors[1].id,soffits:exteriorColors[2].id});
+});
+
+test('the photo and primary controls fit iPad and Lenovo portrait and landscape screens', async ({page}) => {
+  await stubService(page);await openAndConnect(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles([
+    {name:'angle-one.webp',mimeType:'image/webp',buffer:photo},
+    {name:'angle-two.webp',mimeType:'image/webp',buffer:photo},
+  ]);
+  await expect(page.getByRole('button',{name:'Select Photo 2',exact:true})).toBeVisible();
+  for(const layout of ['one','two','exterior']) {
+    if(layout==='two')await page.getByRole('button',{name:'Two Tone',exact:true}).click();
+    if(layout==='exterior')await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
+    for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1280,height:800},{width:800,height:1280},{width:1024,height:768}]) {
+      await page.setViewportSize(viewport);
+      await expect.poll(()=>page.evaluate(()=>{
+        const main=document.querySelector('main'),buttons=document.querySelector('.viz-generate').getBoundingClientRect(),image=document.querySelector('.viz-photo-stage').getBoundingClientRect();
+        return document.documentElement.scrollWidth<=innerWidth && document.documentElement.scrollHeight<=innerHeight+1 && main.scrollHeight<=main.clientHeight+1 && buttons.bottom<=innerHeight && image.top>=0 && image.bottom<=innerHeight;
+      })).toBe(true);
+      await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeVisible();
+    }
+  }
+});
+
+test('compact color controls and hardware dialog meet automated accessibility checks', async ({page,browserName}) => {
+  test.skip(process.platform==='win32' && browserName==='webkit','Windows WebKit accessibility execution is unreliable; Linux CI covers it.');
+  await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  await page.getByRole('button',{name:'Two Tone',exact:true}).click();
+  let results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+  expect(results.violations).toEqual([]);
+  await page.getByRole('button',{name:'Hardware, Backsplash & Countertops',exact:true}).click();
+  results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+  expect(results.violations).toEqual([]);
+  await page.getByRole('button',{name:'Done',exact:true}).click();
 });

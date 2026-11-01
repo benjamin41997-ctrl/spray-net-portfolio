@@ -4,7 +4,7 @@ import { saveRender } from '../lib/visualizerStorage';
 
 const Context = createContext(null);
 export const useVisualizer = () => useContext(Context);
-export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'other', surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
+export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'auto', surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
 export default function VisualizerProvider({ children }) {
   const [photos, setPhotos] = useState([]);
   const [photoId, setPhotoId] = useState(null);
