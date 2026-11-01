@@ -47,3 +47,7 @@ The user-supplied `Kitchen Process Jan2026.pptx` personal SharePoint link and Ya
 Add each verified South Charlotte job as a new project with its real location, surface, color, and own photographs. Set `attribution: 'Spray-Net South Charlotte project'`. Keep network attribution on existing network examples while both collections are in use. Add reviews only with their real source, scope, and published rating. Update `settings.portfolioNotice` once the portfolio is entirely local.
 
 Real-media verification on September 13, 2026: **17 browser checks passed, 3 documented skips**. The production build and all content/media-path validation passed. Automated WCAG A/AA checks reported no violations on the scanned screens. YouTube integration was tested with a stub; this does not certify the remote video's availability.
+
+## Offline Playback Update — Portfolio 1.1.1
+
+The two local MP4s now save automatically as complete files after app-shell setup. The Videos screen reports exact saved status. Cached Blob playback avoids partial-stream limitations on iPad. YouTube entries remain online-only. Original files, durations, source attribution, and image processing remain unchanged.

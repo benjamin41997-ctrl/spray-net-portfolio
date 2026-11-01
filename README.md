@@ -10,7 +10,7 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.1.0. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.1.1. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
 **The collection contains 53 transformations, 18 customer review excerpts, 16 videos, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
@@ -271,7 +271,7 @@ No customer data or filter preferences are stored. Browser history remains avail
 
 ## Verification
 
-The real-media production build precaches **150 entries totaling approximately 28.8 MiB**, including 109 project photographs, corporate branding, local fonts, video thumbnails, and three reference sheets. The approximately 42 MB of local MP4s load on demand and are not part of this initial download.
+The real-media production build precaches **150 entries totaling approximately 28.8 MiB**, including 109 project photographs, corporate branding, local fonts, video thumbnails, and three reference sheets. The approximately 42 MB of local MP4s are saved separately as complete files after the app shell is installed. Keep the app open online until Local Videos Ready Offline appears.
 
 The browser suite covers network attribution, nullable review ratings, both comparison layouts, fullscreen reference sheets, filters, navigation, inactivity reset, local MP4 playback/seeking, offline reload, and responsive overflow. Windows WebKit H.264 playback, WebKit service-worker emulation, and the duplicate WebKit accessibility scan are documented skips; Chromium covers those capabilities. Physical iPad/Android installation, audio/captions, and real YouTube playback remain device acceptance checks.
 
@@ -338,3 +338,17 @@ Each completed preview automatically stores its original photo, rendered image, 
 The public app remains on GitHub Pages. The image service is a separate Cloudflare Worker with a persistent Durable Object usage counter. Its default allowance is 20 attempts per UTC day and 12 per rolling hour, across connected tablets, with one active request. Failed/dispatched requests count, so accidental repeated taps and retries cannot silently multiply spending. Fast previews use GPT Image 2.5 Flare at medium quality; detailed previews use Sunburst at high quality. Provider latency and access vary. API details, environment variables, key rotation, deployment and model sources are in [Visualizer API](docs/VISUALIZER-API.md).
 
 Run `pnpm build`, `pnpm test:api`, and `pnpm test`. API/unit and browser tests use stubs and never make paid calls. Browser tests cover payloads, original-photo reuse, navigation during generation, offline behavior, tablet pairing, camera orientation, local persistence and reset privacy. Run a separately authorized real image smoke test after service deployment to verify provider access and inspect its result.
+
+## iPad Touch and Offline Videos — Portfolio 1.1.1
+
+The before/now comparison responds to a touch or drag anywhere on the photograph. A larger 72-pixel handle is shown on touch devices. Pointer capture keeps the drag active, vertical page scrolling remains enabled, and keyboard range controls still work.
+
+The two local MP4 films now save automatically as complete files (approximately 40.1 MiB total) while the app is open online. Open **Videos** and wait for **Local Videos Ready Offline**, with **2 of 2 local films saved**, before testing airplane mode. The footer reports video readiness separately from the offline app shell. An interrupted download or storage shortage shows a retry option instead of claiming readiness.
+
+Local playback reads the complete saved file into a Blob URL, which supports Safari playback and seeking without depending on streamed HTTP range caching. The video element also uses anonymous CORS mode. The service worker retains range support for ordinary local video URLs; the full-file download uses a separate query URL to avoid Safari reusing partial responses.
+
+The remaining YouTube films are labelled **Internet Required** and remain online embeds. They cannot be made offline by caching the iframe. To offer those films offline, obtain their original licensed MP4 files and add them as local videos. The app does not download YouTube streams.
+
+When adding/replacing a local video, set its exact file size in the video data `bytes` field, and use a new filename if its contents change. Offline setup rejects partial or size-mismatched files. Tests cover touch taps outside the handle, drag/keyboard behavior, complete-file cache retries, interrupted/quota failures, and offline playback/seek. Windows Playwright WebKit lacks H.264/service-worker fidelity; real iPad playback should still be checked on the installed app.
+
+Implementation follows the [Workbox media caching guidance](https://developer.chrome.com/docs/workbox/serving-cached-audio-and-video): streamed partial responses do not populate a complete offline video.
