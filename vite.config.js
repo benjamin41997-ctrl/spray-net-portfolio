@@ -45,16 +45,16 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
-        // Local MP4s are optional/on-demand; online embeds are never cached.
+        // The app saves complete local MP4s ahead of offline use. Ignore its
+        // cache-bypassing download URL; ordinary media requests use range support.
         runtimeCaching: [
           {
-            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.endsWith('.mp4'),
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.endsWith('.mp4') && !url.searchParams.has('offline-cache'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'spray-net-local-videos',
               rangeRequests: true,
               cacheableResponse: { statuses: [200] },
-              expiration: { maxEntries: 6, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],

@@ -787,6 +787,11 @@
     overflow: hidden;
     background: #e9edf0;
     isolation: isolate;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: ew-resize;
   }
   .comparison > .photo {
     position: absolute;
@@ -833,8 +838,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: var(--paper);
     box-shadow: 0 3px 12px #00396533;
@@ -849,6 +854,7 @@
     cursor: ew-resize;
     z-index: 2;
     touch-action: pan-y;
+    pointer-events: none;
   }
   .comparison:has(input:focus-visible) {
     outline: 3px solid #003965;
@@ -2008,8 +2014,8 @@
       font-size: 8px;
     }
     .comparison-divider > span {
-      width: 46px;
-      height: 46px;
+      width: 64px;
+      height: 64px;
     }
     .project-facts {
       grid-template-columns: 1fr 1fr;
@@ -2276,6 +2282,23 @@
 .comparison {
   max-height: 75vh;
   margin-inline: auto;
+}
+.offline-video-panel {
+  padding: 22px;
+  margin-bottom: 28px;
+  border-radius: 16px;
+  background: #eef3f7;
+  color: #003965;
+}
+.offline-video-panel h2 { font-size: 22px; }
+.offline-video-panel p { margin-top: 10px; font-size: 15px; line-height: 1.6; }
+.offline-video-panel progress { width: 100%; height: 16px; margin-top: 12px; accent-color: #003965; }
+.offline-video-panel .button { margin-top: 14px; }
+.video-availability { display: block; margin-top: 14px; font-size: 14px; font-weight: 800; color: #003965; }
+.app-footer { flex-wrap: wrap; gap: 12px; }
+.offline-video-summary { font-size: 12px; color: #003965; }
+@media (pointer: coarse) {
+  .comparison-divider > span { width: 72px; height: 72px; }
 }
 @media (max-width: 600px) {
   .comparison-pair {

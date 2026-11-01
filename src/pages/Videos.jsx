@@ -3,7 +3,11 @@ import PageHeader from '../components/PageHeader';
 import Photo from '../components/Photo';
 import Icon from '../components/Icon';
 import VideoPlayer from '../components/VideoPlayer';
+import OfflineVideoStatus from '../components/OfflineVideoStatus';
+import { useSyncExternalStore } from 'react';
+import { getOfflineVideos, subscribeOfflineVideos } from '../lib/offlineVideos';
 export default function Videos({ video }) {
+  const offlineVideos = useSyncExternalStore(subscribeOfflineVideos, getOfflineVideos);
   if (video)
     return (
       <>
@@ -32,6 +36,7 @@ export default function Videos({ video }) {
         title="From Formulation to Application."
         description="Explore the preparation and specialized spray application behind a Spray-Net transformation."
       />
+      <OfflineVideoStatus />
       {!videos.length && (
         <section className="empty-state">
           <h2>More films to come.</h2>
@@ -52,6 +57,7 @@ export default function Videos({ video }) {
               <p className="eyebrow">{video.eyebrow}</p>
               <h2>{video.title}</h2>
               <p>{video.description}</p>
+              <span className="video-availability">{video.type === 'local' ? offlineVideos.savedUrls.includes(video.url) ? 'Ready Offline' : offlineVideos.phase === 'saving' ? 'Saving for Offline' : 'Not Saved Offline' : 'Internet Required'}</span>
               <span className="text-link">
                 {video.url ? 'Watch the film' : 'Explore the preview'}
                 <Icon name="arrow" size={18} />

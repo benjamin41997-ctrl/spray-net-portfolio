@@ -17,6 +17,7 @@ import Reviews from './pages/Reviews';
 import Videos from './pages/Videos';
 import Why from './pages/Why';
 import VisualizerProvider, { useVisualizer } from './components/VisualizerProvider';
+import OfflineVideoStatus from './components/OfflineVideoStatus';
 
 const Visualizer = lazy(() => import('./pages/Visualizer'));
 
@@ -188,7 +189,7 @@ function Portfolio() {
       </main>
       <footer className="app-footer">
         <span className="offline-status">
-          <span>Portfolio 1.1.0</span>
+          <span>Portfolio 1.1.1</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />
@@ -196,6 +197,7 @@ function Portfolio() {
             </>
           )}
         </span>
+        <OfflineVideoStatus compact />
       </footer>
     </>
   );

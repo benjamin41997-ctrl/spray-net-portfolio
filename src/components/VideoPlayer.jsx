@@ -1,33 +1,64 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { mediaUrl, youtubeEmbed } from '../lib/media';
 import { useOnline } from '../hooks/useOnline';
 import Photo from './Photo';
 import Icon from './Icon';
+import { cachedVideo, getOfflineVideos, subscribeOfflineVideos } from '../lib/offlineVideos';
 
 export default function VideoPlayer({ video }) {
   const online = useOnline();
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState(false);
   const [cached, setCached] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [localSource, setLocalSource] = useState('');
+  const savedVideos = useSyncExternalStore(subscribeOfflineVideos, getOfflineVideos);
+  const objectUrl = useRef('');
+  const mounted = useRef(true);
   const local = video.type === 'local';
   const embed = !local && youtubeEmbed(video.url);
   useEffect(() => {
     let active = true;
-    if (local && 'caches' in window)
-      caches
-        .match(new URL(mediaUrl(video.url), location.href).href)
-        .then((result) => {
-          if (active) setCached(Boolean(result));
+    if (local)
+      cachedVideo(video)
+        .then(async (result) => {
+          if (result && !objectUrl.current) {
+            const blob = await result.blob();
+            if (!active) return;
+            objectUrl.current = URL.createObjectURL(blob);
+            setLocalSource(objectUrl.current);
+          }
+          if (active) { setCached(Boolean(result)); setChecked(true); }
         })
-        .catch(() => {});
+        .catch(() => { if (active) { setCached(false); setChecked(true); } });
     return () => {
       active = false;
     };
-  }, [video.url, local, online]);
+  }, [video.url, local, online, savedVideos.savedUrls]);
   useEffect(() => {
-    setError(false);
-    setPlaying(false);
+    if (online) setError(false);
   }, [online]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); };
+  }, []);
+  async function play() {
+    if (localSource) { setPlaying(true); return; }
+    if (local) {
+      try {
+        const response = await cachedVideo(video);
+        if (response) {
+          const blob = await response.blob();
+          if (!mounted.current) return;
+          if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
+          objectUrl.current = URL.createObjectURL(blob);
+          setLocalSource(objectUrl.current); setCached(true);
+        }
+      } catch { if (!online) { setError(true); return; } }
+    }
+    if (mounted.current) setPlaying(true);
+  }
+  if (!online && local && !checked) return <div className="video-message" role="status"><h3>Checking Saved Video…</h3></div>;
   const unavailable = !online && (!local || !cached);
   if (unavailable)
     return (
@@ -69,7 +100,7 @@ export default function VideoPlayer({ video }) {
     return (
       <button
         className="video-poster"
-        onClick={() => setPlaying(true)}
+        onClick={play}
         aria-label={`Play ${video.title}`}
       >
         <Photo src={video.thumbnail} alt="" eager />
@@ -85,13 +116,14 @@ export default function VideoPlayer({ video }) {
       controls
       autoPlay
       playsInline
+      crossOrigin="anonymous"
       preload="metadata"
       controlsList="nodownload noremoteplayback"
       disablePictureInPicture
       poster={mediaUrl(video.thumbnail)}
       onError={() => setError(true)}
     >
-      <source src={mediaUrl(video.url)} type="video/mp4" onError={() => setError(true)} />
+      <source src={localSource || mediaUrl(video.url)} type="video/mp4" onError={() => setError(true)} />
       {video.captions && (
         <track
           kind="captions"

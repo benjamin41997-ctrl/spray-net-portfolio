@@ -3,8 +3,15 @@ import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { offerAppUpdate } from './lib/appUpdates';
+import { prepareOfflineVideos } from './lib/offlineVideos';
 import './styles.css';
 import './visualizer.css';
+
+// Cache complete local MP4s, rather than relying on partial streaming responses.
+if ('serviceWorker' in navigator) navigator.serviceWorker.ready.then(() => prepareOfflineVideos());
+else prepareOfflineVideos();
+window.addEventListener('online', () => prepareOfflineVideos());
+window.addEventListener('focus', () => prepareOfflineVideos());
 
 // The worker can activate while an old tab is open. Offer a page refresh without
 // interrupting a consultation, including updates installed by another window.
