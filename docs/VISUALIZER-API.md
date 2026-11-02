@@ -189,3 +189,12 @@ The customer has one Create My Preview action using Flare/low. Hidden Consultati
 The app bakes exact selected color names/codes into the bottom-left of the returned image before display, saving and export. Surfaces sharing a color are grouped. Custom instructions can include verified SW codes for the reference label. Unknown original colors are labelled Existing Colors; custom requests without verified references say Colors Not Specified, rather than inventing a code. Original photos are unmodified. Labeling uses no additional AI calls.
 
 Hardware styles are Keep Existing, Knobs, Small Handles and Big Handles. Finishes include Gold and Copper. Legacy hardware identifiers remain accepted for compatibility.
+
+
+### Surface analysis and revisions (1.4.0)
+
+`POST /api/analyze` accepts `{image, mode}` with the existing tablet bearer token. Optional `{feedback, previousRegions}` requires the operator header. The response is `{regions:[{surface,description,polygons:[[{x,y}]]}],model}`. Coordinates are normalized 0..1000. No photographs, region descriptions or correction text are stored by the Worker. Its `analysisUsage` Durable Object record stores only quota counters/timestamps, independently of image render usage (60/day, 30/hour, 1-second interval). The local Node adapter uses a separate `.analysis` usage ledger. Requests use GPT-6 Luna, Responses, `store:false`, strict schema, a 60-second timeout and no retries. Each selected photo/type is cached in consultation memory; surface switching makes no new API request.
+
+`POST /api/render` additionally accepts optional `regions`, `corrections` (up to five notes, 1,500 characters each), and `correction:{image,feedback}`. Any correction notes or revision require operator authorization. A revision sends two Images API references: the original home first and the previous unlabelled preview second. Original geometry remains authoritative. Regular previews still send only the original photograph. Each image is validated against the existing 6 MiB decoded limit; combined request bodies are bounded to twice the original request allowance. Validated surface guides and correction notes are supplied in the edit prompt. No model output or provider error body is logged. Preview labels are added locally after generation, keeping guide overlays and previous labels out of future model inputs.
+
+The public health response identifies this service release with `X-Visualizer-Release: 2026-11-01.7`. Image model/quality settings and persistent tablet passwords are unchanged by this release.

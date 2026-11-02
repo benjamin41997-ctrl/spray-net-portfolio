@@ -1,3 +1,4 @@
+import {analyzePhoto, surfaceKeys, validateRegions} from './regions.mjs';
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, MAX_RESPONSE_BYTES, validateImage } from './images.mjs';
 import { secretMatches, tabletCredentials } from './pairing.mjs';
@@ -39,13 +40,13 @@ async function readBounded(body, limit, tooLarge, signal) {
   return Buffer.concat(chunks, length).toString('utf8');
 }
 
-async function parseBody(request) {
+async function parseBody(request, maximum = MAX_BODY_BYTES) {
   if (!/^application\/json(?:\s*;.*)?$/i.test(request.headers.get('content-type') || '')) throw new ApiError(415, 'unsupported_type', 'Send the photograph as a JSON request.');
   if (request.headers.has('content-encoding') && request.headers.get('content-encoding') !== 'identity') throw new ApiError(415, 'unsupported_encoding', 'Compressed requests are not supported.');
   const length = request.headers.get('content-length');
-  if (length && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) throw new ApiError(413, 'image_too_large', 'The prepared photograph must be smaller than 6 MB.');
+  if (length && (!/^\d+$/.test(length) || Number(length) > maximum)) throw new ApiError(413, 'image_too_large', 'The prepared photograph must be smaller than 6 MB.');
   const uploadSignal = AbortSignal.any([request.signal, AbortSignal.timeout(30_000)]);
-  const value = await readBounded(request.body, MAX_BODY_BYTES, new ApiError(413, 'image_too_large', 'The prepared photograph must be smaller than 6 MB.'), uploadSignal);
+  const value = await readBounded(request.body, maximum, new ApiError(413, 'image_too_large', 'The prepared photograph must be smaller than 6 MB.'), uploadSignal);
   try {
     return JSON.parse(value);
   } catch {
@@ -64,8 +65,8 @@ async function render(body, design, request, config, fetchImpl) {
       signal,
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        images: [{ image_url: body.image }],
-        prompt: buildPrompt(design.design, design.customPrompt),
+        images: [{ image_url: body.image }, ...(design.correction ? [{image_url:design.correction.image}] : [])],
+        prompt: buildPrompt(design.design, design.customPrompt, design),
         model,
         quality,
         size: 'auto',
@@ -104,11 +105,11 @@ async function render(body, design, request, config, fetchImpl) {
   }
 }
 
-export function createApi({ config, catalog, reserve, reserveConnection, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
+export function createApi({ config, catalog, reserve, reserveAnalysis = reserve, reserveConnection, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.6', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.7', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -118,7 +119,7 @@ export function createApi({ config, catalog, reserve, reserveConnection, fetchIm
         headers['Access-Control-Allow-Origin'] = origin;
       }
       const path = new URL(request.url).pathname;
-      if (!['/api/health', '/api/session', '/api/render', '/api/connect'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
+      if (!['/api/health', '/api/session', '/api/render', '/api/connect', '/api/analyze'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
       if (request.method === 'OPTIONS') {
         const method = request.headers.get('access-control-request-method');
         const requestedHeaders = (request.headers.get('access-control-request-headers') || '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
@@ -128,7 +129,7 @@ export function createApi({ config, catalog, reserve, reserveConnection, fetchIm
         headers['Access-Control-Max-Age'] = '600';
         return new Response(null, { status: 204, headers });
       }
-      if ((['/api/render','/api/connect'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
+      if ((['/api/render','/api/connect','/api/analyze'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
       if (path === '/api/health') return json({ configured: config.configured });
       if (!config.configured) throw new ApiError(503, 'not_configured', 'Ask your representative to connect the rendering service.');
       if (path === '/api/connect') {
@@ -148,10 +149,20 @@ export function createApi({ config, catalog, reserve, reserveConnection, fetchIm
       if (busy) throw new ApiError(429, 'render_in_progress', 'A rendering is already being created. Please wait for it to finish.', 10);
       busy = true;
       acquired = true;
-      const body = await parseBody(request);
+      const body = await parseBody(request, path==='/api/render' ? MAX_BODY_BYTES*2 : MAX_BODY_BYTES);
+      if(path==='/api/analyze') {
+        if(!body || Array.isArray(body) || Object.keys(body).some(key=>!['image','mode','feedback','previousRegions'].includes(key)) || !Object.hasOwn(surfaceKeys,body.mode)) throw new ApiError(400,'invalid_analysis','Choose a kitchen or exterior photograph.');
+        if(body.feedback!==undefined && (typeof body.feedback!=='string' || !body.feedback.trim() || body.feedback.length>1500)) throw new ApiError(400,'invalid_analysis','Describe the surface correction in up to 1,500 characters.');
+        if(body.feedback && !operatorAuthorized(request,config,paired)) throw new ApiError(403,'operator_required','Surface corrections require representative access.');
+        if(body.previousRegions!==undefined) body.previousRegions=validateRegions(body.previousRegions,body.mode);
+        validateImage(body.image); await reserveAnalysis();
+        return json(await analyzePhoto(body,request,config,fetchImpl,readBounded));
+      }
       const design = validateDesign(body, catalog);
       if (design.quality === 'detail' && !operatorAuthorized(request, config, paired)) throw new ApiError(403,'operator_required','Detailed previews require representative access.');
-      if (design.customPrompt && !operatorAuthorized(request, config, paired)) throw new ApiError(403, 'operator_required', 'Connect this tablet with the representativeâ€™s password to use custom instructions.');
+      if (design.customPrompt && !operatorAuthorized(request, config, paired)) throw new ApiError(403, 'operator_required', 'Connect this tablet with the representative\'s password to use custom instructions.');
+      if((design.correction || design.corrections.length) && !operatorAuthorized(request,config,paired)) throw new ApiError(403,'operator_required','Corrections require representative access.');
+      if(design.correction) validateImage(design.correction.image);
       validateImage(body.image);
       // Reserve before making the billable request. Failed/aborted attempts also count.
       await reserve();

@@ -97,7 +97,7 @@ function restorePhoto(photo) {
 
 function restoreRecord(record) {
   if (!record) return null;
-  return { ...record, originalPhoto: restorePhoto(record.originalPhoto), renderPhoto: restorePhoto(record.renderPhoto) };
+  return { ...record, originalPhoto: restorePhoto(record.originalPhoto), renderPhoto: restorePhoto(record.renderPhoto), ...(record.rawRenderPhoto?{rawRenderPhoto:restorePhoto(record.rawRenderPhoto)}:{}) };
 }
 
 /**
@@ -105,7 +105,7 @@ function restoreRecord(record) {
  * Resolves only after IndexedDB has committed both images and the design.
  * Browser storage is not a backup: clearing site data removes saved images.
  */
-export async function saveRender({ originalPhoto, renderPhoto, design, photoId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
+export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, corrections = [], regions = [], design, photoId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
   assertImage(originalPhoto, 'Original photo');
   assertImage(renderPhoto, 'Rendering');
   if (!design || typeof design !== 'object' || Array.isArray(design)) {
@@ -121,6 +121,7 @@ export async function saveRender({ originalPhoto, renderPhoto, design, photoId, 
     originalPhoto,
     renderPhoto,
     design: structuredClone(design),
+    corrections:structuredClone(corrections), regions:structuredClone(regions),
     ...(typeof photoId === 'string' && photoId.length <= 128 ? {photoId} : {}),
   };
   // Some WebKit environments cannot persist native Blob objects in IndexedDB.
@@ -131,6 +132,7 @@ export async function saveRender({ originalPhoto, renderPhoto, design, photoId, 
     originalPhoto: { bytes: originalBytes, type: originalPhoto.type },
     renderPhoto: { bytes: renderBytes, type: renderPhoto.type },
   };
+  if(rawRenderPhoto){assertImage(rawRenderPhoto,'Original rendering');storedRecord.rawRenderPhoto={bytes:await rawRenderPhoto.arrayBuffer(),type:rawRenderPhoto.type};record.rawRenderPhoto=rawRenderPhoto;}
   await transact('readwrite', (store) => store.put(storedRecord));
 
   // Persistence is a best-effort browser safeguard, not a guarantee or a sync.

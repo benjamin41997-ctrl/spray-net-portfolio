@@ -16,9 +16,10 @@ const generatedImage = `data:image/webp;base64,${(await readFile(new URL(`../pub
 
 test.use({ serviceWorkers: 'block' });
 
-async function stubService(page, { holdFirstRender = false } = {}) {
+async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false } = {}) {
   await page.addInitScript(endpoint => localStorage.setItem('spray-net-render-endpoint',endpoint),endpoint);
-  const renders = [];
+  const renders = []; const analyses=[];
+  let releaseAnalysis;const analysisGate=new Promise(resolve=>{releaseAnalysis=resolve;});
   let release;
   const firstRenderGate = new Promise(resolve => { release = resolve; });
   await page.route(`${endpoint}/api/**`, async route => {
@@ -37,6 +38,13 @@ async function stubService(page, { holdFirstRender = false } = {}) {
       await route.fulfill({status:valid?200:401,contentType:'application/json',headers,body:JSON.stringify(valid?{ready:true,token:accessCode,operatorToken:operatorCode,operatorAuthorized:true}:{error:{message:'That password is incorrect. Please try again.'}})});
       return;
     }
+    if(request.url().endsWith('/api/analyze')) {
+      analyses.push({body:request.postDataJSON(),operator:request.headers()['x-visualizer-operator']});
+      if(holdFirstAnalysis && analyses.length===1)await analysisGate;
+      const mode=request.postDataJSON().mode;
+      const keys=mode==='exterior'?['siding','siding2','frontDoor','garageDoor','soffits','fascia','windows','trim','vents']:['cabinets','upperCabinets','lowerCabinets','island'];
+      await route.fulfill({status:200,contentType:'application/json',headers,body:JSON.stringify({regions:keys.map((surface,index)=>({surface,description:`Detected ${surface}`,polygons:surface==='siding2'?[]:[[{x:100+index*10,y:100},{x:500,y:100},{x:500,y:500},{x:100,y:500}]]}))})});return;
+    }
     if (request.url().endsWith('/api/render')) {
       renders.push({ body: request.postDataJSON(), authorization: request.headers().authorization });
       if (holdFirstRender && renders.length === 1) await firstRenderGate;
@@ -45,7 +53,7 @@ async function stubService(page, { holdFirstRender = false } = {}) {
     }
     await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ ready: true, operatorAuthorized:request.headers()['x-visualizer-operator'] === operatorCode }) });
   });
-  return { renders, release };
+  return { renders, analyses, release, releaseAnalysis };
 }
 
 async function openTools(page) {
@@ -67,7 +75,7 @@ async function openAndConnect(page) {
 async function uploadPhoto(page) {
   await page.getByLabel('Choose home photo', { exact: true }).setInputFiles({ name: 'kitchen.webp', mimeType: 'image/webp', buffer: photo });
   await expect(page.getByAltText('Original photo of your home', { exact: true })).toBeVisible();
-  await expect(page.getByText('Preparing Your Photoâ€¦', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Preparing Your Photo...', { exact: true })).toHaveCount(0);
 }
 
 async function selectColor(page, surface, color) {
@@ -86,7 +94,7 @@ async function selectColor(page, surface, color) {
 
 async function expectSaved(page, count = 1) {
   await expect(page.locator('.viz-look-strip button')).toHaveCount(count);
-  await expect(page.getByText('Saved on This Tablet', { exact: true })).toBeVisible();
+  await expect(page.getByText('Saved on This Tablet', { exact: true })).toHaveCount(0);
   await expect(page.getByAltText('AI design preview of the selected finishes', { exact: true })).toBeVisible();
 }
 
@@ -515,4 +523,75 @@ test('customers have one preview action and the detailed action is in private to
  await page.getByLabel('Hardware Style',{exact:true}).selectOption('big-handle');
  await page.getByLabel('Hardware Finish',{exact:true}).selectOption('copper');
  await openTools(page);await expect(page.getByRole('button',{name:'Create Detailed Preview',exact:true})).toBeVisible();
+});
+
+
+test('eight photos stay in two rows on the left and the working photo fills the right side',async({page})=>{
+  await stubService(page);await openAndConnect(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(Array.from({length:8},(_,i)=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
+  await expect(page.getByRole('button',{name:'Select Photo 8',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Two Tone',exact:true}).click();
+  for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1024,height:768}]) {
+    await page.setViewportSize(viewport);
+    const geometry=await page.evaluate(()=>{
+      const thumbs=[...document.querySelectorAll('.viz-photo-thumb')].map(e=>e.getBoundingClientRect());
+      const photo=document.querySelector('.viz-photo-stage').getBoundingClientRect();
+      return {rows:new Set(thumbs.map(r=>Math.round(r.top))).size,left:thumbs.every(r=>r.right<=photo.left),width:photo.width,height:photo.height,overflow:document.querySelector('main').scrollHeight>document.querySelector('main').clientHeight+1};
+    });
+    expect(geometry.rows).toBe(2);expect(geometry.left).toBe(true);expect(geometry.width).toBeGreaterThan(viewport.width*.6);expect(geometry.height).toBeGreaterThan(240);expect(geometry.overflow).toBe(false);
+  }
+});
+
+test('surface highlights follow the selected exterior area, show absent areas, and reuse one analysis',async({page})=>{
+  const api=await stubService(page);await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
+  await expect(page.getByRole('img',{name:'Approximate detected area: Detected siding',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Siding 2',exact:true}).click();
+  await expect(page.locator('.viz-detection')).toContainText('Not Clearly Visible');await expect(page.locator('.viz-region-overlay')).toHaveCount(0);
+  await page.getByRole('button',{name:'Front Door',exact:true}).click();
+  await expect(page.getByRole('img',{name:'Approximate detected area: Detected frontDoor',exact:true})).toBeVisible();
+  expect(api.analyses).toHaveLength(1);expect(api.renders).toHaveLength(0);
+  await page.getByRole('button',{name:'Hide Highlight',exact:true}).click();await expect(page.locator('.viz-region-overlay')).toHaveCount(0);
+});
+
+test('representative corrections send original and previous preview, retain notes, and save each new look',async({page})=>{
+  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  await expect(page.getByRole('button',{name:'Correct This Preview',exact:true})).toHaveCount(0);
+  await openTools(page);await page.getByRole('button',{name:'Correct This Preview',exact:true}).click();
+  await page.getByLabel('What Should We Fix?',{exact:true}).fill('Restore the brick and recolor only the siding above the garage.');
+  await page.getByRole('button',{name:'Apply Correction',exact:true}).click();await expectSaved(page,2);
+  expect(api.renders[1].body.image).toBe(api.renders[0].body.image);
+  expect(api.renders[1].body.correction.image).toBe(generatedImage);
+  expect(api.renders[1].body.correction.feedback).toContain('Restore the brick');
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,3);
+  expect(api.renders[2].body.correction).toBeUndefined();expect(api.renders[2].body.corrections).toEqual([api.renders[1].body.correction.feedback]);
+});
+
+test('detected areas can be corrected before spending an image rendering attempt',async({page})=>{
+  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');
+  await openTools(page);await page.getByRole('button',{name:'Correct Detected Areas',exact:true}).click();
+  await page.getByLabel('What Should We Fix?',{exact:true}).fill('The island is the cabinet in the foreground, not the wall cabinets.');
+  await page.getByRole('button',{name:'Update Detected Areas',exact:true}).click();
+  await expect.poll(()=>api.analyses.length).toBe(2);
+  expect(api.analyses[1].operator).toBe(operatorCode);expect(api.analyses[1].body.previousRegions.length).toBeGreaterThan(0);expect(api.analyses[1].body.feedback).toContain('foreground');expect(api.renders).toHaveLength(0);
+});
+
+
+test('rapid photo switching queues detection and skips unselected waiting photos',async({page})=>{
+  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(Array.from({length:3},(_,i)=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
+  await expect.poll(()=>api.analyses.length).toBe(1);
+  await page.getByRole('button',{name:'Select Photo 2',exact:true}).click();await page.getByRole('button',{name:'Select Photo 3',exact:true}).click();
+  expect(api.analyses).toHaveLength(1);api.releaseAnalysis();
+  await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.analyses).toHaveLength(2);
+  await page.getByRole('button',{name:'Select Photo 2',exact:true}).click();await expect.poll(()=>api.analyses.length).toBe(3);
+  await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.renders).toHaveLength(0);
+});
+
+test('stopping while surface analysis is pending does not later dispatch a render',async({page})=>{
+  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.getByRole('button',{name:'Stop Waiting',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Stop Waiting',exact:true}).click();await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeEnabled();
+  api.releaseAnalysis();await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.renders).toHaveLength(0);
 });

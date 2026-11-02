@@ -176,8 +176,8 @@ test('requires bounded JSON and actual image signatures', async () => {
   assert.equal((await h.api(request(undefined, { raw: '{' }))).status, 400);
   assert.equal((await h.api(request(undefined, { headers: { 'Content-Type': 'text/plain' } }))).status, 415);
   assert.equal((await h.api(request(undefined, { headers: { 'Content-Encoding': 'gzip' } }))).status, 415);
-  assert.equal((await h.api(request(undefined, { headers: { 'Content-Length': String(MAX_BODY_BYTES + 1) } }))).status, 413);
-  assert.equal((await h.api(request(undefined, { raw: 'x'.repeat(MAX_BODY_BYTES + 1) }))).status, 413);
+  assert.equal((await h.api(request(undefined, { headers: { 'Content-Length': String(MAX_BODY_BYTES * 2 + 1) } }))).status, 413);
+  assert.equal((await h.api(request(undefined, { raw: 'x'.repeat(MAX_BODY_BYTES * 2 + 1) }))).status, 413);
   assert.throws(() => validateImage('data:image/jpeg;base64,' + Buffer.from('not an image').toString('base64')));
   assert.throws(() => validateImage('data:image/svg+xml;base64,' + Buffer.from('<svg/>').toString('base64')));
   assert.throws(() => validateImage(image, 3));
@@ -425,4 +425,35 @@ test('failed quota persistence prevents provider calls', async () => {
   const h = harness({ reserve: () => { throw new ApiError(503, 'quota_unavailable', 'Unavailable'); } });
   assert.equal((await h.api(request())).status, 503);
   assert.equal(h.calls.length, 0);
+});
+
+
+test('surface analysis is bounded, authenticated, stateless, and uses a separate usage reservation',async()=>{
+  let analyses=0;const calls=[];
+  const regions=[{surface:'siding',description:'Horizontal siding above garage',polygons:[[{x:10,y:20},{x:500,y:20},{x:500,y:300}]]}];
+  const analyze=createApi({config,catalog,reserve:()=>{throw Error('render quota used');},reserveAnalysis:()=>{analyses++;},fetchImpl:async(url,init)=>{calls.push([url,JSON.parse(init.body)]);return new Response(JSON.stringify({output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({regions})}]}]}));}});
+  const result=await analyze(request({image,mode:'exterior'},{path:'/api/analyze'}));
+  assert.equal(result.status,200);assert.deepEqual((await result.json()).regions,regions);assert.equal(analyses,1);assert.equal(calls.length,1);
+  assert.equal(calls[0][0],'https://api.openai.com/v1/responses');assert.equal(calls[0][1].model,'gpt-6-luna');assert.equal(calls[0][1].store,false);assert.equal(calls[0][1].text.format.strict,true);
+  assert.equal((await analyze(request({image,mode:'exterior',feedback:'Fix the siding'},{path:'/api/analyze'}))).status,403);
+  assert.equal((await analyze(request({image,mode:'invalid'},{path:'/api/analyze'}))).status,400);
+  assert.equal((await analyze(request({image,mode:'exterior'},{path:'/api/analyze',headers:{Authorization:''}}))).status,401);assert.equal(analyses,1);
+});
+
+test('revisions require operator access and use both original and previous preview with bounded correction memory',async()=>{
+  const h=harness({config:passwordConfig});const headers={'X-Visualizer-Operator':passwordConfig.operatorToken};
+  const body={...payload(),correction:{image,feedback:'Restore the untouched brick.'},corrections:['Restore the untouched brick.'],regions:[{surface:'cabinets',description:'Cabinet fronts',polygons:[[{x:10,y:10},{x:900,y:10},{x:900,y:900}]]}]};
+  assert.equal((await h.api(request(body))).status,403);assert.equal(h.reservations,0);
+  assert.equal((await h.api(request(body,{headers}))).status,200);
+  const sent=JSON.parse(h.calls[0][1].body);assert.equal(sent.images.length,2);assert.deepEqual(sent.images,[{image_url:image},{image_url:image}]);assert.match(sent.prompt,/Image 1 is the ORIGINAL/);assert.match(sent.prompt,/Restore the untouched brick/);assert.match(sent.prompt,/Approximate surface guides/);
+  assert.equal((await h.api(request({...body,corrections:Array(6).fill('note')},{headers}))).status,400);
+  assert.equal((await h.api(request({...body,correction:{image:'https://bad.example/photo',feedback:'Fix siding'}},{headers}))).status,400);
+  assert.equal((await h.api(request({...body,regions:[{...body.regions[0],polygons:[[{x:-1,y:0},{x:5,y:0},{x:5,y:5}]]}]},{headers}))).status,400);assert.equal(h.reservations,1);
+});
+
+test('invalid or refused surface results fail gracefully without retrying',async()=>{
+  for(const output of [{status:'incomplete',output:[]},{output:[{type:'message',content:[{type:'refusal'}]}]},{output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({regions:[{surface:'siding',description:'bad',polygons:[[{x:2000,y:0},{x:0,y:0},{x:0,y:50}]]}]})}]}]}]) {
+    let calls=0;const api=createApi({config,catalog,reserve:()=>{},fetchImpl:async()=>{calls++;return new Response(JSON.stringify(output));}});
+    const result=await api(request({image,mode:'exterior'},{path:'/api/analyze'}));assert.equal(result.status,502);assert.equal((await result.json()).error.code,'analysis_failed');assert.equal(calls,1);
+  }
 });

@@ -23,7 +23,7 @@ test('saved renderings retain both photos and selections across reloads and can 
     const originalPhoto = new Blob(['original photo'], { type: 'image/jpeg' });
     const renderPhoto = new Blob(['generated image'], { type: 'image/png' });
     await saveRender({
-      id: 'first', originalPhoto, renderPhoto,
+      id: 'first', originalPhoto, renderPhoto,rawRenderPhoto:new Blob(['unlabelled'],{type:'image/webp'}),corrections:['Keep the brick unchanged.'],regions:[],
       design: { room: 'kitchen', cabinetColor: 'Chantilly Lace', twoTone: true },
       consultationLabel: '  Kitchen Consultation  ', createdAt: '2026-10-29T12:00:00Z',
     });
@@ -39,7 +39,7 @@ test('saved renderings retain both photos and selections across reloads and can 
       label: first.consultationLabel,
       design: first.design,
       original: await first.originalPhoto.text(),
-      rendered: await first.renderPhoto.text(),
+      rendered: await first.renderPhoto.text(), raw:await first.rawRenderPhoto.text(), corrections:first.corrections,
       countBefore: (await storageSummary()).count,
     };
     await deleteRender('first');
@@ -50,7 +50,7 @@ test('saved renderings retain both photos and selections across reloads and can 
   expect(stored).toEqual({
     order: ['second', 'first'], label: 'Kitchen Consultation',
     design: { room: 'kitchen', cabinetColor: 'Chantilly Lace', twoTone: true },
-    original: 'original photo', rendered: 'generated image', countBefore: 2, deleted: null, countAfter: 1,
+    original: 'original photo', rendered: 'generated image', raw:'unlabelled', corrections:['Keep the brick unchanged.'],countBefore: 2, deleted: null, countAfter: 1,
   });
 });
 

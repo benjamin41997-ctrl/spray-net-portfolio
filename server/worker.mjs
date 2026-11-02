@@ -14,6 +14,10 @@ export class VisualizerGate {
         const previous = await transaction.get('connectionAttempts');
         await transaction.put('connectionAttempts', reserveConnectionAttempt(previous, connectionFingerprint(request)));
       }),
+      reserveAnalysis: () => state.storage.transaction(async transaction => {
+        const previous=await transaction.get('analysisUsage');
+        await transaction.put('analysisUsage',reserveAttempt(previous,{...config,maxDaily:60,maxHourly:30,minIntervalMs:1000}));
+      }),
       reserve: () => state.storage.transaction(async transaction => {
         const previous = await transaction.get('usage');
         const next = reserveAttempt(previous, config);

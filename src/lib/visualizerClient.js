@@ -40,7 +40,7 @@ export async function connectTablet(password) {
 export async function callVisualizer(path, { endpoint, token, operatorToken, body, signal }) {
   const response = await fetch(`${normalizeEndpoint(endpoint)}${path}`, {
     method: body ? 'POST' : 'GET', mode: 'cors', cache: 'no-store', credentials: 'omit',
-    headers: { ...(token ? {Authorization:`Bearer ${token}`} : {}), ...(operatorToken && (path === '/api/session' || body?.customPrompt || body?.quality === 'detail') ? { 'X-Visualizer-Operator':operatorToken } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    headers: { ...(token ? {Authorization:`Bearer ${token}`} : {}), ...(operatorToken && (path === '/api/session' || body?.customPrompt || body?.feedback || body?.correction || body?.corrections?.length || body?.quality === 'detail') ? { 'X-Visualizer-Operator':operatorToken } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}), signal,
   });
   const data = await response.json().catch(() => null);
