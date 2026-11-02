@@ -5,7 +5,6 @@ import {consultationFixture,accessToken,operatorToken} from './consultation-fixt
 import {projects} from '../src/data/projects.js';
 
 const endpoint='https://consultation-sync-test.invalid';
-const photo=await readFile(new URL('../public/'+projects[0].beforeImage,import.meta.url));
 const renderImage='data:image/webp;base64,'+(await readFile(new URL('../public/'+projects[0].afterImage,import.meta.url))).toString('base64');
 async function tools(page) {const button=page.getByRole('group',{name:'Project type'}).locator('button[aria-pressed=true]');for(let i=0;i<8;i++)await button.click();await expect(page.getByRole('heading',{name:'Consultation Tools',exact:true})).toBeVisible();}
 async function install(context,h) {
@@ -17,6 +16,23 @@ async function install(context,h) {
 }
 async function upload(page) {await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(fileURLToPath(new URL('../public/'+projects[0].beforeImage,import.meta.url)));await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();}
 async function create(page) {await page.getByLabel('Find a Color',{exact:true}).fill('SW7008');await page.locator('.viz-swatch').first().click();await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.locator('.viz-look-strip button')).toHaveCount(1);}
+
+async function offlineControl(context,page,browserName) {
+  if(browserName!=='webkit')return offline=>context.setOffline(offline);
+  // Playwright WebKit's native offline emulation also blocks local FileReader
+  // access on Windows and Linux. Block HTTP traffic instead, while delivering
+  // the same browser connectivity state/events and leaving local files usable.
+  let disconnected=false;
+  await context.route('**/*',route=>disconnected && /^https?:/.test(route.request().url())?route.abort('internetdisconnected'):route.fallback());
+  return async offline=>{
+    disconnected=offline;
+    await page.evaluate(value=>{
+      if(value)Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>false});
+      else delete navigator.onLine;
+      window.dispatchEvent(new Event(value?'offline':'online'));
+    },offline);
+  };
+}
 
 test('two tablets share originals and renders, clear after one hour, and reopen a named consultation for more work',async({browser,baseURL})=>{
   test.setTimeout(120_000);
@@ -42,17 +58,17 @@ test('two tablets share originals and renders, clear after one hour, and reopen 
 });
 
 test('offline originals and previews stay queued locally and sync once connectivity returns',async({browser,baseURL,browserName})=>{
-  test.skip(process.platform==='win32' && browserName==='webkit','Windows WebKit rejects reading selected local files in offline mode; Linux CI covers native offline selection.');
   test.setTimeout(120_000);const h=consultationFixture({origin:new URL(baseURL).origin,renderImage});
   const one=await browser.newContext({serviceWorkers:'block'}),two=await browser.newContext({serviceWorkers:'block'});await Promise.all([install(one,h),install(two,h)]);
   const rep=await one.newPage(),other=await two.newPage();
+  const setOffline=await offlineControl(one,rep,browserName);
   try{
     await rep.goto(baseURL+'#/visualize');await tools(rep);await expect(rep.getByRole('heading',{name:'Shared Consultations',exact:true})).toBeVisible();await rep.getByLabel('Consultation Name',{exact:true}).fill('Offline Visit');await rep.getByRole('button',{name:'Start a New Consultation',exact:true}).click();
-    await expect.poll(async()=>Boolean((await h.request('/api/consultations/active').then(r=>r.json())).active)).toBe(true);await expect(rep.locator('.viz-sync-status')).toContainText('Synced');await one.setOffline(true);await upload(rep);await expect(rep.locator('.viz-sync-status')).toContainText('Offline');
+    await expect.poll(async()=>Boolean((await h.request('/api/consultations/active').then(r=>r.json())).active)).toBe(true);await expect(rep.locator('.viz-sync-status')).toContainText('Synced');await setOffline(true);await upload(rep);await expect(rep.locator('.viz-sync-status')).toContainText('Offline');
     expect((await h.request('/api/consultations/active').then(r=>r.json())).active.photos).toHaveLength(0);
-    await one.setOffline(false);await rep.reload();await other.goto(baseURL+'#/visualize');await expect(other.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible({timeout:25000});await expect(rep.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();
+    await setOffline(false);await rep.reload();await other.goto(baseURL+'#/visualize');await expect(other.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible({timeout:25000});await expect(rep.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();
     await create(rep);await expect(other.locator('.viz-look-strip button')).toHaveCount(1,{timeout:20000});expect(h.renders).toBe(1);
-  }finally{await one.setOffline(false);await one.close();await two.close();}
+  }finally{await setOffline(false);await one.close();await two.close();}
 });
 
 test('a failed shared upload survives reload and retries without duplicating the original',async({browser,baseURL})=>{
