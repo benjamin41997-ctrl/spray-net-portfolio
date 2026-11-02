@@ -9,6 +9,7 @@ import { navigate } from '../lib/navigation';
 import { useOperatorUnlock } from '../hooks/useOperatorUnlock';
 import VisualizerPhotoView from '../components/VisualizerPhotoView';
 import VisualizerCorrection from '../components/VisualizerCorrection';
+import ConsultationLibrary from '../components/ConsultationLibrary';
 import VisualizerPhotos from '../components/VisualizerPhotos';
 import VisualizerConnection from '../components/VisualizerConnection';
 import VisualizerCabinets from '../components/VisualizerCabinets';
@@ -77,6 +78,7 @@ export default function Visualizer() {
     pair(); return () => { active = false; };
   }, []);
   useEffect(() => () => { photoEpoch.current += 1; }, []);
+  useEffect(()=>{const changed=()=>{setArchived(null);setSaved([]);setBefore(false);setCorrectionTarget(null);setSurface('siding');setTone('dark');};window.addEventListener('consultation-switched',changed);return()=>window.removeEventListener('consultation-switched',changed);},[]);
   useEffect(()=>{const clear=()=>{setCorrectionTarget(null);setArchived(null);setSaved([]);setToolsOpen(false);setCustomPrompt('');};window.addEventListener('portfolio-session-reset',clear);return()=>window.removeEventListener('portfolio-session-reset',clear);},[]);
   useEffect(() => { if (fullscreen) fullscreenDialog.current?.showModal(); else fullscreenDialog.current?.close(); }, [fullscreen]);
   const layout = cabinetLayout(v.design.surfaces);
@@ -115,7 +117,7 @@ export default function Visualizer() {
       catch (e) { failures.push('Photo '+(index+1)+': '+e.message); }
     }
     if (epoch !== photoEpoch.current) return;
-    v.addPhotos(prepared); setArchived(null); setBefore(false); setLoadingPhoto(false);
+    try{await v.addPhotos(prepared);}catch(e){v.setError(e.message);setLoadingPhoto(false);return;} setArchived(null); setBefore(false); setLoadingPhoto(false);
     if (failures.length) v.setError(failures.join(' '));
   }
   function switchMode(mode) { if (mode === v.design.mode) return; v.switchMode(mode);setArchived(null);setBefore(false);setShowHighlight(true); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); }
@@ -132,10 +134,11 @@ export default function Visualizer() {
     <h1 className="sr-only" tabIndex={-1}>Design Visualizer</h1>
     <div className="viz-toolbar"><div className="chips" role="group" aria-label="Project type">
       {['kitchen','exterior'].map(mode => <button {...unlock} key={mode} className={`chip ${v.design.mode === mode ? 'selected' : ''}`} aria-pressed={v.design.mode === mode} disabled={v.busy || loadingPhoto} onClick={event => { if (!unlock.onClick(event)) switchMode(mode); }}>{mode === 'kitchen' ? 'Kitchen & Cabinets' : 'Home Exterior'}</button>)}
-    </div></div>
+    </div>{v.sync.enabled && <span className="viz-sync-status" role="status">{v.sync.status || 'Connecting Tablets...'}</span>}</div>
     {toolsOpen && <section className="viz-tools" aria-label="Consultation tools">
       <div className="viz-tools-heading"><h2>Consultation Tools</h2><button className="button" onClick={closeTools}>Close Tools</button></div>
       <VisualizerConnection connected={connected} online={online} onConnected={data => {setConnected(true);setOperatorReady(Boolean(data.operatorAuthorized));setToolMessage('');}} onForgotten={() => {setConnected(false);setOperatorReady(false);setCustomPrompt('');setToolMessage('');}} />
+      {v.sync.enabled && <ConsultationLibrary sync={v.sync} busy={v.busy || loadingPhoto} onOpened={()=>{setArchived(null);setSaved([]);setBefore(false);closeTools();}}/>}
       <div className="viz-actions"><button className="button" onClick={loadSaved}>Saved Previews on This Tablet</button></div>
       <p role="status">{toolMessage}</p>
       {!!saved.length && <div className="viz-saved-list">{saved.map(record => <SavedThumb key={record.id} record={record} onSelect={r => { setArchived(r); setBefore(false); }} />)}</div>}
@@ -147,8 +150,8 @@ export default function Visualizer() {
       {!operatorReady && <p>Activate this tablet with your password to enable custom instructions.</p>}
       <label className="viz-label">Custom Instructions<textarea maxLength={1500} rows={4} value={customPrompt} disabled={!operatorReady || v.busy} onChange={e => setCustomPrompt(e.target.value)} placeholder="For example: Keep the upper cabinets white and make only the island a muted sage green. Keep the countertop unchanged." /></label>
       <small>{customPrompt.length} / 1,500 characters</small><div className="viz-actions"><button className="button button-dark" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('preview',customPrompt)}>Create Custom Preview</button><button className="button" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('detail',customPrompt)}>Create Detailed Custom Preview</button></div></div>
-        <label className="viz-label">Consultation Label <span>(Optional)</span><input value={v.label} maxLength={100} placeholder="For finding these previews later" onChange={e => v.setLabel(e.target.value)} /></label>
-        <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setCustomPrompt(''); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>
+        {!v.sync.enabled && <label className="viz-label">Consultation Label <span>(Optional)</span><input value={v.label} maxLength={100} placeholder="For finding these previews later" onChange={e => v.setLabel(e.target.value)} /></label>}
+        {!v.sync.enabled && <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setCustomPrompt(''); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>}
     </section>}
     {v.design.mode==='exterior' && <VisualizerExteriorSteps active={activeSurface} surfaces={v.design.surfaces} onSelect={setSurface} disabled={v.busy}/>}
     <div className="viz-workspace">

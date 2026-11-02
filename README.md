@@ -10,7 +10,7 @@ The portfolio includes cabinet and exterior galleries, instant filters, an acces
 
 **Repository:** [benjamin41997-ctrl/spray-net-portfolio](https://github.com/benjamin41997-ctrl/spray-net-portfolio). Changes pushed to `main` are built, tested, and deployed automatically. Check the [deployment workflow](https://github.com/benjamin41997-ctrl/spray-net-portfolio/actions/workflows/deploy.yml) for completion before testing a new version. The local project is connected to this repository; future updates use the same tablet URL.
 
-For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.4.2. Record the device model, OS/browser version, screen orientation, and steps for any issue.
+For each tablet test, check portrait and landscape layouts, gallery filters, the comparison slider, fullscreen photos, reviews, and video playback. Install from Safari on iPad or Chrome on Android, wait for **Ready offline**, and test again in airplane mode. To see a newly deployed version, open online and tap **Update now** when the update banner appears. The app checks on opening, returning to the foreground, reconnecting, and every 15 minutes while visible. Downloaded releases activate even if an older tab remains open; refreshing afterward loads the new cached shell. The footer identifies this release as Portfolio 1.5.0. Record the device model, OS/browser version, screen orientation, and steps for any issue.
 
 **The collection contains 53 transformations, 18 customer review excerpts, 16 videos, and three reference sheets.** Source attribution is retained in the maintenance data and documentation. The customer app uses a unified Spray-Net voice without franchise-origin notices; unverified locations remain blank. Fictional locations, reviews, illustrations, and the demo animation have been removed from the published media. Read [Media sources and remaining gaps](docs/MEDIA-SOURCES.md) and the per-photo [source manifest](docs/media-sources.json) before adding or relabeling content.
 
@@ -252,12 +252,12 @@ Browser install menu wording varies by OS release. A real tablet check is still 
 In `src/data/settings.js`:
 
 ```js
-inactivityMinutes: 10, // 0 disables automatic reset
+inactivityMinutes: 60, // 0 disables the general inactivity reset
 ```
 
 Pointer, keyboard, touch, scrolling, and local video playback count as activity. After the configured interval, the app returns home, closes any open viewer, and clears current filters and local screen state. It also checks elapsed time when an inactive/background app resumes. Embedded YouTube playback cannot report activity across origins, so choose a timeout longer than your longest film.
 
-No customer data or filter preferences are stored. Browser history remains available for normal Back behavior; the reset does not attempt to erase the browser's history.
+Filter preferences are cleared. Shared consultation originals and renders remain in the private archive; clearing the customer-facing screen does not delete them. Browser history remains available for normal Back behavior; the reset does not attempt to erase browser history. The shared consultation also has its own fixed one-hour expiry, independent of activity.
 
 ## Offline and update behavior
 
@@ -311,7 +311,7 @@ Removed the Marietta review (18 reviews remain), replaced the ambiguous quote ic
 
 Decorative quotation icons on the home review card, reviews introduction, and Why Spray-Net article notes now use the existing Spray-Net emblem. The shared BrandEmblem component uses the local, offline-cached branding asset.
 
-## Design Visualizer — Portfolio 1.1.0
+## Design Visualizer — Current Workflow
 
 Open **Visualizer** from the header or **Visualize Your Home** on the home screen. Choose Kitchen & Cabinets or Home Exterior, take a clear photo or choose up to four photos together per project type, choose surfaces and colors, then select Create My Preview. Detailed previews are available in the hidden consultation tools. Tap a photo thumbnail to switch angles. Uploading or switching photos creates no rendering; each render button processes only the selected photo. The original for that angle is reused for each rendering so successive edits do not compound earlier changes. You can browse the portfolio while generation continues and return through the status banner.
 
@@ -454,3 +454,46 @@ Looks use a two-column grid: Look 1/2, then 3/4, then 5/6, with no horizontal sc
 
 
 Validation for 1.4.2: the production build and all 32 service tests passed. Chromium/WebKit visualizer checks cover exterior-only detection, six Looks wrapping in three rows, tablet fit, correction flows and separate photo libraries. A live detector smoke test on the portfolio's brick-and-stucco example identified stucco as Siding 1 and brick as Siding 2. The sample test made one analysis call and no image render calls; image edits remain on the configured fast model. GitHub Actions runs the complete suite before publishing.
+
+
+## Shared Tablet Consultations — Portfolio 1.5.0
+
+Both tablets must be activated with your existing tablet password and connected to the internet to exchange photos. There is one active consultation for the connected tablet group. Photos are not posted to GitHub or a public image URL.
+
+### At the appointment
+
+1. Open Visualizer. Hold Kitchen & Cabinets (or Home Exterior) for five seconds to open Consultation Tools.
+2. Under **Shared Consultations**, enter a name such as **Smith Kitchen - November 1**, then choose **Start a New Consultation**. You can also upload photos first to create an automatically named consultation and use **Rename Current Consultation** afterward.
+3. Upload up to four kitchen photos and four exterior photos. Original photos are saved, even before you make a render. Wait for **Synced to Shared Consultation**. The other activated tablet fetches changes automatically, normally within about five seconds while open; larger image transfers can take longer.
+4. Hand the other tablet to the homeowner. Open Visualizer there if it is on the home page. Its photos and any sample Looks will be available. The homeowner can choose colors and make more Looks, or browse the rest of the portfolio. Photo selection and unrendered color choices are independent on each tablet; saved Looks sync to both.
+5. Every finished Look retains its exact labelled image, unlabelled image used for corrections, original photo, finish selections and correction notes. A visible sync error means the data has not yet reached shared storage. Use **Retry Sync** in your tools after resolving the connection.
+
+### Clearing the customer session
+
+The active consultation clears on both tablets **one hour after it starts or is reopened**, even if the homeowner is still tapping. Clearing returns the app to Home and clears its customer-facing photos, Looks and filters. It does **not** delete the named consultation. Background/sleeping tablets check on waking. An offline tablet also enforces the cached expiry locally. Use **End Customer Session** to clear both tablets earlier while online. The general portfolio inactivity reset is now 60 minutes.
+
+### Follow up later
+
+Open Consultation Tools → **Saved Consultations**, search for the name, and choose **Open**. The original photos and all saved Looks load again, and a fresh one-hour customer session begins on the connected tablets. Select a photo and use the normal color controls for a future render, or select a Look to review it. Use **Save Image** or **Share Image** in the hidden tools for email attachments or your tablet's share sheet. The app does not send email automatically.
+
+**Delete** in the shared library permanently removes that consultation's originals and Looks from shared storage after confirmation. It is separate from the automatic one-hour clear. Existing previews made before 1.5.0 remain in **Saved Previews on This Tablet**; they are not silently uploaded or reassigned to another customer.
+
+### Connections and offline behavior
+
+Uploads and finished renders enter a persistent local sync queue before showing as complete. If the connection drops, keep the originating tablet's site data intact and reopen it online to resume syncing. Repeated uploads use the same IDs, preventing duplicate photos/Looks. New AI rendering requires internet. Existing active-session images and previously opened image files can be viewed from local storage offline. Unsynced items are retained locally even after the customer-facing hour expires, so they can finish uploading into the archive later. Clearing browser/site data before syncing removes those unsynced items.
+
+When there are unsynced items, let them finish before opening or deleting another saved consultation. The active consultation status shows pending uploads and errors rather than claiming a cloud save succeeded. Both devices must be online for automatic exchange; a closed or suspended app catches up when reopened.
+
+### Storage and deployment
+
+Shared metadata is in the existing Cloudflare Durable Object, and media is in the private R2 bucket **spray-net-portfolio-consultations**, bound as `CONSULTATION_MEDIA`. Bucket public access remains disabled. The Worker authenticates all metadata and image requests. Shared-library listing, naming, reopening and deletion require the representative credential; ordinary tablet access can use the active consultation.
+
+Current protective limits: 1,000 consultations, 120 Looks per consultation, four photos per project type, 6 MiB per stored image and 2 GiB of shared media for this app. Reaching a limit shows an error; originals and local queued items are retained for recovery. Retention has no automatic deletion date. R2/Worker allowances and any overage charges are determined by the existing Cloudflare account; the app cap is not an account-wide billing cap. See [Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/).
+
+The frontend still deploys through the existing GitHub Actions workflow. Changes to consultation storage endpoints additionally require deploying `server/wrangler.toml` with the existing Wrangler command. The portable Node image-service adapter continues to support local rendering; shared R2 consultations are enabled on the configured Cloudflare deployment. See [Visualizer API](docs/VISUALIZER-API.md) for endpoint details.
+
+
+Validation for 1.5.0: the production build and all 38 service tests pass. New browser tests use separate device contexts to exercise automatic photo/render exchange, browsing the rest of the portfolio, one-hour clear, archive reopening for future renders, failed-upload recovery after reload and an offline deadline. A Windows WebKit offline file-selector I/O limitation skips that single native offline-selection case locally; the same case runs on Linux CI, and separate recovery/expiry cases run on both browser engines. A live private-storage smoke test verified original/render uploads, identical returned bytes, idempotent retries, representative-only archive access and cleanup without changing the active customer or calling the AI provider.
+
+
+Final local release verification: 99 full-suite browser checks passed with seven documented Windows/WebKit skips, followed by six passing Chromium/WebKit handoff/recovery/expiry checks after the last clearing safeguard. Portrait/landscape studio fit and shared-tools WCAG AA checks also passed. GitHub Actions runs all 106 cases on Linux before deployment.

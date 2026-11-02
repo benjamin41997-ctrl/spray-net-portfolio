@@ -105,11 +105,11 @@ async function render(body, design, request, config, fetchImpl) {
   }
 }
 
-export function createApi({ config, catalog, reserve, reserveAnalysis = reserve, reserveConnection, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
+export function createApi({ config, catalog, reserve, reserveAnalysis = reserve, reserveConnection, consultations, fetchImpl = (input, init) => globalThis.fetch(input, init) }) {
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.10', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.11', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -119,7 +119,8 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
         headers['Access-Control-Allow-Origin'] = origin;
       }
       const path = new URL(request.url).pathname;
-      if (!['/api/health', '/api/session', '/api/render', '/api/connect', '/api/analyze'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
+      const consultationRoute=path==='/api/consultations' || path.startsWith('/api/consultations/');
+      if (!consultationRoute && !['/api/health', '/api/session', '/api/render', '/api/connect', '/api/analyze'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
       if (request.method === 'OPTIONS') {
         const method = request.headers.get('access-control-request-method');
         const requestedHeaders = (request.headers.get('access-control-request-headers') || '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
@@ -129,7 +130,8 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
         headers['Access-Control-Max-Age'] = '600';
         return new Response(null, { status: 204, headers });
       }
-      if ((['/api/render','/api/connect','/api/analyze'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
+      if(consultationRoute && !['GET','POST'].includes(request.method))throw new ApiError(405,'method_not_allowed','This request method is not allowed.');
+      if (!consultationRoute && (['/api/render','/api/connect','/api/analyze'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
       if (path === '/api/health') return json({ configured: config.configured });
       if (!config.configured) throw new ApiError(503, 'not_configured', 'Ask your representative to connect the rendering service.');
       if (path === '/api/connect') {
@@ -145,7 +147,8 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
         return json({ready:true, ...paired, operatorAuthorized:Boolean(paired.operatorToken)});
       }
       authorize(request, config, paired);
-      if (path === '/api/session') return json({ ready: true, operatorAuthorized:operatorAuthorized(request, config, paired) });
+      if (path === '/api/session') return json({ ready: true, operatorAuthorized:operatorAuthorized(request, config, paired),...(consultations?{consultationsEnabled:true}:{}) });
+      if(consultationRoute){if(!consultations)throw new ApiError(503,'sync_unavailable','Consultation sync is not configured.');return await consultations.handle(request,{operator:operatorAuthorized(request,config,paired),parseBody,json,headers});}
       if (busy) throw new ApiError(429, 'render_in_progress', 'A rendering is already being created. Please wait for it to finish.', 10);
       busy = true;
       acquired = true;

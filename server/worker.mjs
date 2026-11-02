@@ -1,3 +1,4 @@
+import {ConsultationStore} from './consultations.mjs';
 import { colors } from '../src/data/colors.js';
 import { createApi } from './api.mjs';
 import { loadConfig } from './config.mjs';
@@ -9,6 +10,7 @@ export class VisualizerGate {
     const config = loadConfig(env);
     this.handle = createApi({
       config,
+      ...(env.CONSULTATION_MEDIA?{consultations:new ConsultationStore({storage:state.storage,bucket:env.CONSULTATION_MEDIA,catalog:colors})}:{}),
       catalog: colors,
       reserveConnection: request => state.storage.transaction(async transaction => {
         const previous = await transaction.get('connectionAttempts');

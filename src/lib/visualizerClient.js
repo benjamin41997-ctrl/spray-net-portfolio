@@ -26,9 +26,9 @@ export function saveConnection(endpoint, token, operatorToken = '') {
   const saved = {version:1, endpoint:normalizeEndpoint(endpoint), token:token.trim(), operatorToken:operatorToken.trim()};
   try { localStorage.setItem(connectionKey, JSON.stringify(saved)); }
   catch { throw new Error('This browser cannot remember tablet access. Allow site storage, then try again.'); }
-  sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(operatorKey);
+  sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(operatorKey);window.dispatchEvent(new Event('visualizer-connection-changed'));
 }
-export function forgetConnection() { localStorage.removeItem(connectionKey); sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(operatorKey); }
+export function forgetConnection() { localStorage.removeItem(connectionKey); sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(operatorKey);window.dispatchEvent(new Event('visualizer-connection-changed')); }
 export async function connectTablet(password) {
   const {endpoint} = connectionSettings();
   const data = await callVisualizer('/api/connect', {endpoint, body:{password}, signal:AbortSignal.timeout(15_000)});
@@ -40,11 +40,11 @@ export async function connectTablet(password) {
 export async function callVisualizer(path, { endpoint, token, operatorToken, body, signal }) {
   const response = await fetch(`${normalizeEndpoint(endpoint)}${path}`, {
     method: body ? 'POST' : 'GET', mode: 'cors', cache: 'no-store', credentials: 'omit',
-    headers: { ...(token ? {Authorization:`Bearer ${token}`} : {}), ...(operatorToken && (path === '/api/session' || body?.customPrompt || body?.feedback || body?.correction || body?.corrections?.length || body?.quality === 'detail') ? { 'X-Visualizer-Operator':operatorToken } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    headers: { ...(token ? {Authorization:`Bearer ${token}`} : {}), ...(operatorToken && (path.startsWith('/api/consultations') || path === '/api/session' || body?.customPrompt || body?.feedback || body?.correction || body?.corrections?.length || body?.quality === 'detail') ? { 'X-Visualizer-Operator':operatorToken } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}), signal,
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.error?.message || `The image service could not complete this request (${response.status}).`);
+  if (!response.ok) {const error=new Error(data?.error?.message || `The image service could not complete this request (${response.status}).`);error.status=response.status;error.code=data?.error?.code;throw error;}
   if (!data) throw new Error('The image service returned an unreadable response.');
   return data;
 }

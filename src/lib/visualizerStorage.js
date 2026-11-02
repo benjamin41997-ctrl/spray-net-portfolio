@@ -105,7 +105,7 @@ function restoreRecord(record) {
  * Resolves only after IndexedDB has committed both images and the design.
  * Browser storage is not a backup: clearing site data removes saved images.
  */
-export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, corrections = [], regions = [], design, photoId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
+export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, corrections = [], regions = [], design, photoId, consultationId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
   assertImage(originalPhoto, 'Original photo');
   assertImage(renderPhoto, 'Rendering');
   if (!design || typeof design !== 'object' || Array.isArray(design)) {
@@ -121,6 +121,7 @@ export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, c
     originalPhoto,
     renderPhoto,
     design: structuredClone(design),
+    ...(typeof consultationId==='string'?{consultationId}:{}),
     corrections:structuredClone(corrections), regions:structuredClone(regions),
     ...(typeof photoId === 'string' && photoId.length <= 128 ? {photoId} : {}),
   };

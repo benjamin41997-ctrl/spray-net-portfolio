@@ -24,3 +24,8 @@ new_sqlite_classes = ["VisualizerGate"]
 
 [observability]
 enabled = false
+
+
+[[r2_buckets]]
+binding = "CONSULTATION_MEDIA"
+bucket_name = "spray-net-portfolio-consultations"

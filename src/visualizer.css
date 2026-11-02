@@ -5,6 +5,13 @@
   .visualizer-app.with-tools { height:auto; min-height:100%; grid-template-rows:44px auto minmax(540px,calc(100dvh - 190px)); }
   .viz-toolbar, .viz-actions, .viz-selection, .viz-look-strip, .viz-layout-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .viz-toolbar { justify-content:space-between; }
+  .viz-sync-status { font-size:13px; color:#245c45; max-width:48%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .viz-consultation-library { border:1px solid #cbd5dd; border-radius:12px; padding:16px; margin:14px 0; background:white; }
+  .viz-consultation-list { display:grid; gap:8px; max-height:360px; overflow:auto; margin-top:12px; }
+  .viz-consultation-list article { display:flex; align-items:center; gap:10px; padding:10px; background:#f2f6f8; border-radius:10px; }
+  .viz-consultation-list article > div { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .viz-consultation-list small { display:block; margin-top:5px; font-size:13px; }
+  .viz-consultation-help { font-size:14px; }
   .visualizer-app .chip { min-height:44px; padding:8px 12px; font-size:16px; }
   .visualizer-app .chips { gap:6px; }
   .viz-workspace { display:grid; grid-template-columns:minmax(340px,.72fr) minmax(0,1.28fr); grid-template-rows:minmax(0,1fr) auto auto; grid-template-areas:'controls preview' 'uploads preview' 'media preview'; gap:10px 14px; min-height:0; }

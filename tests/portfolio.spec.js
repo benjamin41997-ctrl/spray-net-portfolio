@@ -225,7 +225,7 @@ test('inactivity resets to home and clears filters', async ({ page }) => {
   await page.clock.install();
   await page.goto('./#/projects?collection=cabinets&color=Blue');
   await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets' && p.colorFamily === 'Blue').length);
-  await page.clock.runFor(10 * 60_000 + 1000);
+  await page.clock.runFor(60 * 60_000 + 1000);
   await expect(page).toHaveURL(/#\/$/);
   await page.locator('.cabinet-card').click();
   await expect(page.locator('.project-card')).toHaveCount(projects.filter(p => p.category === 'Cabinets').length);
