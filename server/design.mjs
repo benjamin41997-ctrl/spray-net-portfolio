@@ -31,8 +31,8 @@ const surfaces = {
 };
 
 const options = {
-  hardwareStyle: { keep: 'unchanged', bar: 'simple straight bar pulls', knob: 'simple round knobs', cup: 'cup pulls on drawers and round knobs on doors', none: 'no visible cabinet hardware' },
-  hardwareFinish: { keep: 'existing finish', 'matte-black': 'matte black', 'brushed-nickel': 'brushed nickel', brass: 'brushed brass', chrome: 'polished chrome', bronze: 'dark bronze' },
+  hardwareStyle: { keep: 'unchanged', 'small-handle': 'short straight cabinet handles, approximately 3 to 5 inches long', 'big-handle': 'long cabinet handles, approximately 8 to 12 inches long, scaled appropriately to each door or drawer', bar: 'simple straight bar pulls', knob: 'simple round knobs', cup: 'cup pulls on drawers and round knobs on doors', none: 'no visible cabinet hardware' },
+  hardwareFinish: { keep: 'existing finish', 'matte-black': 'matte black', 'brushed-nickel': 'brushed nickel', gold: 'warm metallic gold', copper: 'metallic copper', brass: 'brushed brass', chrome: 'polished chrome', bronze: 'dark bronze' },
   backsplash: { keep: 'unchanged', 'white-subway': 'white subway tile with subtle light grout', marble: 'subtle white marble tile', 'warm-neutral': 'warm neutral tile' },
   countertop: { keep: 'unchanged', 'white-quartz': 'white quartz with subtle natural variation', marble: 'white marble with restrained gray veining', 'dark-stone': 'dark charcoal stone', 'butcher-block': 'natural wood butcher block' },
 };

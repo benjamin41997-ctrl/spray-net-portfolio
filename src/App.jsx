@@ -30,7 +30,7 @@ class ErrorBoundary extends Component {
     if (this.state.failed)
       return (
         <div className="empty-state">
-          <h1>Let’s start fresh.</h1>
+          <h1>Letâ€™s start fresh.</h1>
           <p>Something interrupted this view.</p>
           <a
             className="button button-dark"
@@ -50,7 +50,7 @@ function NotFound() {
     <div className="empty-state">
       <Icon name="layers" size={40} />
       <h1 tabIndex={-1}>A new direction.</h1>
-      <p>This page isn’t in the portfolio. There’s plenty more to explore.</p>
+      <p>This page isnâ€™t in the portfolio. Thereâ€™s plenty more to explore.</p>
       <a href="#/" className="button button-dark">
         Back to home
         <Icon name="arrow" size={18} />
@@ -78,7 +78,7 @@ function Portfolio() {
   const video = section === 'videos' && videos.find((item) => item.id === id);
   const article = section === 'why' && content.find((item) => item.id === id);
   useEffect(() => {
-    document.title = `${project?.title || video?.title || article?.title || { projects: 'Transformations', reviews: 'Customer Reviews', videos: 'Process Videos', why: 'Why Spray-Net', visualize: 'Design Visualizer' }[section] || 'Spray-Net Portfolio'} · South Charlotte`;
+    document.title = `${project?.title || video?.title || article?.title || { projects: 'Transformations', reviews: 'Customer Reviews', videos: 'Process Videos', why: 'Why Spray-Net', visualize: 'Design Visualizer' }[section] || 'Spray-Net Portfolio'} Â· South Charlotte`;
     if (previousPath.current !== route.path) {
       const initial = previousPath.current === null;
       previousPath.current = route.path;
@@ -104,7 +104,7 @@ function Portfolio() {
   else if (route.path === '/videos') page = <Videos />;
   else if (video && route.path === `/videos/${video.id}`) page = <Videos video={video} />;
   else if (route.path === '/why') page = <Why />;
-  else if (route.path === '/visualize') page = <Suspense fallback={<p role="status">Opening the Design Studio…</p>}><Visualizer /></Suspense>;
+  else if (route.path === '/visualize') page = <Suspense fallback={<p role="status">Opening the Design Studioâ€¦</p>}><Visualizer /></Suspense>;
   else if (article && route.path === `/why/${article.id}`)
     page = <Why article={article} route={route} />;
   else page = <NotFound />;
@@ -124,7 +124,7 @@ function Portfolio() {
         <a href="#/" className="brand" aria-label="Spray-Net South Charlotte home">
           <img
             src={mediaUrl(settings.logo)}
-            alt={`${settings.brandName} — ${brand.tagline}`}
+            alt={`${settings.brandName} â€” ${brand.tagline}`}
             width="220"
             height="61"
           />
@@ -175,7 +175,7 @@ function Portfolio() {
         <div className="offline-banner" role="status">
           <Icon name="offline" size={17} />
           <span>
-            You’re offline.{' '}
+            Youâ€™re offline.{' '}
             {offlineReady
               ? 'Your portfolio is ready to explore.'
               : 'Some content may need a connection.'}
@@ -189,7 +189,7 @@ function Portfolio() {
       </main>
       <footer className="app-footer">
         <span className="offline-status">
-          <span>Portfolio 1.3.1</span>
+          <span>Portfolio 1.3.2</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />

@@ -56,7 +56,7 @@
   .viz-step-tabs .chip.has-color::after { content:''; position:absolute; height:3px; left:10px; right:10px; bottom:3px; border-radius:3px; background:var(--step-color); border:1px solid #8799a5; }
   .viz-step-tabs :focus-visible { outline-offset:-3px; }
   .viz-step-actions { display:grid; grid-template-columns:auto 1fr; gap:8px; }
-  .viz-generate { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .viz-generate { display:grid; grid-template-columns:1fr; gap:8px; }
   .viz-generate button { min-width:0; }
   .viz-controls > .viz-hardware-panel { flex:1; min-height:0; overflow:auto; padding:0 4px; }
   .viz-label { display:grid; gap:8px; font-size:16px; font-weight:700; margin-top:16px; }

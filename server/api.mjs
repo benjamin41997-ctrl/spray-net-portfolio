@@ -108,7 +108,7 @@ export function createApi({ config, catalog, reserve, reserveConnection, fetchIm
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.5', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.6', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -150,7 +150,8 @@ export function createApi({ config, catalog, reserve, reserveConnection, fetchIm
       acquired = true;
       const body = await parseBody(request);
       const design = validateDesign(body, catalog);
-      if (design.customPrompt && !operatorAuthorized(request, config, paired)) throw new ApiError(403, 'operator_required', 'Connect this tablet with the representative’s password to use custom instructions.');
+      if (design.quality === 'detail' && !operatorAuthorized(request, config, paired)) throw new ApiError(403,'operator_required','Detailed previews require representative access.');
+      if (design.customPrompt && !operatorAuthorized(request, config, paired)) throw new ApiError(403, 'operator_required', 'Connect this tablet with the representativeâ€™s password to use custom instructions.');
       validateImage(body.image);
       // Reserve before making the billable request. Failed/aborted attempts also count.
       await reserve();

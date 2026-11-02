@@ -1,6 +1,6 @@
 export const finishOptions={
-  hardwareStyle:{label:'Hardware Style',options:{keep:'Keep Existing',bar:'Bar Pulls',knob:'Knobs',cup:'Cup Pulls',none:'No Hardware'}},
-  hardwareFinish:{label:'Hardware Finish',options:{keep:'Keep Existing','matte-black':'Matte Black','brushed-nickel':'Brushed Nickel',brass:'Brass',chrome:'Chrome',bronze:'Bronze'}},
+  hardwareStyle:{label:'Hardware Style',options:{keep:'Keep Existing',knob:'Knobs','small-handle':'Small Handles','big-handle':'Big Handles'}},
+  hardwareFinish:{label:'Hardware Finish',options:{keep:'Keep Existing','matte-black':'Matte Black','brushed-nickel':'Brushed Nickel',gold:'Gold',copper:'Copper',brass:'Brass',chrome:'Chrome',bronze:'Bronze'}},
   backsplash:{label:'Backsplash',options:{keep:'Keep Existing','white-subway':'White Subway Tile',marble:'Marble Look','warm-neutral':'Warm Neutral Tile'}},
   countertop:{label:'Countertops',options:{keep:'Keep Existing','white-quartz':'White Quartz Look',marble:'Marble Look','dark-stone':'Dark Stone Look','butcher-block':'Butcher Block Look'}},
 };

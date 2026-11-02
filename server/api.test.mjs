@@ -214,15 +214,27 @@ test('builds one stateless, constrained edit and never exposes server credential
 });
 
 test('detail mode selects the configured precise model and high quality', async () => {
-  const h = harness();
-  const result = await h.api(request({ ...payload(), quality: 'detail' }));
+  const operatorToken='detail-operator-'.padEnd(43,'x');
+  const h = harness({config:{...config,operatorToken}});
+  assert.equal((await h.api(request({...payload(),quality:'detail'}))).status,403);
+  assert.equal(h.reservations,0);
+  const result = await h.api(request({ ...payload(), quality: 'detail' },{headers:{'X-Visualizer-Operator':operatorToken}}));
   assert.equal(result.status, 200);
   const upstream = JSON.parse(h.calls[0][1].body);
   assert.equal(upstream.model, 'gpt-image-2.5-sunburst');
   assert.equal(upstream.quality, 'high');
 });
 
-test('fast testing forces Flare low quality for regular, detailed and custom requests', async () => {
+test('new hardware choices describe knob and handle sizes and gold/copper finishes explicitly',()=>{
+ for(const hardwareStyle of ['knob','small-handle','big-handle'])for(const hardwareFinish of ['gold','copper']){
+  const {design}=validateDesign({...payload(),design:{mode:'kitchen',surfaces:{},hardwareStyle,hardwareFinish}},catalog);
+  const prompt=buildPrompt(design);assert.match(prompt,new RegExp(hardwareFinish));
+  if(hardwareStyle==='small-handle')assert.match(prompt,/3 to 5 inches/);
+  if(hardwareStyle==='big-handle')assert.match(prompt,/8 to 12 inches/);
+ }
+});
+
+test('fast testing keeps ordinary previews light and reserves high quality for authorized detailed requests', async () => {
   const operatorToken = 'test-fast-operator-'.padEnd(43,'x');
   const fastConfig = {...config,fastTestMode:true,previewModel:'gpt-image-2.5-sunburst',detailModel:'gpt-image-2.5-sunburst',operatorToken};
   for (const quality of ['preview','detail']) for (const custom of [false,true]) {
@@ -231,11 +243,11 @@ test('fast testing forces Flare low quality for regular, detailed and custom req
     assert.equal(result.status,200);
     assert.equal(result.headers.get('X-Visualizer-Render-Mode'),'fast-test');
     const upstream = JSON.parse(h.calls[0][1].body);
-    assert.equal(upstream.model,'gpt-image-2.5-flare');
-    assert.equal(upstream.quality,'low');
+    assert.equal(upstream.model,quality==='detail'?'gpt-image-2.5-sunburst':'gpt-image-2.5-flare');
+    assert.equal(upstream.quality,quality==='detail'?'high':'low');
     assert.equal(upstream.n,1);
     assert.equal(h.calls.length,1); assert.equal(h.reservations,1);
-    assert.equal((await result.json()).model,'gpt-image-2.5-flare');
+    assert.equal((await result.json()).model,quality==='detail'?'gpt-image-2.5-sunburst':'gpt-image-2.5-flare');
   }
 });
 

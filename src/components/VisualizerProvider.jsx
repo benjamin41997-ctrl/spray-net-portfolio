@@ -47,7 +47,9 @@ export default function VisualizerProvider({ children }) {
       const submittedDesign = { ...design, surfaces: Object.fromEntries(Object.entries(design.surfaces).filter(([, value]) => value)) };
       const manual = customPrompt.trim();
       const data = await callVisualizer('/api/render', { ...connectionSettings(), signal: abort.signal, body: { image: photo.dataUrl, design: submittedDesign, quality, ...(manual ? {customPrompt:manual} : {}) } });
-      const renderPhoto = imageDataBlob(data.image);
+      const {labelRender}=await import('../lib/renderLabel');
+      const finalDesign=structuredClone({...submittedDesign,...(manual?{customPrompt:manual}:{})});
+      const renderPhoto = await labelRender(imageDataBlob(data.image),finalDesign);
       if (epoch.current !== generation) return;
       const record = { id: crypto.randomUUID(), photoId:photo.id, originalPhoto: photo.blob, renderPhoto, design: structuredClone({...submittedDesign,...(manual ? {customPrompt:manual} : {})}), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
       let saved = false;

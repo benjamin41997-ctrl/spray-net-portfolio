@@ -10,7 +10,7 @@ The salesperson enters one tablet password in the hidden tools. The service retu
 - Exterior siding, brick, stucco, entry doors, garage doors, window frames, soffits, fascia, vents, columns, and trim.
 - Up to eight uploaded photos per consultation, one selected original per request, without previous conversation history. Uploading and switching angles incur no API usage. Each change starts from that angle's original.
 - Server-built instructions preserve layout, camera view, lighting, appliances and unselected surfaces. Ordinary rendering accepts verified color IDs and a small set of options. Custom instructions require a separate operator credential; clients cannot change model, source URL or output size.
-- **Current UI test mode:** every request uses `gpt-image-2.5-flare` at `low` quality, including detailed/custom requests. One WebP is returned. With fast test mode disabled, the configured tiers are Flare/medium and Sunburst/high.
+- **Current UI test mode:** customer preview requests use `gpt-image-2.5-flare` at `low` quality; operator-only detailed requests use Sunburst/high. One WebP is returned. With fast test mode disabled, the configured tiers are Flare/medium and Sunburst/high.
 - No automatic retries. A timed-out or cancelled request may still incur provider usage, so every dispatched attempt consumes one quota slot.
 - Photos and renderings are never written to the API filesystem or Durable Object storage. The server stores usage timestamps/counts only. The photograph is sent to OpenAI to create the rendering. The portfolio manages local saved designs on the tablet separately.
 
@@ -97,7 +97,7 @@ For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep on
 | `VISUALIZER_MAX_HOURLY_RENDERS` | 12, permitted range 1–60 |
 | `VISUALIZER_MIN_INTERVAL_SECONDS` | 5, permitted range 1–60 |
 | `VISUALIZER_TIMEOUT_SECONDS` | 240, permitted range 30–300 |
-| `VISUALIZER_FAST_TEST_MODE` | `true` in the deployment/example; forces Flare/low for all tiers. Unset or `false` restores configured tiers |
+| `VISUALIZER_FAST_TEST_MODE` | `true` in the deployment/example; forces Flare/low for customer previews; operator detail uses its configured model. Unset or `false` restores configured tiers |
 | `VISUALIZER_PREVIEW_MODEL` | `gpt-image-2.5-flare` |
 | `VISUALIZER_DETAIL_MODEL` | `gpt-image-2.5-sunburst` |
 | `VISUALIZER_USAGE_FILE` | Node only: `server/.local/usage.json` |
@@ -181,3 +181,11 @@ The exterior wizard edits one existing surface key per step; navigating does not
 The customer exterior row now contains `siding`, `siding2`, `frontDoor`, `garageDoor`, `soffits`, `fascia`, `windows`, `trim` and `vents`. The API retains brick/stucco/columns compatibility for existing data and custom workflows, while those choices are absent from the customer row. `siding2` shares the primary siding reference rules and accepts an independent color. Prompts distinguish the primary/largest siding area from an existing distinct profile, material, gable or accent section; they forbid inventing a secondary area.
 
 Kitchen panel selection is browser UI state and adds no API fields. The guided sequence starts with island/base color and advances to cabinet/wall color. Existing `cabinets`, `upperCabinets`, `lowerCabinets` and `island` payload mapping is preserved. Opening a panel, moving a step or selecting a color never creates an image request; only an explicit render button does so.
+
+## Preview Actions and Labels — Portfolio 1.3.2
+
+The customer has one Create My Preview action using Flare/low. Hidden Consultation Tools contains Create Detailed Preview and detailed custom rendering. These require operator authorization before quota reservation and use Sunburst/high, as an explicit exception to fast draft mode. Ordinary requests stay fast.
+
+The app bakes exact selected color names/codes into the bottom-left of the returned image before display, saving and export. Surfaces sharing a color are grouped. Custom instructions can include verified SW codes for the reference label. Unknown original colors are labelled Existing Colors; custom requests without verified references say Colors Not Specified, rather than inventing a code. Original photos are unmodified. Labeling uses no additional AI calls.
+
+Hardware styles are Keep Existing, Knobs, Small Handles and Big Handles. Finishes include Gold and Copper. Legacy hardware identifiers remain accepted for compatibility.

@@ -67,7 +67,7 @@ async function openAndConnect(page) {
 async function uploadPhoto(page) {
   await page.getByLabel('Choose home photo', { exact: true }).setInputFiles({ name: 'kitchen.webp', mimeType: 'image/webp', buffer: photo });
   await expect(page.getByAltText('Original photo of your home', { exact: true })).toBeVisible();
-  await expect(page.getByText('Preparing Your Photo…', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Preparing Your Photoâ€¦', { exact: true })).toHaveCount(0);
 }
 
 async function selectColor(page, surface, color) {
@@ -106,7 +106,7 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   await selectColor(page, 'upperCabinets', kitchenColors[0]);
   await selectColor(page, 'lowerCabinets', kitchenColors[1]);
   await page.getByRole('button',{name:'Hardware Finishes',exact:true}).click();
-  await page.getByLabel('Hardware Style', { exact: true }).selectOption('bar');
+  await page.getByLabel('Hardware Style', { exact: true }).selectOption('small-handle');
   await page.getByLabel('Hardware Finish', { exact: true }).selectOption('matte-black');
   await page.getByLabel('Backsplash', { exact: true }).selectOption('white-subway');
   await page.getByLabel('Countertops', { exact: true }).selectOption('white-quartz');
@@ -115,7 +115,7 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   await expectSaved(page);
   expect(api.renders[0].body.design).toEqual({
     mode: 'kitchen', sidingMaterial: 'auto', surfaces: { upperCabinets: kitchenColors[0].id, lowerCabinets: kitchenColors[1].id, island: kitchenColors[1].id },
-    hardwareStyle: 'bar', hardwareFinish: 'matte-black', backsplash: 'white-subway', countertop: 'white-quartz',
+    hardwareStyle: 'small-handle', hardwareFinish: 'matte-black', backsplash: 'white-subway', countertop: 'white-quartz',
   });
   expect(api.renders[0].body.quality).toBe('preview');
   expect(api.renders[0].authorization).toBe(`Bearer ${accessCode}`);
@@ -123,6 +123,7 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   expect(api.renders[0].body.image).not.toBe(generatedImage);
 
   await selectColor(page, 'lowerCabinets', kitchenColors[2]);
+  await openTools(page);
   await page.getByRole('button', { name: 'Create Detailed Preview', exact: true }).click();
   await expectSaved(page, 2);
   expect(api.renders[1].body.image).toBe(api.renders[0].body.image);
@@ -187,6 +188,7 @@ test('exterior surfaces are independent and going offline blocks paid generation
   await context.setOffline(true);
   await expect(page.getByText('Connect to the internet to create a new preview. Saved images and color selections still work offline.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Create My Preview', exact: true })).toBeDisabled();
+  await openTools(page);
   await expect(page.getByRole('button', { name: 'Create Detailed Preview', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Show Original', exact: true }).click();
   await expect(page.getByAltText('Original photo of your home', { exact: true })).toBeVisible();
@@ -450,7 +452,7 @@ test('the top-level kitchen choices expose hardware directly and retain both har
   await options.getByRole('button',{name:'Hardware Finishes',exact:true}).click();
   await expect(page.getByLabel('Find a Color',{exact:true})).toHaveCount(0);
   await expect(page.getByRole('button',{name:'One Tone',exact:true})).toHaveCount(0);
-  await page.getByLabel('Hardware Style',{exact:true}).selectOption('bar');
+  await page.getByLabel('Hardware Style',{exact:true}).selectOption('small-handle');
   await page.getByLabel('Hardware Finish',{exact:true}).selectOption('brass');
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
   expect(api.renders[0].body.design.surfaces).toEqual({});
@@ -502,4 +504,15 @@ test('all nine exterior choices fit one row and the two siding areas render inde
   await selectColor(page,'siding2',exteriorColors[1]);
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
   expect(api.renders[0].body.design.surfaces).toEqual({siding:exteriorColors[0].id,siding2:exteriorColors[1].id});
+});
+
+test('customers have one preview action and the detailed action is in private tools',async({page})=>{
+ await stubService(page);await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+ await expect(page.locator('.viz-generate button')).toHaveCount(1);
+ await expect(page.getByRole('button',{name:'Create Detailed Preview',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'Hardware Finishes',exact:true}).click();
+ expect(await page.getByLabel('Hardware Style',{exact:true}).locator('option').allTextContents()).toEqual(['Keep Existing','Knobs','Small Handles','Big Handles']);
+ await page.getByLabel('Hardware Style',{exact:true}).selectOption('big-handle');
+ await page.getByLabel('Hardware Finish',{exact:true}).selectOption('copper');
+ await openTools(page);await expect(page.getByRole('button',{name:'Create Detailed Preview',exact:true})).toBeVisible();
 });
