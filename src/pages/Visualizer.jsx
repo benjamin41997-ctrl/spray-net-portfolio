@@ -95,7 +95,7 @@ export default function Visualizer() {
   const region=analysis?.regions?.find(item=>item.surface===activeSurface);
   useEffect(()=>{if(v.design.mode==='exterior' && v.photo && connected && online)v.analyzePhoto(v.design.mode);},[v.photo?.id,v.design.mode,connected,online]);
   const previousSurface=useRef({photoId:v.photo?.id,surface:activeSurface});
-  useEffect(()=>{const previous=previousSurface.current;if(previous.photoId!==v.photo?.id || previous.surface!==activeSurface){setShowHighlight(true);if(previous.photoId===v.photo?.id)setBefore(true);previousSurface.current={photoId:v.photo?.id,surface:activeSurface};}},[activeSurface,v.photo?.id]);
+  useEffect(()=>{const previous=previousSurface.current;if(previous.photoId!==v.photo?.id || previous.surface!==activeSurface){setShowHighlight(true);if(previous.photoId===v.photo?.id && !v.busy)setBefore(true);previousSurface.current={photoId:v.photo?.id,surface:activeSurface};}},[activeSurface,v.photo?.id]);
   const collection = useMemo(() => {
     const systems = v.design.mode === 'kitchen' ? ['kitchen'] : ({brick:['brick'],stucco:['elasto'],frontDoor:['dw'],garageDoor:['dw'],windows:['dw'],siding:['vinyl','mat','satin','brick','elasto'],siding2:['vinyl','mat','satin','brick','elasto']}[activeSurface] || ['mat','satin','dw']);
     return colors.filter(c => c.referenceOnly || c.systems.some(system => systems.includes(system)));

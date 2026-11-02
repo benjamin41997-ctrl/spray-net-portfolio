@@ -598,6 +598,13 @@ test('exterior options wait for detection before a customer can dispatch a rende
 });
 
 
+test('a custom preview started during detection displays its result when detection completes',async({page})=>{
+  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
+  await openTools(page);await page.getByLabel('Custom Instructions',{exact:true}).fill('Remove the shutters and keep the windows and brick unchanged.');
+  await page.getByRole('button',{name:'Create Custom Preview',exact:true}).click();await expect(page.getByRole('button',{name:'Stop Waiting',exact:true})).toBeVisible();
+  api.releaseAnalysis();await expectSaved(page);expect(api.renders[0].body.customPrompt).toContain('Remove the shutters');
+});
+
 test('side-view photos show only detected surfaces and navigation skips absent features',async({page})=>{
   const api=await stubService(page,{holdFirstAnalysis:true,surfaceSets:[['siding','soffits','fascia']]});await openAndConnect(page);
   await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
