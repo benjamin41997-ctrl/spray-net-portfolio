@@ -244,3 +244,14 @@ The bucket was created privately with `wrangler r2 bucket create spray-net-portf
 Service release `2026-11-02.12` removes daily render and analysis caps. Rendering uses `VISUALIZER_MAX_TEN_MINUTE_RENDERS=5` and `VISUALIZER_MAX_HOURLY_RENDERS=30`, with five seconds between attempts. Surface analysis keeps its independent 30-per-hour, one-second limit. The existing Durable Object usage records remain intact and compatible. Old day/count fields are retained as counters, not lockouts. Ten-minute and hourly limit responses include a retry delay; no automatic retries are added.
 
 The brick render instructions explicitly apply the selected stain color to both brick faces and mortar, including brick assigned to either Siding group. Recessed joint geometry and surface texture remain; contrasting or original-color mortar is not requested. Other wall groups stay protected. Models and render quality settings are unchanged.
+
+
+### Shutters and Detected-Only Menus (1.6.0)
+
+Service release `2026-11-02.13` adds `shutters` to exterior region keys and exterior design surfaces. Shutters remain separate from window glass/frames, trim and wall cladding. Normalized detection/holes/confidence validation is unchanged.
+
+An exterior design may include `shutterAction: "keep"` (default) or `"remove"`. For recoloring, supply `surfaces.shutters` with a verified color ID and keep the action at `keep`. For removal, use `shutterAction: "remove"` and omit `surfaces.shutters`; removal alone satisfies the required-change check. Removing and recoloring shutters together is rejected, as is removal in kitchen mode. Removal regions are treated as editable guides and excluded from protected-area references. The image prompt continues the adjacent wall finish into the removed areas and protects window geometry and unrelated surfaces.
+
+The client displays only ready regions with nonempty polygons and confidence other than low. It waits for detection before displaying customer controls, and filters each render request to the active photo's visible surface IDs. A per-photo representative override is available in hidden tools for missed features. Corrections retain their saved design. No shutter choices are added to kitchen payloads.
+
+When provider token usage is available, `/api/render` returns optional numeric `usage: {inputTextTokens,inputImageTokens,outputImageTokens}`. Counts must be nonnegative safe integers within the configured parser bound; incomplete/invalid usage is omitted without failing a successful image. Extra provider fields are never forwarded. This supports operator cost verification without exposing credentials or adding billing controls to customer screens. For pricing and the measured sample, see README.

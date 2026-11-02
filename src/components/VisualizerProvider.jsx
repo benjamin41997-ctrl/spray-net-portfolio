@@ -6,7 +6,7 @@ import { saveRender } from '../lib/visualizerStorage';
 
 const Context = createContext(null);
 export const useVisualizer = () => useContext(Context);
-export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'auto', surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
+export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'auto', ...(mode==='exterior'?{shutterAction:'keep'}:{}), surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
 export default function VisualizerProvider({ children }) {
   const [allPhotos,setPhotos]=useState([]);
   const [mode,setMode]=useState('kitchen');
@@ -77,7 +77,7 @@ export default function VisualizerProvider({ children }) {
       .then(result=>{if(epoch.current===generation && analysisCache.current[key]?.requestId===requestId){analysisCache.current[key]=abort.signal.aborted?{status:'interrupted'}:result;setAnalyses({...analysisCache.current});} return result;});
     analysisTask.current={key,promise};analysisTasks.current[key]=promise;return promise;
   }
-  async function generate(quality, customPrompt = '', correction = null) {
+  async function generate(quality, customPrompt = '', correction = null, availableSurfaces = null) {
     if (!photo || controller.current) return;
     const consultation=syncRef.current.session;
     const generation = epoch.current;
@@ -87,6 +87,10 @@ export default function VisualizerProvider({ children }) {
     try {
       const chosenDesign=correction?.record.design || design;
       const submittedDesign = { ...chosenDesign, surfaces: Object.fromEntries(Object.entries(chosenDesign.surfaces).filter(([, value]) => value)) };
+      if(submittedDesign.mode==='exterior' && Array.isArray(availableSurfaces)) {
+        submittedDesign.surfaces=Object.fromEntries(Object.entries(submittedDesign.surfaces).filter(([key])=>availableSurfaces.includes(key)));
+        if(!availableSurfaces.includes('shutters'))submittedDesign.shutterAction='keep';
+      }
       delete submittedDesign.customPrompt;
       const manual = (customPrompt || correction?.record.design.customPrompt || '').trim();
       const key=`${photo.id}:${submittedDesign.mode}`;
@@ -132,7 +136,7 @@ export default function VisualizerProvider({ children }) {
       setLooks(current=>[...current,...remoteLooks.filter(r=>!current.some(item=>item.id===r.id))].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
       setPhotoIds(current=>({...current,kitchen:current.kitchen || remotePhotos.find(p=>p.mode==='kitchen')?.id || null,exterior:current.exterior || remotePhotos.find(p=>p.mode==='exterior')?.id || null}));
     }
-    for(const r of remoteLooks){const key=`${r.photoId}:${r.design.mode}`;if(r.regions?.length && !analysisCache.current[key])analysisCache.current[key]={status:'ready',regions:r.regions};if(!correctionsByPhoto.current[key])correctionsByPhoto.current[key]=r.corrections || [];}
+    for(const r of remoteLooks){const key=`${r.photoId}:${r.design.mode}`;if(r.regions?.length && !analysisCache.current[key])analysisCache.current[key]={status:r.regions.some(region=>region.surface==='shutters')?'ready':'interrupted',regions:r.regions};if(!correctionsByPhoto.current[key])correctionsByPhoto.current[key]=r.corrections || [];}
     setAnalyses({...analysisCache.current});setLabel(name);
   }});
   syncRef.current=sync;

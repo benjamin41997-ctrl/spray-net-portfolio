@@ -12,7 +12,9 @@ export function renderLabelLines(design) {
     const color=colorsById.get(id);if(!color)continue;
     const entry=grouped.get(id)||{color,surfaces:[]};entry.surfaces.push(surfaceNames[surface]||surface);grouped.set(id,entry);
   }
-  return grouped.size ? [...grouped.values()].map(({color,surfaces})=>`${surfaces.join(' / ')}: ${color.name} (${color.code})`) : ['Existing Colors Â· Hardware & Finish Preview'];
+  const lines=[...grouped.values()].map(({color,surfaces})=>`${surfaces.join(' / ')}: ${color.name} (${color.code})`);
+  if(design.shutterAction==='remove')lines.push('Shutters: Removed');
+  return lines.length?lines:['Existing Colors Â· Hardware & Finish Preview'];
 }
 
 export async function labelRender(blob, design) {

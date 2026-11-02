@@ -456,6 +456,35 @@ test('brick staining includes matching mortar for explicit brick and either sidi
   assert.doesNotMatch(buildPrompt(door),/BRICK STAIN COVERAGE/);
 });
 
+test('shutters are separate detected surfaces and support recoloring or removal without changing windows', async () => {
+  const body={image,quality:'preview',design:{mode:'exterior',surfaces:{shutters:'white'}}};
+  const recolor=validateDesign(body,catalog);
+  assert.match(buildPrompt(recolor.design),/Recolor all existing visible window shutters/);
+  const remove=validateDesign({...body,design:{mode:'exterior',surfaces:{},shutterAction:'remove'}},catalog);
+  const region={surface:'shutters',description:'Shutter panels beside windows',polygons:[[{x:10,y:10},{x:20,y:10},{x:20,y:50}]]};
+  assert.deepEqual(validateRegions([region],'exterior'),[region]);
+  const prompt=buildPrompt(remove.design,'',{regions:[region]});
+  assert.match(prompt,/EXTERIOR CHANGE ALLOWLIST: shutters/);
+  assert.match(prompt,/REMOVE SHUTTERS/);
+  assert.match(prompt,/Match its surrounding wall color/);
+  assert.match(prompt,/PROTECTED AREA REFERENCES[^\n]*\n\[\]/);
+  assert.match(buildAnalysisPrompt({mode:'exterior'}),/not window frames, glass/);
+  assert.throws(()=>validateDesign({...body,design:{...body.design,shutterAction:'remove'}},catalog),e=>e.code==='invalid_design');
+  assert.throws(()=>validateDesign({...body,design:{mode:'kitchen',surfaces:{cabinets:'white'},shutterAction:'remove'}},catalog),e=>e.code==='invalid_design');
+  assert.throws(()=>validateDesign({...body,design:{...body.design,shutterAction:'replace'}},catalog),e=>e.code==='invalid_design');
+  const h=harness();const result=await h.api(request({...body,design:{mode:'exterior',surfaces:{},shutterAction:'remove'}}));
+  assert.equal(result.status,200);assert.equal(h.reservations,1);
+});
+
+test('render usage includes only validated numeric counts when the provider supplies them',async()=>{
+  const h=harness({fetchImpl:async()=>new Response(JSON.stringify({data:[{b64_json:webp}],usage:{input_tokens_details:{text_tokens:2000,image_tokens:3000},output_tokens:196,private_detail:'never return this'}}))});
+  const result=await h.api(request());const data=await result.json();
+  assert.deepEqual(data.usage,{inputTextTokens:2000,inputImageTokens:3000,outputImageTokens:196});
+  assert.ok(!JSON.stringify(data).includes('never return this'));
+  const malformed=harness({fetchImpl:async()=>new Response(JSON.stringify({data:[{b64_json:webp}],usage:{input_tokens_details:{text_tokens:-1,image_tokens:3},output_tokens:'bad'}}))});
+  assert.equal((await malformed.api(request()).then(r=>r.json())).usage,undefined);
+});
+
 test('failed quota persistence prevents provider calls', async () => {
   const h = harness({ reserve: () => { throw new ApiError(503, 'quota_unavailable', 'Unavailable'); } });
   assert.equal((await h.api(request())).status, 503);

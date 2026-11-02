@@ -96,7 +96,9 @@ async function render(body, design, request, config, fetchImpl) {
     } catch {
       throw new ApiError(502, 'invalid_result', 'The rendering service returned an unreadable image.');
     }
-    return { image, model, requestId: crypto.randomUUID() };
+    const usage={inputTextTokens:result.usage?.input_tokens_details?.text_tokens,inputImageTokens:result.usage?.input_tokens_details?.image_tokens,outputImageTokens:result.usage?.output_tokens_details?.image_tokens ?? result.usage?.output_tokens};
+    const hasUsage=Object.values(usage).every(value=>Number.isSafeInteger(value) && value>=0 && value<=100_000_000);
+    return { image, model, requestId: crypto.randomUUID(), ...(hasUsage?{usage}:{}) };
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (timeout.aborted) throw new ApiError(504, 'render_timeout', 'The rendering took too long. Your design is still here; try again when ready.');
@@ -109,7 +111,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-02.12', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-02.13', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {

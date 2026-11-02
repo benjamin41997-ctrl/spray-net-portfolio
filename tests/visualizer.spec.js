@@ -16,7 +16,7 @@ const generatedImage = `data:image/webp;base64,${(await readFile(new URL(`../pub
 
 test.use({ serviceWorkers: 'block' });
 
-async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false } = {}) {
+async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false } = {}) {
   await page.addInitScript(endpoint => localStorage.setItem('spray-net-render-endpoint',endpoint),endpoint);
   const renders = []; const analyses=[];
   let releaseAnalysis;const analysisGate=new Promise(resolve=>{releaseAnalysis=resolve;});
@@ -41,9 +41,10 @@ async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = 
     if(request.url().endsWith('/api/analyze')) {
       analyses.push({body:request.postDataJSON(),operator:request.headers()['x-visualizer-operator']});
       if(holdFirstAnalysis && analyses.length===1)await analysisGate;
+      if(failAnalysis){await route.fulfill({status:502,contentType:'application/json',headers,body:JSON.stringify({error:{message:'Surface detection could not finish.'}})});return;}
       const mode=request.postDataJSON().mode;
-      const keys=mode==='exterior'?['siding','siding2','frontDoor','garageDoor','soffits','fascia','windows','trim','vents']:['cabinets','upperCabinets','lowerCabinets','island'];
-      await route.fulfill({status:200,contentType:'application/json',headers,body:JSON.stringify({regions:keys.map((surface,index)=>({surface,description:`Detected ${surface}`,polygons:surface==='siding2'?[]:[[{x:100+index*10,y:100},{x:500,y:100},{x:500,y:500},{x:100,y:500}]]}))})});return;
+      const keys=mode==='exterior'?['siding','siding2','frontDoor','garageDoor','soffits','fascia','windows','shutters','trim','vents']:['cabinets','upperCabinets','lowerCabinets','island'];
+      await route.fulfill({status:200,contentType:'application/json',headers,body:JSON.stringify({regions:keys.map((surface,index)=>({surface,description:`Detected ${surface}`,polygons:(absentSurfaces.includes(surface) || (surfaceSets[analyses.length-1] && !surfaceSets[analyses.length-1].includes(surface)))?[]:[[{x:100+index*10,y:100},{x:500,y:100},{x:500,y:500},{x:100,y:500}]]}))})});return;
     }
     if (request.url().endsWith('/api/render')) {
       renders.push({ body: request.postDataJSON(), authorization: request.headers().authorization });
@@ -53,7 +54,7 @@ async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = 
     }
     await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ ready: true, operatorAuthorized:request.headers()['x-visualizer-operator'] === operatorCode }) });
   });
-  return { renders, analyses, release, releaseAnalysis };
+  return { renders, analyses, release, releaseAnalysis, setAnalysisFailure:value=>{failAnalysis=value;} };
 }
 
 async function openTools(page) {
@@ -80,8 +81,8 @@ async function uploadPhoto(page) {
 
 async function selectColor(page, surface, color) {
   const exterior=page.getByRole('group',{name:'Exterior surfaces',exact:true});
-  if(await exterior.count()) {
-    const labels={siding:'Siding 1',siding2:'Siding 2',frontDoor:'Front Door',garageDoor:'Garage Door',windows:'Windows',soffits:'Soffits',fascia:'Fascia',brick:'Brick',stucco:'Stucco',trim:'Trim',vents:'Vents',columns:'Columns'};
+  if(await page.getByRole('button',{name:'Home Exterior',exact:true}).getAttribute('aria-pressed')==='true') {
+    const labels={siding:'Siding 1',siding2:'Siding 2',frontDoor:'Front Door',garageDoor:'Garage Door',windows:'Windows',shutters:'Shutters',soffits:'Soffits',fascia:'Fascia',brick:'Brick',stucco:'Stucco',trim:'Trim',vents:'Vents',columns:'Columns'};
     await exterior.getByRole('button',{name:labels[surface],exact:true}).click();
   } else {
     await page.getByRole('button',{name:'Color Options',exact:true}).click();
@@ -494,11 +495,11 @@ test('two-tone choices guide island first then cabinets and base first then wall
   await expect(page.getByRole('heading',{name:'Select Wall Cabinet Color',exact:true})).toBeVisible();
 });
 
-test('all nine exterior choices fit one row and the two siding areas render independently', async ({page}) => {
+test('all ten detected exterior choices fit one row and the two siding areas render independently', async ({page}) => {
   const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
   await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
   const row=page.getByRole('group',{name:'Exterior surfaces',exact:true});
-  await expect(row.getByRole('button')).toHaveCount(9);
+  await expect(row.getByRole('button')).toHaveCount(10);
   for(const removed of ['Brick','Stucco','Columns'])await expect(row.getByRole('button',{name:removed,exact:true})).toHaveCount(0);
   for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1280,height:800},{width:800,height:1280},{width:1024,height:768},{width:768,height:1024}]){
     await page.setViewportSize(viewport);
@@ -542,11 +543,10 @@ test('four photos stay in two rows on the left and the working photo fills the r
   }
 });
 
-test('surface highlights follow the selected exterior area, show absent areas, and reuse one analysis',async({page})=>{
-  const api=await stubService(page);await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
+test('surface highlights follow detected areas, hide absent areas, and reuse one analysis',async({page})=>{
+  const api=await stubService(page,{absentSurfaces:['siding2']});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
   await expect(page.getByRole('img',{name:'Approximate detected area: Detected siding',exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Siding 2',exact:true}).click();
-  await expect(page.locator('.viz-detection')).toContainText('Not Clearly Visible');await expect(page.locator('.viz-region-overlay')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Siding 2',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'Front Door',exact:true}).click();
   await expect(page.getByRole('img',{name:'Approximate detected area: Detected frontDoor',exact:true})).toBeVisible();
   expect(api.analyses).toHaveLength(1);expect(api.renders).toHaveLength(0);
@@ -589,13 +589,58 @@ test('rapid photo switching queues detection and skips unselected waiting photos
   await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.renders).toHaveLength(0);
 });
 
-test('stopping while surface analysis is pending does not later dispatch a render',async({page})=>{
-  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);await selectColor(page,'siding',exteriorColors[0]);
-  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.getByRole('button',{name:'Stop Waiting',exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Stop Waiting',exact:true}).click();await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeEnabled();
+test('exterior options wait for detection before a customer can dispatch a render',async({page})=>{
+  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
+  await expect(page.getByText('Detecting Visible Surfaces...',{exact:true})).toBeVisible();
+  await expect(page.getByRole('group',{name:'Exterior surfaces',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeDisabled();
   api.releaseAnalysis();await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.renders).toHaveLength(0);
 });
 
+
+test('side-view photos show only detected surfaces and navigation skips absent features',async({page})=>{
+  const api=await stubService(page,{holdFirstAnalysis:true,surfaceSets:[['siding','soffits','fascia']]});await openAndConnect(page);
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
+  await expect(page.getByText('Detecting Visible Surfaces...',{exact:true})).toBeVisible();
+  api.releaseAnalysis();const menu=page.getByRole('group',{name:'Exterior surfaces',exact:true});
+  await expect(menu.getByRole('button')).toHaveCount(3);
+  expect(await menu.getByRole('button').allTextContents()).toEqual(['Siding 1','Soffits','Fascia']);
+  await page.getByRole('button',{name:'Next: Soffits',exact:true}).click();
+  await expect(menu.getByRole('button',{name:'Soffits',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Next: Fascia',exact:true}).click();await expect(page.getByRole('button',{name:'Last Surface',exact:true})).toBeDisabled();
+  expect(api.analyses).toHaveLength(1);expect(api.renders).toHaveLength(0);
+});
+
+test('shutters recolor and remove as independent saved choices, with hidden previous-photo edits excluded',async({page})=>{
+  const api=await stubService(page,{surfaceSets:[['siding','frontDoor','windows','shutters'],['siding','soffits','fascia']]});await openAndConnect(page);
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles([1,2].map(n=>({name:`exterior-${n}.webp`,mimeType:'image/webp',buffer:photo})));
+  await selectColor(page,'shutters',exteriorColors[0]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[0].body.design.surfaces).toEqual({shutters:exteriorColors[0].id});expect(api.renders[0].body.design.shutterAction).toBe('keep');
+  await page.getByRole('button',{name:'Remove Shutters',exact:true}).click();await expect(page.getByLabel('Find a Color',{exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,2);
+  expect(api.renders[1].body.design.shutterAction).toBe('remove');expect(api.renders[1].body.design.surfaces).toEqual({});
+  await selectColor(page,'frontDoor',exteriorColors[1]);
+  await page.getByRole('button',{name:'Select Photo 2',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Shutters',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeDisabled();
+  await selectColor(page,'siding',exteriorColors[2]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[2].body.design.surfaces).toEqual({siding:exteriorColors[2].id});expect(api.renders[2].body.design.shutterAction).toBe('keep');
+  await page.getByRole('button',{name:'Select Photo 1',exact:true}).click();await expectSaved(page,2);
+  await page.getByRole('button',{name:'Shutters',exact:true}).click();await expect(page.getByRole('button',{name:'Remove Shutters',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+
+test('failed and empty detections stay uncluttered and representative tools can recover missing options',async({page})=>{
+  const api=await stubService(page,{failAnalysis:true,surfaceSets:[[],[]]});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
+  await expect(page.getByText('Surface Detection Needs Another Try',{exact:true})).toBeVisible();
+  await expect(page.getByRole('group',{name:'Exterior surfaces',exact:true})).toHaveCount(0);
+  api.setAnalysisFailure(false);await page.getByRole('button',{name:'Retry Detection',exact:true}).click();
+  await expect(page.locator('.viz-surface-status')).toHaveText('No Editable Surfaces Detected');
+  await openTools(page);await page.getByRole('button',{name:'Show All Surface Options',exact:true}).click();await page.getByRole('button',{name:'Close Tools',exact:true}).click();
+  await expect(page.getByRole('group',{name:'Exterior surfaces',exact:true}).getByRole('button')).toHaveCount(10);
+  await page.getByRole('button',{name:'Shutters',exact:true}).click();await page.getByRole('button',{name:'Remove Shutters',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeEnabled();expect(api.renders).toHaveLength(0);
+});
 
 test('kitchen and exterior each retain a separate four-photo library, selections and Looks',async({page})=>{
   const api=await stubService(page);await openAndConnect(page);

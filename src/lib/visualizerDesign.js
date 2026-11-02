@@ -1,7 +1,10 @@
 import { colorsById } from '../data/colors.js';
 
-export const surfaceNames = {cabinets:'Cabinets',upperCabinets:'Wall Cabinets',lowerCabinets:'Base Cabinets',island:'Island',siding:'Siding 1',siding2:'Siding 2',frontDoor:'Front Door',garageDoor:'Garage Door',soffits:'Soffits',fascia:'Fascia',windows:'Windows',trim:'Trim',brick:'Brick',stucco:'Stucco',vents:'Vents',columns:'Columns'};
-export const exteriorSurfaces = ['siding','siding2','frontDoor','garageDoor','soffits','fascia','windows','trim','vents'];
+export const surfaceNames = {cabinets:'Cabinets',upperCabinets:'Wall Cabinets',lowerCabinets:'Base Cabinets',island:'Island',siding:'Siding 1',siding2:'Siding 2',frontDoor:'Front Door',garageDoor:'Garage Door',soffits:'Soffits',fascia:'Fascia',windows:'Windows',shutters:'Shutters',trim:'Trim',brick:'Brick',stucco:'Stucco',vents:'Vents',columns:'Columns'};
+export const exteriorSurfaces = ['siding','siding2','frontDoor','garageDoor','soffits','fascia','windows','shutters','trim','vents'];
+export function detectedExteriorSurfaces(analysis) {
+  return analysis?.status==='ready'?exteriorSurfaces.filter(id=>analysis.regions?.some(r=>r.surface===id && r.confidence!=='low' && r.polygons?.length)):[];
+}
 export const cabinetLayout = surfaces => Object.hasOwn(surfaces,'upperCabinets') || Object.hasOwn(surfaces,'lowerCabinets') ? 'wall-base' : Object.hasOwn(surfaces,'island') ? 'island' : 'one-tone';
 export function cabinetTones(surfaces) {
   return cabinetLayout(surfaces) === 'wall-base'

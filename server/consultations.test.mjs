@@ -33,6 +33,18 @@ test('the one-hour clear preserves originals and renders and representative reop
   assert.equal((await h.request(path,undefined,false)).status,200);assert.equal(h.renders,0);
 });
 
+test('shutter colors and removal choices sync and survive archive reopening',async()=>{
+  const h=consultationFixture();await create(h);const p=photo(0,'exterior');await upload(h,p);
+  for(const [index,finish]of [{mode:'exterior',surfaces:{shutters:'sw-7008'},shutterAction:'keep'},{mode:'exterior',surfaces:{},shutterAction:'remove'}].entries()) {
+    const look={id:`shutter-look-000000000000${index}`,photoId:p.id,design:finish,quality:'preview',createdAt:new Date().toISOString()};
+    assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look,image:fixtureImage},false)).status,200);
+  }
+  const active=(await h.request('/api/consultations/active',undefined,false).then(r=>r.json())).active;
+  assert.equal(active.looks[0].design.surfaces.shutters,'sw-7008');assert.equal(active.looks[1].design.shutterAction,'remove');
+  h.advance(3_600_001);const reopened=await h.request('/api/consultations',{action:'activate',consultationId:id}).then(r=>r.json());
+  assert.equal(reopened.consultation.looks[1].design.shutterAction,'remove');assert.equal(h.renders,0);
+});
+
 test('idempotent retry, separate photo limits and concurrent uploads keep consultation metadata consistent',async()=>{
   const h=consultationFixture();await create(h);await upload(h);const writes=h.writes;await upload(h);assert.equal(h.writes,writes);
   const results=await Promise.all([1,2,3,4].map(i=>upload(h,photo(i))));assert.equal(results.filter(r=>r.status===200).length,3);assert.equal(results.filter(r=>r.status===409).length,1);

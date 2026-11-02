@@ -16,7 +16,7 @@ import VisualizerCabinets from '../components/VisualizerCabinets';
 import VisualizerExteriorSteps, {ExteriorStepNavigation} from '../components/VisualizerExteriorSteps';
 import VisualizerPalette from '../components/VisualizerPalette';
 import VisualizerOptions, {finishOptions} from '../components/VisualizerOptions';
-import {cabinetLayout, cabinetTones, cabinetSurfaces, exteriorSurfaces, surfaceNames} from '../lib/visualizerDesign';
+import {cabinetLayout, cabinetTones, cabinetSurfaces, exteriorSurfaces, detectedExteriorSurfaces, surfaceNames} from '../lib/visualizerDesign';
 
 function useBlobUrl(blob) {
   const [url, setUrl] = useState('');
@@ -47,6 +47,7 @@ export default function Visualizer() {
   const [toolMessage, setToolMessage] = useState(''); const [saved, setSaved] = useState([]); const [archived, setArchived] = useState(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false); const [before, setBefore] = useState(false);
   const [showHighlight,setShowHighlight]=useState(true);
+  const [manualSurfacePhotoId,setManualSurfacePhotoId]=useState(null);
   const [correctionTarget,setCorrectionTarget]=useState(null);
   const [fullscreen, setFullscreen] = useState(false);
   const fullscreenDialog = useRef(null);
@@ -84,9 +85,13 @@ export default function Visualizer() {
   const layout = cabinetLayout(v.design.surfaces);
   const twoTone = v.design.mode === 'kitchen' && layout !== 'one-tone';
   const tones = cabinetTones(v.design.surfaces);
-  const activeSurface = v.design.mode === 'exterior' ? (exteriorSurfaces.includes(surface) ? surface : 'siding')
-    : !twoTone ? 'cabinets' : tone === 'light' ? (layout === 'wall-base' ? 'upperCabinets' : 'cabinets') : (layout === 'wall-base' ? 'lowerCabinets' : 'island');
   const analysis=v.analyses[`${v.photo?.id}:${v.design.mode}`];
+  const manualSurfaces=Boolean(v.photo && manualSurfacePhotoId===v.photo.id);
+  const availableSurfaces=manualSurfaces?exteriorSurfaces:detectedExteriorSurfaces(analysis);
+  const detecting=v.design.mode==='exterior' && v.photo && connected && online && (!analysis || ['loading','interrupted'].includes(analysis.status));
+  const detectionStatus=detecting?'loading':v.photo && (!connected || !online)?'connection':analysis?.status;
+  const activeSurface = v.design.mode === 'exterior' ? (availableSurfaces.includes(surface) ? surface : availableSurfaces[0] || '')
+    : !twoTone ? 'cabinets' : tone === 'light' ? (layout === 'wall-base' ? 'upperCabinets' : 'cabinets') : (layout === 'wall-base' ? 'lowerCabinets' : 'island');
   const region=analysis?.regions?.find(item=>item.surface===activeSurface);
   useEffect(()=>{if(v.design.mode==='exterior' && v.photo && connected && online)v.analyzePhoto(v.design.mode);},[v.photo?.id,v.design.mode,connected,online]);
   const previousSurface=useRef({photoId:v.photo?.id,surface:activeSurface});
@@ -96,11 +101,12 @@ export default function Visualizer() {
     return colors.filter(c => c.referenceOnly || c.systems.some(system => systems.includes(system)));
   }, [v.design.mode, activeSurface]);
   const selectedColor = colors.find(c => c.id === v.design.surfaces[activeSurface]);
-  const changes = Object.entries(v.design.surfaces).filter(([,value]) => value);
-  const hasChanges = (changes.length > 0 || Object.keys(finishOptions).some(key => v.design[key] !== 'keep')) && (!twoTone || !changes.length || Boolean(tones.light && tones.dark));
+  const changes = Object.entries(v.design.surfaces).filter(([key,value]) => value && (v.design.mode!=='exterior' || availableSurfaces.includes(key)));
+  const removingShutters=v.design.mode==='exterior' && v.design.shutterAction==='remove' && availableSurfaces.includes('shutters');
+  const hasChanges = (changes.length > 0 || removingShutters || Object.keys(finishOptions).some(key => v.design[key] !== 'keep')) && (!twoTone || !changes.length || Boolean(tones.light && tones.dark));
   const setColor = id => {
     v.setDesign(d => {
-      if (d.mode === 'exterior') return {...d,surfaces:{...d.surfaces,[activeSurface]:id}};
+      if (d.mode === 'exterior') return {...d,...(activeSurface==='shutters'?{shutterAction:'keep'}:{}),surfaces:{...d.surfaces,[activeSurface]:id}};
       if (cabinetLayout(d.surfaces)==='one-tone') return {...d,surfaces:cabinetSurfaces('one-tone',id)};
       const current=cabinetTones(d.surfaces); const next=tone==='light'?{...current,light:id}:{...current,dark:id};
       return {...d,surfaces:cabinetSurfaces(cabinetLayout(d.surfaces),next.light,next.dark)};
@@ -129,7 +135,7 @@ export default function Visualizer() {
   async function loadSaved() { const epoch = photoEpoch.current; try { const records = await listRenders(); if (epoch !== photoEpoch.current) return; setSaved(records); setToolMessage('Saved previews are stored on this device only.'); } catch(e) { if (epoch === photoEpoch.current) setToolMessage(e.message); } }
   async function removeSaved() { if (!archived || !window.confirm('Delete this saved preview from this tablet?')) return; try { await deleteRender(archived.id); setArchived(null); await loadSaved(); } catch(e) { setToolMessage(e.message); } }
   async function exportCurrent(share) { try { await exportImage(current, share); } catch(e) { if(e.name !== 'AbortError') setToolMessage('Unable to export this image. Please try Save Image.'); } }
-  function showPreview(quality, manual = '') { setBefore(false); setShowHighlight(false); v.generate(quality, manual); }
+  function showPreview(quality, manual = '') { setBefore(false); setShowHighlight(false); v.generate(quality, manual, null, v.design.mode==='exterior'?availableSurfaces:null); }
   return <div className={`visualizer-app ${v.design.mode==='exterior'?'is-exterior':''} ${toolsOpen?'with-tools':''}`}>
     <h1 className="sr-only" tabIndex={-1}>Design Visualizer</h1>
     <div className="viz-toolbar"><div className="chips" role="group" aria-label="Project type">
@@ -146,6 +152,7 @@ export default function Visualizer() {
       <button className="button button-dark" disabled={!operatorReady || !v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>showPreview('detail')}>Create Detailed Preview</button>
       {current && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy} onClick={()=>{setCorrectionTarget({kind:'preview',record:current});closeTools();}}>Correct This Preview</button></div>}
       {v.design.mode==='exterior' && v.photo && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy || analysis?.status==='loading'} onClick={()=>{setCorrectionTarget({kind:'areas'});closeTools();}}>Correct Detected Areas</button></div>}
+      {v.design.mode==='exterior' && v.photo && <button className="button" disabled={!operatorReady || v.busy} aria-pressed={manualSurfaces} onClick={()=>setManualSurfacePhotoId(manualSurfaces?null:v.photo.id)}>{manualSurfaces?'Use Detected Surfaces Only':'Show All Surface Options'}</button>}
       <div className="viz-custom-prompt"><h3>Custom Design Instructions</h3><p>Render the selected photo with your specific changes. Each button creates one image using the normal usage allowance.</p>
       {!operatorReady && <p>Activate this tablet with your password to enable custom instructions.</p>}
       <label className="viz-label">Custom Instructions<textarea maxLength={1500} rows={4} value={customPrompt} disabled={!operatorReady || v.busy} onChange={e => setCustomPrompt(e.target.value)} placeholder="For example: Keep the upper cabinets white and make only the island a muted sage green. Keep the countertop unchanged." /></label>
@@ -153,7 +160,7 @@ export default function Visualizer() {
         {!v.sync.enabled && <label className="viz-label">Consultation Label <span>(Optional)</span><input value={v.label} maxLength={100} placeholder="For finding these previews later" onChange={e => v.setLabel(e.target.value)} /></label>}
         {!v.sync.enabled && <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setCustomPrompt(''); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>}
     </section>}
-    {v.design.mode==='exterior' && <VisualizerExteriorSteps active={activeSurface} surfaces={v.design.surfaces} onSelect={setSurface} disabled={v.busy}/>}
+    {v.design.mode==='exterior' && <VisualizerExteriorSteps active={activeSurface} available={availableSurfaces} surfaces={v.design.surfaces} onSelect={setSurface} disabled={v.busy} status={detectionStatus}/>}
     <div className="viz-workspace">
       <section className="viz-canvas-column" aria-label="Your design preview">
         <div className="viz-photo-stage">
@@ -167,14 +174,15 @@ export default function Visualizer() {
           <button className={`button ${kitchenPanel==='colors'?'button-dark':''}`} aria-pressed={kitchenPanel==='colors'} disabled={v.busy} onClick={()=>setKitchenPanel('colors')}>Color Options</button>
           <button className={`button ${kitchenPanel==='hardware'?'button-dark':''}`} aria-pressed={kitchenPanel==='hardware'} disabled={v.busy} onClick={()=>setKitchenPanel('hardware')}>Hardware Finishes</button>
         </div>}
-        {v.design.mode==='kitchen' && kitchenPanel==='hardware' ? <>
+        {v.design.mode==='exterior' && !activeSurface?<div className="viz-surface-empty"><strong>{detectionStatus==='loading'?'Finding the Options for This Photo':detectionStatus==='connection'?'Connect to Detect Visible Surfaces':v.photo?'No Editable Surfaces Found':'Start With Your Exterior Photo'}</strong><p>{detectionStatus==='loading'?'Color options will appear when detection finishes.':v.photo?'Your representative can retry or correct detection if an area was missed.':'Upload a photo to see only the surfaces visible in that view.'}</p></div>:v.design.mode==='kitchen' && kitchenPanel==='hardware' ? <>
           <VisualizerOptions design={v.design} onChange={v.setDesign} disabled={v.busy}/>
           {twoTone && changes.length>0 && !(tones.light&&tones.dark) && <p className="viz-notice">Choose both cabinet colors in Color Options to finish your two-tone preview.</p>}
         </> : <>
           {v.design.mode==='kitchen' ? <VisualizerCabinets layout={layout} tone={tone} light={colors.find(c=>c.id===tones.light)} dark={colors.find(c=>c.id===tones.dark)} onLayout={changeLayout} onTone={setTone} disabled={v.busy}/>
-            : <ExteriorStepNavigation active={activeSurface} onSelect={setSurface} disabled={v.busy}/>}
-          {!twoTone && <div className="viz-selection"><div>{v.design.mode==='exterior' && <span>{surfaceNames[activeSurface]}{activeSurface==='siding'?'  -  Main Area':activeSurface==='siding2'?'  -  Accent Area':''}</span>}<strong>{selectedColor?.name || 'Keep Existing Finish'}</strong></div><button className="viz-text-button" disabled={v.busy} onClick={()=>setColor('')}>Keep Existing</button></div>}
-          <VisualizerPalette key={paletteSession} collection={collection} selectedId={selectedColor?.id} onSelect={setColor} disabled={v.busy} target={surfaceNames[activeSurface]}/>
+            : <ExteriorStepNavigation active={activeSurface} available={availableSurfaces} onSelect={setSurface} disabled={v.busy}/>}
+          {activeSurface==='shutters' && <div className="viz-shutter-options" role="group" aria-label="Shutter treatment"><button className={`button ${!removingShutters?'button-dark':''}`} aria-pressed={!removingShutters} disabled={v.busy} onClick={()=>v.setDesign(d=>({...d,shutterAction:'keep'}))}>Change Color</button><button className={`button ${removingShutters?'button-dark':''}`} aria-pressed={removingShutters} disabled={v.busy} onClick={()=>v.setDesign(d=>{const surfaces={...d.surfaces};delete surfaces.shutters;return {...d,surfaces,shutterAction:'remove'};})}>Remove Shutters</button></div>}
+          {!twoTone && <div className="viz-selection"><div>{v.design.mode==='exterior' && <span>{surfaceNames[activeSurface]}{activeSurface==='siding'?'  -  Main Area':activeSurface==='siding2'?'  -  Accent Area':''}</span>}<strong>{activeSurface==='shutters' && removingShutters?'Shutters Will Be Removed':selectedColor?.name || 'Keep Existing Finish'}</strong></div><button className="viz-text-button" disabled={v.busy} onClick={()=>setColor('')}>Keep Existing</button></div>}
+          {activeSurface==='shutters' && removingShutters?<p className="viz-notice">The surrounding wall finish will continue behind the removed shutters. Windows and frames stay in place.</p>:<VisualizerPalette key={paletteSession} collection={collection} selectedId={selectedColor?.id} onSelect={setColor} disabled={v.busy} target={surfaceNames[activeSurface]}/>}
         </>}
         </div>
         {!online && <p className="viz-notice">Connect to the internet to create a new preview. Saved images and color selections still work offline.</p>}
@@ -193,8 +201,8 @@ export default function Visualizer() {
         {originalUrl && <button className="button" onClick={() => setFullscreen(true)}>View Fullscreen</button>}
           {current && <button className="button" aria-label={before ? 'Show Design Preview' : 'Show Original'} aria-pressed={before} onClick={() => {setBefore(!before);setShowHighlight(false);}}>{before ? 'Show Design Preview' : 'Show Original'}</button>}
         </div>
-        {v.photo && !archived && v.design.mode==='exterior' && <div className="viz-detection" role="status">
-          <span title={region?.description}>{analysis?.status==='loading'?'Finding Surfaces...':analysis?.status==='ready'?`${surfaceNames[activeSurface]}: ${region?.polygons?.length?'Approximate Detected Area':'Not Clearly Visible'}${region?.substrate?' - '+region.substrate:''}${region?.existingColor?' / '+region.existingColor:''}`:'Surface Highlights Unavailable'}</span>
+        {v.photo && !archived && v.design.mode==='exterior' && analysis && analysis.status!=='loading' && <div className="viz-detection" role="status">
+          <span title={region?.description}>{analysis?.status==='ready'?activeSurface?`${surfaceNames[activeSurface]}: ${region?.polygons?.length?'Approximate Detected Area':'Not Clearly Visible'}${region?.substrate?' - '+region.substrate:''}${region?.existingColor?' / '+region.existingColor:''}`:'No Editable Surfaces Detected':'Surface Highlights Unavailable'}</span>
           {analysis?.status==='ready' && !!region?.polygons?.length && <button className="viz-text-button" disabled={v.busy} onClick={()=>{setShowHighlight(!showHighlight);if(!showHighlight)setBefore(true);}}>{showHighlight?'Hide Highlight':'Show Highlight'}</button>}
           {['error','interrupted'].includes(analysis?.status) && <button className="viz-text-button" disabled={v.busy || !online} onClick={()=>v.analyzePhoto(v.design.mode,true)}>Retry Detection</button>}
         </div>}

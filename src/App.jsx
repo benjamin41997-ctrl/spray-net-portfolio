@@ -189,7 +189,7 @@ function Portfolio() {
       </main>
       <footer className="app-footer">
         <span className="offline-status">
-          <span>Portfolio 1.5.1</span>
+          <span>Portfolio 1.6.0</span>
           {offlineReady && (
             <>
               <Icon name="check" size={14} />

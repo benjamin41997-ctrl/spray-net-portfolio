@@ -67,7 +67,12 @@
   .viz-tone-target strong { display:block; font-size:16px; }
   .viz-tone-target span span { display:block; font-size:14px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .viz-exterior-steps { display:grid; gap:8px; min-width:0; }
-  .viz-step-tabs { display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:3px; min-width:0; }
+  .viz-step-tabs { display:grid; grid-template-columns:repeat(var(--surface-count,1),minmax(0,1fr)); gap:3px; min-width:0; }
+  .viz-surface-status { display:flex; align-items:center; gap:10px; min-height:44px; padding:6px 12px; border-radius:10px; background:#eef3f7; font-size:16px; }
+  .viz-surface-status .viz-spinner { width:22px; height:22px; flex-shrink:0; }
+  .viz-surface-empty { padding:12px; font-size:17px; line-height:1.5; }
+  .viz-surface-empty p { margin-top:10px; font-size:16px; }
+  .viz-shutter-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .visualizer-app .viz-step-tabs .chip { position:relative; min-width:0; padding:8px 3px; white-space:nowrap; }
   .viz-step-tabs .chip.has-color::after { content:''; position:absolute; height:3px; left:10px; right:10px; bottom:3px; border-radius:3px; background:var(--step-color); border:1px solid #8799a5; }
   .viz-step-tabs :focus-visible { outline-offset:-3px; }
