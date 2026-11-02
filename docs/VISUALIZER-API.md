@@ -208,3 +208,10 @@ The image prompt includes the selected-change allowlist, explicit protected feat
 
 
 The new client sends `imageSize:{width,height}` (positive integer dimensions up to 4,096 pixels per axis) with `/api/analyze`. Original-detail vision inputs and a per-image schema request native pixel coordinates, then independently normalize x and y back to 0..1000 for the existing UI/render contract. Correction guides are converted in the opposite direction before the next analysis. Missing imageSize keeps the normalized-coordinate path for older tablets. No stronger model or automatic retry is introduced.
+
+
+### Wall cladding and garage semantics (1.4.2)
+
+Release `2026-11-01.10` shares substrate/garage definitions between analysis and edits through `server/exteriorRules.mjs`. Siding keys include brick and stucco wall groups. Auto siding colors accept the union of vinyl, MAT, SATIN, brick and ELASTO references; legacy explicitly selected material restrictions remain. Exact duplicate primary polygons are removed from Siding 2 after validation; an empty secondary result never authorizes recoloring the primary. Garage panels and plain frames are one garage-color target; decorative trim matching house trim is assigned to `trim` with exclusions on the garage guide. No model change is included.
+
+The current client sends `/api/analyze` only for exterior photos and omits kitchen region data on render requests. Older clients remain compatible with kitchen analysis; cabinet rendering still uses the original photo and selected finish instructions. Surface correction is hidden for kitchens, while preview correction remains available.

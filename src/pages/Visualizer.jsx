@@ -86,11 +86,11 @@ export default function Visualizer() {
     : !twoTone ? 'cabinets' : tone === 'light' ? (layout === 'wall-base' ? 'upperCabinets' : 'cabinets') : (layout === 'wall-base' ? 'lowerCabinets' : 'island');
   const analysis=v.analyses[`${v.photo?.id}:${v.design.mode}`];
   const region=analysis?.regions?.find(item=>item.surface===activeSurface);
-  useEffect(()=>{if(v.photo && connected && online)v.analyzePhoto(v.design.mode);},[v.photo?.id,v.design.mode,connected,online]);
+  useEffect(()=>{if(v.design.mode==='exterior' && v.photo && connected && online)v.analyzePhoto(v.design.mode);},[v.photo?.id,v.design.mode,connected,online]);
   const previousSurface=useRef({photoId:v.photo?.id,surface:activeSurface});
   useEffect(()=>{const previous=previousSurface.current;if(previous.photoId!==v.photo?.id || previous.surface!==activeSurface){setShowHighlight(true);if(previous.photoId===v.photo?.id)setBefore(true);previousSurface.current={photoId:v.photo?.id,surface:activeSurface};}},[activeSurface,v.photo?.id]);
   const collection = useMemo(() => {
-    const systems = v.design.mode === 'kitchen' ? ['kitchen'] : ({brick:['brick'],stucco:['elasto'],frontDoor:['dw'],garageDoor:['dw'],windows:['dw'],siding:['vinyl','mat','satin'],siding2:['vinyl','mat','satin']}[activeSurface] || ['mat','satin','dw']);
+    const systems = v.design.mode === 'kitchen' ? ['kitchen'] : ({brick:['brick'],stucco:['elasto'],frontDoor:['dw'],garageDoor:['dw'],windows:['dw'],siding:['vinyl','mat','satin','brick','elasto'],siding2:['vinyl','mat','satin','brick','elasto']}[activeSurface] || ['mat','satin','dw']);
     return colors.filter(c => c.referenceOnly || c.systems.some(system => systems.includes(system)));
   }, [v.design.mode, activeSurface]);
   const selectedColor = colors.find(c => c.id === v.design.surfaces[activeSurface]);
@@ -142,7 +142,7 @@ export default function Visualizer() {
       {archived && <div className="viz-actions"><button className="button" onClick={() => setArchived(null)}>Back to Current Consultation</button><button className="button" onClick={removeSaved}>Delete Selected Preview</button></div>}
       <button className="button button-dark" disabled={!operatorReady || !v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>showPreview('detail')}>Create Detailed Preview</button>
       {current && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy} onClick={()=>{setCorrectionTarget({kind:'preview',record:current});closeTools();}}>Correct This Preview</button></div>}
-      {v.photo && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy || analysis?.status==='loading'} onClick={()=>{setCorrectionTarget({kind:'areas'});closeTools();}}>Correct Detected Areas</button></div>}
+      {v.design.mode==='exterior' && v.photo && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy || analysis?.status==='loading'} onClick={()=>{setCorrectionTarget({kind:'areas'});closeTools();}}>Correct Detected Areas</button></div>}
       <div className="viz-custom-prompt"><h3>Custom Design Instructions</h3><p>Render the selected photo with your specific changes. Each button creates one image using the normal usage allowance.</p>
       {!operatorReady && <p>Activate this tablet with your password to enable custom instructions.</p>}
       <label className="viz-label">Custom Instructions<textarea maxLength={1500} rows={4} value={customPrompt} disabled={!operatorReady || v.busy} onChange={e => setCustomPrompt(e.target.value)} placeholder="For example: Keep the upper cabinets white and make only the island a muted sage green. Keep the countertop unchanged." /></label>
@@ -154,7 +154,7 @@ export default function Visualizer() {
     <div className="viz-workspace">
       <section className="viz-canvas-column" aria-label="Your design preview">
         <div className="viz-photo-stage">
-          {originalUrl ? <VisualizerPhotoView src={current && !before ? previewUrl : originalUrl} alt={current && !before ? 'AI design preview of the selected finishes' : 'Original photo of your home'} region={region} showHighlight={showHighlight && (!current || before) && !archived && !v.busy && kitchenPanel!=='hardware'}/> : <div className="viz-upload-intro"><h2>Preview Your Home</h2><p>See how new colors and finishes could look in your kitchen or on your home's exterior.</p><p>Take a photo or choose your photos, then pick your colors and finishes. Tap Create My Preview to see your idea and explore another look.</p><div className="viz-upload-actions"><button className="button button-dark" onClick={() => cameraInput.current?.click()}>Take a Photo</button><button className="button" onClick={() => fileInput.current?.click()}>Choose Photos</button></div></div>}
+          {originalUrl ? <VisualizerPhotoView src={current && !before ? previewUrl : originalUrl} alt={current && !before ? 'AI design preview of the selected finishes' : 'Original photo of your home'} region={region} showHighlight={v.design.mode==='exterior' && showHighlight && (!current || before) && !archived && !v.busy && kitchenPanel!=='hardware'}/> : <div className="viz-upload-intro"><h2>Preview Your Home</h2><p>See how new colors and finishes could look in your kitchen or on your home's exterior.</p><p>Take a photo or choose your photos, then pick your colors and finishes. Tap Create My Preview to see your idea and explore another look.</p><div className="viz-upload-actions"><button className="button button-dark" onClick={() => cameraInput.current?.click()}>Take a Photo</button><button className="button" onClick={() => fileInput.current?.click()}>Choose Photos</button></div></div>}
         </div>
       </section>
       <section className="viz-controls" id="visualizer-finishes" aria-label="Choose your finishes">
@@ -190,7 +190,7 @@ export default function Visualizer() {
         {originalUrl && <button className="button" onClick={() => setFullscreen(true)}>View Fullscreen</button>}
           {current && <button className="button" aria-label={before ? 'Show Design Preview' : 'Show Original'} aria-pressed={before} onClick={() => {setBefore(!before);setShowHighlight(false);}}>{before ? 'Show Design Preview' : 'Show Original'}</button>}
         </div>
-        {v.photo && !archived && (v.design.mode==='exterior' || kitchenPanel==='colors') && <div className="viz-detection" role="status">
+        {v.photo && !archived && v.design.mode==='exterior' && <div className="viz-detection" role="status">
           <span title={region?.description}>{analysis?.status==='loading'?'Finding Surfaces...':analysis?.status==='ready'?`${surfaceNames[activeSurface]}: ${region?.polygons?.length?'Approximate Detected Area':'Not Clearly Visible'}${region?.substrate?' - '+region.substrate:''}${region?.existingColor?' / '+region.existingColor:''}`:'Surface Highlights Unavailable'}</span>
           {analysis?.status==='ready' && !!region?.polygons?.length && <button className="viz-text-button" disabled={v.busy} onClick={()=>{setShowHighlight(!showHighlight);if(!showHighlight)setBefore(true);}}>{showHighlight?'Hide Highlight':'Show Highlight'}</button>}
           {['error','interrupted'].includes(analysis?.status) && <button className="viz-text-button" disabled={v.busy || !online} onClick={()=>v.analyzePhoto(v.design.mode,true)}>Retry Detection</button>}

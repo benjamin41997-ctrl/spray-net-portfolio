@@ -1,3 +1,4 @@
+import {claddingRules,garageRules} from './exteriorRules.mjs';
 import {validateRegions} from './regions.mjs';
 import {ApiError} from './errors.mjs';
 export {ApiError} from './errors.mjs';
@@ -10,18 +11,18 @@ const surfaces = {
     island: 'island cabinetry only, excluding its countertop',
   },
   exterior: {
-    siding: 'the primary or largest siding area only, grouped by matching substrate/profile and original base color across disconnected faces; always exclude distinct secondary siding groups even if they have no new color selected',
-    siding2: 'the existing secondary siding group with a genuinely different substrate/profile or underlying paint color; a gable position or shadow alone is not a different group; preserve primary siding and do not invent a secondary group',
+    siding: 'the primary or largest siding area (wall-cladding group, which may be lap siding, BRICK or STUCCO), grouped by matching substrate/profile and original base color across disconnected faces; exclude all distinct secondary groups',
+    siding2: 'the existing secondary siding group (wall cladding, including BRICK or STUCCO) with a genuinely different substrate/profile or underlying paint color; preserve primary siding, and do not invent a secondary group or reuse the primary when only one exists',
     brick: 'brick masonry only; preserve mortar, texture and masonry detail',
     stucco: 'stucco surfaces only; preserve their texture',
     frontDoor: 'the front entry door only',
-    garageDoor: 'garage doors only',
+    garageDoor: 'garage door panels and their plain functional frames/jambs in the same selected color, excluding decorative trim or ornamental overlays that match the house trim, plus glass and hardware',
     windows: 'window frames only; never paint the glass',
     soffits: 'soffits only',
     fascia: 'fascia boards only',
     vents: 'exterior vents only; preserve openings',
     columns: 'porch columns only',
-    trim: 'remaining decorative exterior trim only; exclude separately selected features',
+    trim: 'decorative exterior trim, including decorative bands, applied casing, arches or overlays ON or AROUND garage doors that match the house trim; exclude garage door panels and plain functional garage frames/jambs',
   },
 };
 
@@ -64,7 +65,7 @@ export function validateDesign(body, catalog) {
       : surface === 'brick' ? ['brick']
         : surface === 'stucco' ? ['elasto']
           : ['frontDoor', 'garageDoor', 'windows'].includes(surface) ? ['dw']
-            : ['siding','siding2'].includes(surface) ? (sidingMaterial === 'auto' ? ['vinyl','mat','satin'] : sidingMaterial === 'vinyl' ? ['vinyl'] : ['mat', 'satin'])
+            : ['siding','siding2'].includes(surface) ? (sidingMaterial === 'auto' ? ['vinyl','mat','satin','brick','elasto'] : sidingMaterial === 'vinyl' ? ['vinyl'] : ['mat', 'satin'])
               : ['mat', 'satin', 'dw'];
     const officialReference = color.referenceOnly && color.source === 'sherwin-williams-official';
     if (!officialReference && !systems.some(system => color.systems?.includes(system))) invalid('This color is not available for the selected surface. Choose another color from its deck.');
@@ -105,11 +106,14 @@ export function buildPrompt(design, customPrompt = '', context = {}) {
   if (design.mode === 'exterior') {
     const selected=new Set(design.surfaces.map(item=>item.surface));
     instructions.push('EXTERIOR CHANGE ALLOWLIST: '+[...selected].join(', ')+'. All other surfaces are locked.');
-    instructions.push('LOCKED EXTERIOR FEATURES: '+Object.keys(surfaces.exterior).filter(key=>!selected.has(key)).join(', ')+', plus roof/shingles, glass, gutters/downspouts, stone/mortar, lights, fixtures, fences, driveway, landscaping and sky. Preserve their original colors, tones, brightness and shadows. Color similarity to a selected surface is never permission to repaint them.');
-    instructions.push('Identify siding from its substrate/profile AND existing base color. Group matching disconnected siding faces together across stories. Different materials painted the same color remain separate. Shaded and sunlit faces of the same material/color remain one group. A gable by itself is not a secondary group. Never recolor masonry, trim, frames, soffits or fascia as siding. Honor openings and exclusion holes; if a boundary is ambiguous leave that boundary unchanged instead of spilling paint.');
+    const wallGroupSelected=selected.has('siding') || selected.has('siding2');
+    instructions.push('LOCKED EXTERIOR FEATURES: '+Object.keys(surfaces.exterior).filter(key=>!selected.has(key) && !(wallGroupSelected && ['brick','stucco'].includes(key))).join(', ')+', plus roof/shingles, glass, gutters/downspouts, lights, fixtures, fences, driveway, landscaping and sky. Brick/stucco wall groups are editable only when assigned to a selected Siding group or explicitly selected. Preserve all unselected groups and features with original colors, brightness and shadows. Color similarity alone never permits repainting.');
+    instructions.push(claddingRules,garageRules);
+    const second=context.regions?.find(r=>r.surface==='siding2');
+    if(second && !second.polygons.length)instructions.push('NO SECOND WALL GROUP WAS DETECTED: Siding 2 has no editable region. Do not apply its selected color to Siding 1 or any other surface. Leave the original primary group unchanged unless Siding 1 itself is selected. Representative corrections may identify a genuinely missing second group, but never duplicate the primary.');
   }
   if (design.mode === 'exterior' && design.surfaces.some(item => ['siding','siding2'].includes(item.surface))) {
-    instructions.push(design.sidingMaterial === 'auto' ? 'Recolor the existing siding without replacing it or changing its material, profile or texture.' : `The selected siding is ${design.sidingMaterial === 'vinyl' ? 'vinyl' : 'aluminum, fiber cement or engineered wood'}; recolor its existing appearance without replacing or changing its material or texture.`);
+    instructions.push(design.sidingMaterial === 'auto' ? 'Recolor the existing siding wall-cladding group without replacing it or changing its material, profile or texture, including brick joints or stucco relief when that is the selected substrate.' : `The selected siding is ${design.sidingMaterial === 'vinyl' ? 'vinyl' : 'aluminum, fiber cement or engineered wood'}; recolor its existing appearance without replacing or changing its material or texture.`);
   }
   for (const { surface, color } of design.surfaces) {
     instructions.push(`Recolor ${surfaces[design.mode][surface]} to ${color.brand} ${color.name}${color.code ? ` (${color.code})` : ''}, sRGB ${color.hex}.`);

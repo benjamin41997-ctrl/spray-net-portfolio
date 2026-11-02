@@ -52,7 +52,7 @@ export default function VisualizerProvider({ children }) {
   };
   function switchMode(next){if(!controller.current && ['kitchen','exterior'].includes(next)){setMode(next);setError('');setSaveWarning('');}}
   function analyzePhoto(mode, retry=false, feedback='') {
-    if(!photo || controller.current)return;
+    if(mode!=='exterior' || !photo || controller.current)return;
     const key=`${photo.id}:${mode}`;
     if(!retry && analysisCache.current[key] && analysisCache.current[key].status!=='interrupted')return analysisTasks.current[key];
     const previousTask=analysisTask.current?.promise;
@@ -84,7 +84,7 @@ export default function VisualizerProvider({ children }) {
       const key=`${photo.id}:${submittedDesign.mode}`;
       if(analysisTasks.current[key] && analysisCache.current[key]?.status==='loading')await Promise.race([analysisTasks.current[key],new Promise(resolve=>abort.signal.addEventListener('abort',resolve,{once:true}))]);
       if(abort.signal.aborted || epoch.current!==generation)return;
-      const regions=analysisCache.current[key]?.regions || [];
+      const regions=submittedDesign.mode==='exterior'?(analysisCache.current[key]?.regions || []):[];
       const previousNotes=[...new Set([...(correction?.record.corrections || []),...(correctionsByPhoto.current[key] || [])])].slice(-5);
       const corrections=correction?[...previousNotes,correction.feedback.trim()].slice(-5):previousNotes;
       let revision;

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
 import { createApi } from './api.mjs';
-import {buildAnalysisPrompt,validateRegions} from './regions.mjs';
+import {buildAnalysisPrompt,validateRegions,finalizeDetectedRegions} from './regions.mjs';
 import { loadConfig } from './config.mjs';
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, validateImage } from './images.mjs';
@@ -489,4 +489,17 @@ test('native photo dimensions use separate axes and convert detected polygons an
   assert.equal(axes.x.maximum,1200);assert.equal(axes.y.maximum,800);assert.equal(sent.input[0].content[1].detail,'original');
   assert.match(sent.input[0].content[0].text,/1200 pixels wide by 800 pixels high/);assert.match(sent.input[0].content[0].text,/"x":600,"y":400/);
   assert.equal((await h.api(request({image,mode:'exterior',imageSize:{width:0,height:800}},{path:'/api/analyze'}))).status,400);
+});
+
+
+test('wall cladding includes brick and stucco, allows only one group, and garage trim stays independent',()=>{
+  const prompt=buildAnalysisPrompt({mode:'exterior'});
+  assert.match(prompt,/Brick and stucco count as siding types/);assert.match(prompt,/if only one exists, leave Siding 2 empty/);assert.match(prompt,/Decorative casing/);assert.match(prompt,/paint the door and those frames the same/);
+  assert.doesNotMatch(prompt,/classify brick, stone, stucco/);
+  const deck=[...catalog,{id:'brick-only',brand:'Spray-Net',name:'Brick White',hex:'#FFFFFF',systems:['brick'],collections:['exterior']},{id:'stucco-only',brand:'Spray-Net',name:'Stucco White',hex:'#EEEEEE',systems:['elasto'],collections:['exterior']}];
+  for(const id of ['brick-only','stucco-only'])for(const key of ['siding','siding2'])assert.equal(validateDesign({...payload(),design:{mode:'exterior',surfaces:{[key]:id}}},deck).design.surfaces[0].color.id,id);
+  const region={description:'Wall',polygons:[[{x:0,y:0},{x:100,y:0},{x:100,y:100}]],holes:[],confidence:'high'};
+  const regions=finalizeDetectedRegions([{...region,surface:'siding'},{...region,surface:'siding2'}]);assert.equal(regions[0].polygons.length,1);assert.equal(regions[1].polygons.length,0);
+  const design=validateDesign({...payload(),design:{mode:'exterior',surfaces:{siding2:'white',garageDoor:'white'}},regions},catalog);
+  const edit=buildPrompt(design.design,'',design);assert.match(edit,/NO SECOND WALL GROUP WAS DETECTED/);assert.match(edit,/Do not apply its selected color to Siding 1/);assert.match(edit,/Decorative casing/);assert.match(edit,/plain functional frames\/jambs/);assert.doesNotMatch(edit,/Never recolor masonry/);
 });

@@ -568,10 +568,10 @@ test('representative corrections send original and previous preview, retain note
 });
 
 test('detected areas can be corrected before spending an image rendering attempt',async({page})=>{
-  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  const api=await stubService(page);await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
   await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');
   await openTools(page);await page.getByRole('button',{name:'Correct Detected Areas',exact:true}).click();
-  await page.getByLabel('What Should We Fix?',{exact:true}).fill('The island is the cabinet in the foreground, not the wall cabinets.');
+  await page.getByLabel('What Should We Fix?',{exact:true}).fill('The brick below the lap siding is Siding 2; keep the foreground planting unchanged.');
   await page.getByRole('button',{name:'Update Detected Areas',exact:true}).click();
   await expect.poll(()=>api.analyses.length).toBe(2);
   expect(api.analyses[1].operator).toBe(operatorCode);expect(api.analyses[1].body.previousRegions.length).toBeGreaterThan(0);expect(api.analyses[1].body.feedback).toContain('foreground');expect(api.renders).toHaveLength(0);
@@ -579,7 +579,7 @@ test('detected areas can be corrected before spending an image rendering attempt
 
 
 test('rapid photo switching queues detection and skips unselected waiting photos',async({page})=>{
-  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);
+  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
   await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(Array.from({length:3},(_,i)=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
   await expect.poll(()=>api.analyses.length).toBe(1);
   await page.getByRole('button',{name:'Select Photo 2',exact:true}).click();await page.getByRole('button',{name:'Select Photo 3',exact:true}).click();
@@ -590,7 +590,7 @@ test('rapid photo switching queues detection and skips unselected waiting photos
 });
 
 test('stopping while surface analysis is pending does not later dispatch a render',async({page})=>{
-  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+  const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);await selectColor(page,'siding',exteriorColors[0]);
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.getByRole('button',{name:'Stop Waiting',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Stop Waiting',exact:true}).click();await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeEnabled();
   api.releaseAnalysis();await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.renders).toHaveLength(0);
@@ -610,4 +610,25 @@ test('kitchen and exterior each retain a separate four-photo library, selections
   await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await expectSaved(page);await expect(page.locator('.viz-selection strong')).toHaveText(exteriorColors[0].name);await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toHaveAttribute('title','exterior-3.webp');
   const regions=await page.locator('.viz-media-panel').evaluate(e=>{const photo=document.querySelector('.viz-photo-stage').getBoundingClientRect();return [...e.querySelectorAll('button')].every(b=>b.getBoundingClientRect().right<=photo.left);});
   if((await page.viewportSize()).width>(await page.viewportSize()).height)expect(regions).toBe(true);
+});
+
+
+test('cabinets skip surface detection while previews and correction tools remain available',async({page})=>{
+  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
+  await page.getByRole('button',{name:'Two Tone',exact:true}).click();
+  await selectColor(page,'island',kitchenColors[0]);await selectColor(page,'cabinets',kitchenColors[1]);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.analyses).toHaveLength(0);expect(api.renders[0].body.regions).toBeUndefined();
+  await expect(page.locator('.viz-detection,.viz-region-overlay')).toHaveCount(0);
+  await openTools(page);await expect(page.getByRole('button',{name:'Correct Detected Areas',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Correct This Preview',exact:true})).toBeEnabled();
+});
+
+test('Looks wrap into pairs on the left without horizontal scrolling',async({page})=>{
+  await stubService(page);await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+  for(let i=1;i<=6;i++){await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,i);}
+  for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1280,height:800},{width:800,height:1280},{width:1024,height:768}]){
+    await page.setViewportSize(viewport);
+    const geometry=await page.locator('.viz-look-strip').evaluate(strip=>{const buttons=[...strip.querySelectorAll('button')].map(b=>b.getBoundingClientRect()),photo=document.querySelector('.viz-photo-stage').getBoundingClientRect(),main=document.querySelector('main');return {rows:new Set(buttons.map(r=>Math.round(r.top))).size,pairs:[0,2,4].every(i=>Math.abs(buttons[i].top-buttons[i+1].top)<1),scroll:strip.scrollWidth>strip.clientWidth,left:buttons.every(b=>b.right<=photo.left+1),mainFits:main.scrollHeight<=main.clientHeight+1,visible:buttons.every(b=>b.bottom<=innerHeight)};});
+    expect(geometry).toEqual({rows:3,pairs:true,scroll:false,left:true,mainFits:true,visible:true});
+  }
 });
