@@ -18,7 +18,7 @@ These are visual design concepts, not measured color matches or construction spe
 
 ## Cloudflare deployment
 
-`server/wrangler.toml` defines a **separate** Worker named `spray-net-visualizer-api`. It does not modify the review portal Worker. The `VisualizerGate` Durable Object serializes renders and persists the service-wide daily/hourly quota atomically. There is no D1 database, media bucket, image upload archive, or additional application dependency.
+`server/wrangler.toml` defines a **separate** Worker named `spray-net-visualizer-api`. It does not modify the review portal Worker. The `VisualizerGate` Durable Object serializes renders and persists the service-wide rolling usage windows atomically. Private consultation media uses the separate R2 binding described below.
 
 Use an authenticated Wrangler CLI from the existing Cloudflare setup. From the repository root:
 
@@ -60,11 +60,11 @@ wrangler secret put VISUALIZER_OPERATOR_TOKEN --config server/wrangler.toml
 
 The service uses this operator secret to derive the custom-render access token returned after password verification. Neither master secret needs to be entered on a tablet. The old setup-file importer and multi-field connection form are removed. Legacy private QR links still work, immediately remove their credentials from the address, and now remember access locally. Existing session-only connections migrate to remembered storage automatically.
 
-Open the hidden menu by holding **Kitchen & Cabinets** or **Home Exterior** for five seconds, or tapping either button eight times within six seconds. The gesture hides salesperson controls; the API credential separately authorizes custom rendering. Closing tools clears the typed custom prompt. Custom and ordinary renders share the same model settings, one-image output, daily/hourly quota, concurrency limit, and original-photo flow. There is no separate prompt-generation model call.
+Open the hidden menu by holding **Kitchen & Cabinets** or **Home Exterior** for five seconds, or tapping either button eight times within six seconds. The gesture hides salesperson controls; the API credential separately authorizes custom rendering. Closing tools clears the typed custom prompt. Custom and ordinary renders share the same model settings, one-image output, rolling usage windows, concurrency limit, and original-photo flow. There is no separate prompt-generation model call.
 
 Set `VISUALIZER_ALLOWED_ORIGINS` to exact HTTPS **origins**, not full page URLs. For GitHub Pages this is `https://benjamin41997-ctrl.github.io`, without `/spray-net-portfolio/`. There is no wildcard CORS setting. An origin restriction is supplementary; the device token is the authorization boundary.
 
-The configuration starts with 20 attempts per UTC day, 12 per rolling hour, a five-second minimum interval, and one active rendering. Adjust these values in `server/wrangler.toml` before deployment as needed. A quota reservation is persisted before the paid request. The cap remains in place across Worker restarts, deployments and token rotation. Use the same Durable Object binding and name when redeploying; creating a different Worker/object creates a separate allowance.
+The configuration allows five attempts per rolling ten minutes and 30 per rolling hour, a five-second minimum interval, and one active rendering. There is no daily rendering cap. Adjust these values in `server/wrangler.toml` before deployment as needed. An attempt is persisted before the paid request. Rolling windows survive Worker restarts, deployments and token rotation, including across midnight. Legacy daily counters remain readable for compatibility but never block a render. A limit response includes the remaining wait in its message and `Retry-After` header. Use the same Durable Object binding and name when redeploying; creating a different Worker/object creates separate usage history.
 
 Cloudflare may defer active Durable Object code updates for up to five minutes after deployment. Check the `X-Visualizer-Release` response header on `/api/session` before a live smoke test, or use a current Wrangler release with `--durable-objects-code-update-mode immediate` when no render is running. The request adapter uses `redirect: 'manual'`; Workers rejects the Fetch standard's `redirect: 'error'` before sending a request. Non-2xx responses are handled without following redirects. See [Cloudflare code update behavior](https://developers.cloudflare.com/changelog/post/2026-10-30-durable-objects-deferred-code-updates/) and [Request options](https://developers.cloudflare.com/workers/runtime-apis/request/).
 
@@ -72,7 +72,7 @@ Rendering incurs OpenAI API usage. A ChatGPT subscription does not supply this s
 
 ## Local Node 24 server
 
-Copy `.env.example` to the ignored `.env` file and fill in the server key and generated token. The explicit daily cap, token, key and allowed origins are all required; otherwise rendering stays disabled.
+Copy `.env.example` to the ignored `.env` file and fill in the server key and generated token. The token, key and allowed origins are required; otherwise rendering stays disabled. Rolling limits default to five per ten minutes and 30 per hour. The former `VISUALIZER_MAX_DAILY_RENDERS` setting is obsolete and ignored.
 
 ```powershell
 node --env-file=.env server/index.mjs
@@ -82,7 +82,7 @@ By default it listens at `http://127.0.0.1:8787`. Plain HTTP is only intended fo
 
 For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep one server process, and place `VISUALIZER_USAGE_FILE` on a persistent volume. The proxy must permit a request body slightly above 8 MB and allow at least 250 seconds for a render. Disable request/response body logging and never log authorization headers. The server itself logs only startup status.
 
-`server/.local/usage.json` is an atomic ledger that survives restarts. Startup acquires an exclusive `.lock` file. If the process is killed abruptly, inspect and remove the stale lock only after confirming no other instance is using the ledger. An unreadable/corrupt ledger blocks rendering; never silently delete it to restart the daily allowance. Multiple replicas require the Cloudflare Durable Object deployment or a shared transactional quota service.
+`server/.local/usage.json` is an atomic ledger that survives restarts. Startup acquires an exclusive `.lock` file. If the process is killed abruptly, inspect and remove the stale lock only after confirming no other instance is using the ledger. An unreadable/corrupt ledger blocks rendering; never silently delete it to reset usage history. Multiple replicas require the Cloudflare Durable Object deployment or a shared transactional quota service.
 
 ### Configuration
 
@@ -93,8 +93,8 @@ For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep on
 | `VISUALIZER_OPERATOR_TOKEN` | Optional separate random operator secret, 43–128 characters; custom prompts disabled without it |
 | `VISUALIZER_TABLET_PASSWORD` | Optional private 12–128 character password; required for one-password activation |
 | `VISUALIZER_ALLOWED_ORIGINS` | Required comma-separated exact HTTPS origins; localhost HTTP allowed for development |
-| `VISUALIZER_MAX_DAILY_RENDERS` | Required, 1–200; resets at midnight UTC |
-| `VISUALIZER_MAX_HOURLY_RENDERS` | 12, permitted range 1–60 |
+| `VISUALIZER_MAX_TEN_MINUTE_RENDERS` | 5, permitted range 1–60; rolling ten-minute window |
+| `VISUALIZER_MAX_HOURLY_RENDERS` | 30, permitted range 1–60; rolling hour |
 | `VISUALIZER_MIN_INTERVAL_SECONDS` | 5, permitted range 1–60 |
 | `VISUALIZER_TIMEOUT_SECONDS` | 240, permitted range 30–300 |
 | `VISUALIZER_FAST_TEST_MODE` | `true` in the deployment/example; forces Flare/low for customer previews; operator detail uses its configured model. Unset or `false` restores configured tiers |
@@ -193,7 +193,7 @@ Hardware styles are Keep Existing, Knobs, Small Handles and Big Handles. Finishe
 
 ### Surface analysis and revisions (1.4.0)
 
-`POST /api/analyze` accepts `{image, mode}` with the existing tablet bearer token. Optional `{feedback, previousRegions}` requires the operator header. The response is `{regions:[{surface,description,polygons:[[{x,y}]]}],model}`. Coordinates are normalized 0..1000. No photographs, region descriptions or correction text are stored by the Worker. Its `analysisUsage` Durable Object record stores only quota counters/timestamps, independently of image render usage (60/day, 30/hour, 1-second interval). The local Node adapter uses a separate `.analysis` usage ledger. Requests use GPT-6 Luna, Responses, `store:false`, strict schema, a 60-second timeout and no retries. Each selected photo/type is cached in consultation memory; surface switching makes no new API request.
+`POST /api/analyze` accepts `{image, mode}` with the existing tablet bearer token. Optional `{feedback, previousRegions}` requires the operator header. The response is `{regions:[{surface,description,polygons:[[{x,y}]]}],model}`. Coordinates are normalized 0..1000. No photographs, region descriptions or correction text are stored by the Worker. Its `analysisUsage` Durable Object record stores only quota counters/timestamps, independently of image render usage (30 per rolling hour, 1-second interval, no daily cap). The local Node adapter uses a separate `.analysis` usage ledger. Requests use GPT-6 Luna, Responses, `store:false`, strict schema, a 60-second timeout and no retries. Each selected photo/type is cached in consultation memory; surface switching makes no new API request.
 
 `POST /api/render` additionally accepts optional `regions`, `corrections` (up to five notes, 1,500 characters each), and `correction:{image,feedback}`. Any correction notes or revision require operator authorization. A revision sends two Images API references: the original home first and the previous unlabelled preview second. Original geometry remains authoritative. Regular previews still send only the original photograph. Each image is validated against the existing 6 MiB decoded limit; combined request bodies are bounded to twice the original request allowance. Validated surface guides and correction notes are supplied in the edit prompt. No model output or provider error body is logged. Preview labels are added locally after generation, keeping guide overlays and previous labels out of future model inputs.
 
@@ -237,3 +237,10 @@ Bounds: 17 MiB request bodies, 6 MiB per original/render/raw image, 1,000 consul
 The one-hour timeout clears the visible session, not the archive. Durable Object metadata and R2 media have no automatic lifecycle deletion rule. Local offline pending work can finish uploading to the archived consultation using representative access. Revoking tablet/operator tokens or changing the tablet password stops future authenticated reads/writes; ordinary deploys preserve access and saved data.
 
 The bucket was created privately with `wrangler r2 bucket create spray-net-portfolio-consultations`; `server/wrangler.toml` declares its binding. Shared sync is optional in `createApi` so the Node adapter and existing image-only tests continue to work without R2. `server/consultations.test.mjs` and `tests/consultation-sync.spec.js` test the actual shared service implementation with an isolated in-memory bucket, without billable AI requests. No email is sent by these endpoints.
+
+
+### Rolling Limits and Brick Staining (1.5.1)
+
+Service release `2026-11-02.12` removes daily render and analysis caps. Rendering uses `VISUALIZER_MAX_TEN_MINUTE_RENDERS=5` and `VISUALIZER_MAX_HOURLY_RENDERS=30`, with five seconds between attempts. Surface analysis keeps its independent 30-per-hour, one-second limit. The existing Durable Object usage records remain intact and compatible. Old day/count fields are retained as counters, not lockouts. Ten-minute and hourly limit responses include a retry delay; no automatic retries are added.
+
+The brick render instructions explicitly apply the selected stain color to both brick faces and mortar, including brick assigned to either Siding group. Recessed joint geometry and surface texture remain; contrasting or original-color mortar is not requested. Other wall groups stay protected. Models and render quality settings are unchanged.

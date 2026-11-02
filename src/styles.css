@@ -314,7 +314,8 @@
   .home-cards {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 16px;
+    column-gap: 16px;
+    row-gap: clamp(28px, 4dvh, 48px);
   }
   .visual-card {
     grid-column: span 3;
@@ -1623,7 +1624,7 @@
       padding-top: 39px;
     }
     .home-cards {
-      gap: 13px;
+      column-gap: 13px;
     }
     .visual-card {
       height: 350px;

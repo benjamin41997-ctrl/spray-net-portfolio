@@ -8,8 +8,17 @@ export function reserveAttempt(previous, config, now = Date.now()) {
   }
   record = { ...record, recentAttempts: record.recentAttempts.filter(value => value > now - 3_600_000) };
   if (record.day !== today) record = { ...record, day: today, count: 0 };
-  if (record.count >= config.maxDaily) throw new ApiError(429, 'daily_limit', 'Today’s rendering limit has been reached. Your saved designs are still available.');
-  if (record.recentAttempts.length >= config.maxHourly) throw new ApiError(429, 'hourly_limit', 'Please take a break before creating more renderings.', Math.ceil((record.recentAttempts[0] + 3_600_000 - now) / 1000));
+  const wait=(attempts,windowMs)=>Math.max(1,Math.ceil((attempts[0]+windowMs-now)/1000));
+  const delay=seconds=>`${Math.ceil(seconds/60)} ${Math.ceil(seconds/60)===1?'minute':'minutes'}`;
+  if (record.recentAttempts.length >= config.maxHourly) {
+    const seconds=wait(record.recentAttempts,3_600_000);
+    throw new ApiError(429,'hourly_limit',`You have reached ${config.maxHourly} previews in one hour. Try again in ${delay(seconds)}. Your saved designs are still available.`,seconds);
+  }
+  const tenMinuteAttempts=record.recentAttempts.filter(value=>value>now-600_000);
+  if(tenMinuteAttempts.length>=config.maxTenMinutes) {
+    const seconds=wait(tenMinuteAttempts,600_000);
+    throw new ApiError(429,'ten_minute_limit',`You have reached ${config.maxTenMinutes} previews in 10 minutes. Try again in ${delay(seconds)}. Your saved designs are still available.`,seconds);
+  }
   const last = record.recentAttempts.at(-1);
   if (last !== undefined && now - last < config.minIntervalMs) throw new ApiError(429, 'rate_limit', 'Please wait a moment before creating another rendering.', Math.ceil((last + config.minIntervalMs - now) / 1000));
   record.count += 1;

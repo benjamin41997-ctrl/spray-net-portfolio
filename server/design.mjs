@@ -1,4 +1,4 @@
-import {claddingRules,garageRules} from './exteriorRules.mjs';
+import {claddingRules,garageRules,brickStainRules} from './exteriorRules.mjs';
 import {validateRegions} from './regions.mjs';
 import {ApiError} from './errors.mjs';
 export {ApiError} from './errors.mjs';
@@ -13,7 +13,7 @@ const surfaces = {
   exterior: {
     siding: 'the primary or largest siding area (wall-cladding group, which may be lap siding, BRICK or STUCCO), grouped by matching substrate/profile and original base color across disconnected faces; exclude all distinct secondary groups',
     siding2: 'the existing secondary siding group (wall cladding, including BRICK or STUCCO) with a genuinely different substrate/profile or underlying paint color; preserve primary siding, and do not invent a secondary group or reuse the primary when only one exists',
-    brick: 'brick masonry only; preserve mortar, texture and masonry detail',
+    brick: 'brick masonry including both brick faces and all mortar joints in the same selected stain color; preserve joint relief, texture and masonry detail',
     stucco: 'stucco surfaces only; preserve their texture',
     frontDoor: 'the front entry door only',
     garageDoor: 'garage door panels and their plain functional frames/jambs in the same selected color, excluding decorative trim or ornamental overlays that match the house trim, plus glass and hardware',
@@ -109,6 +109,7 @@ export function buildPrompt(design, customPrompt = '', context = {}) {
     const wallGroupSelected=selected.has('siding') || selected.has('siding2');
     instructions.push('LOCKED EXTERIOR FEATURES: '+Object.keys(surfaces.exterior).filter(key=>!selected.has(key) && !(wallGroupSelected && ['brick','stucco'].includes(key))).join(', ')+', plus roof/shingles, glass, gutters/downspouts, lights, fixtures, fences, driveway, landscaping and sky. Brick/stucco wall groups are editable only when assigned to a selected Siding group or explicitly selected. Preserve all unselected groups and features with original colors, brightness and shadows. Color similarity alone never permits repainting.');
     instructions.push(claddingRules,garageRules);
+    if(wallGroupSelected || selected.has('brick'))instructions.push(brickStainRules);
     const second=context.regions?.find(r=>r.surface==='siding2');
     if(second && !second.polygons.length)instructions.push('NO SECOND WALL GROUP WAS DETECTED: Siding 2 has no editable region. Do not apply its selected color to Siding 1 or any other surface. Leave the original primary group unchanged unless Siding 1 itself is selected. Representative corrections may identify a genuinely missing second group, but never duplicate the primary.');
   }

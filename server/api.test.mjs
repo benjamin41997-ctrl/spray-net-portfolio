@@ -14,7 +14,7 @@ import { connectionFingerprint, reserveConnectionAttempt, tabletCredentials } fr
 
 const token = 'test-device-token-'.padEnd(43, 'x');
 const origin = 'https://portfolio.example.com';
-const config = loadConfig({ OPENAI_API_KEY: 'test-server-secret', VISUALIZER_ACCESS_TOKEN: token, VISUALIZER_ALLOWED_ORIGINS: origin, VISUALIZER_MAX_DAILY_RENDERS: '20' });
+const config = loadConfig({ OPENAI_API_KEY: 'test-server-secret', VISUALIZER_ACCESS_TOKEN: token, VISUALIZER_ALLOWED_ORIGINS: origin });
 const catalog = [
   { id: 'white', name: 'White', brand: 'Spray-Net', code: 'W1', hex: '#FFFFFF', collections: ['kitchen', 'exterior'], systems: ['kitchen', 'brick', 'elasto', 'dw', 'mat', 'satin'] },
   { id: 'navy', name: 'Navy', brand: 'Spray-Net', code: 'B1', hex: '#112233', collections: ['kitchen'], systems: ['kitchen'] },
@@ -49,14 +49,17 @@ function harness(options = {}) {
 
 test('configuration is fail-closed and accepts only exact approved origins and models', () => {
   assert.equal(loadConfig({}).configured, false);
-  assert.equal(loadConfig({ OPENAI_API_KEY: 'key', VISUALIZER_ACCESS_TOKEN: token, VISUALIZER_ALLOWED_ORIGINS: origin }).configured, false);
+  assert.equal(loadConfig({ OPENAI_API_KEY: 'key', VISUALIZER_ACCESS_TOKEN: token, VISUALIZER_ALLOWED_ORIGINS: origin }).configured, true);
+  assert.equal(config.maxTenMinutes,5);
+  assert.equal(config.maxHourly,30);
   assert.throws(() => loadConfig({ VISUALIZER_ACCESS_TOKEN: '1234' }));
   assert.throws(() => loadConfig({ VISUALIZER_ALLOWED_ORIGINS: '*' }));
   assert.throws(() => loadConfig({ VISUALIZER_ALLOWED_ORIGINS: 'https://example.com/path' }));
   assert.throws(() => loadConfig({ VISUALIZER_ALLOWED_ORIGINS: 'http://example.com' }));
   assert.throws(() => loadConfig({ VISUALIZER_PREVIEW_MODEL: 'arbitrary-model' }));
   assert.throws(() => loadConfig({ VISUALIZER_FAST_TEST_MODE: 'yes' }));
-  assert.throws(() => loadConfig({ VISUALIZER_MAX_DAILY_RENDERS: '2000' }));
+  assert.throws(() => loadConfig({ VISUALIZER_MAX_TEN_MINUTE_RENDERS: '0' }));
+  assert.throws(() => loadConfig({ VISUALIZER_MAX_HOURLY_RENDERS: '2000' }));
   assert.equal(loadConfig({ VISUALIZER_ALLOWED_ORIGINS: 'http://127.0.0.1:5173' }).allowedOrigins.size, 1);
 });
 
@@ -390,17 +393,19 @@ test('cancelled uploads release the lock before a quota reservation or provider 
   assert.equal((await h.api(request({}))).status, 400);
 });
 
-test('daily quota persists across restarts, fails closed on corrupt files, and counts attempts', () => {
+test('rolling limits persist across restarts, fail closed on corrupt files, and count attempts', () => {
   const dir = mkdtempSync(join(import.meta.dirname, '.quota-test-'));
   const file = join(dir, 'usage.json');
-  const limited = { ...config, maxDaily: 2, minIntervalMs: 1 };
+  const limited = { ...config, maxTenMinutes: 2, minIntervalMs: 1 };
   const now = Date.parse('2026-10-30T12:00:00Z');
   try {
     new UsageLedger(file, limited).reserve(now);
     new UsageLedger(file, limited).reserve(now + 10);
-    assert.throws(() => new UsageLedger(file, limited).reserve(now + 20), error => error.code === 'daily_limit');
+    assert.throws(() => new UsageLedger(file, limited).reserve(now + 20), error => error.code === 'ten_minute_limit');
     const saved = JSON.parse(readFileSync(file, 'utf8'));
     assert.deepEqual(Object.keys(saved).sort(), ['count', 'day', 'recentAttempts', 'version']);
+    new UsageLedger(file, limited).reserve(now + 600_000);
+    assert.equal(JSON.parse(readFileSync(file, 'utf8')).count, 3);
     new UsageLedger(file, limited).reserve(now + 86_400_000);
     assert.equal(JSON.parse(readFileSync(file, 'utf8')).count, 1);
     writeFileSync(file, 'corrupt');
@@ -420,6 +425,35 @@ test('persistent limiter enforces hourly and interval limits, including around U
   assert.throws(() => reserveAttempt(first, hourly, now + 5001), error => error.code === 'hourly_limit');
   assert.equal(reserveAttempt(first, hourly, now + 3_600_001).count, 1);
   assert.throws(() => reserveAttempt({ ...first, day: '2029-01-01' }, config, now), error => error.code === 'quota_unavailable');
+});
+
+test('five-per-ten-minute and thirty-per-hour windows expire exactly without a daily lockout', () => {
+  const now=Date.parse('2026-11-02T12:00:00Z');
+  let record=null;
+  for(let i=0;i<5;i++)record=reserveAttempt(record,config,now+i*5000);
+  assert.throws(()=>reserveAttempt(record,config,now+25_000),e=>e.code==='ten_minute_limit' && e.retryAfter===575);
+  record=reserveAttempt(record,config,now+600_000);
+  assert.equal(record.count,6);
+  record=null;
+  for(let batch=0;batch<6;batch++)for(let i=0;i<5;i++)record=reserveAttempt(record,config,now+batch*600_000+i*5000);
+  assert.equal(record.recentAttempts.length,30);
+  assert.throws(()=>reserveAttempt(record,config,now+3_599_999),e=>e.code==='hourly_limit' && e.retryAfter===1);
+  assert.equal(reserveAttempt(record,config,now+3_600_000).count,31);
+  // Old deployments' daily counts remain readable, but no longer block renders.
+  const legacy={version:1,day:'2026-11-02',count:200,recentAttempts:[]};
+  assert.equal(reserveAttempt(legacy,config,now).count,201);
+});
+
+test('brick staining includes matching mortar for explicit brick and either siding group', () => {
+  for(const surface of ['brick','siding','siding2']) {
+    const design=validateDesign({image,quality:'preview',design:{mode:'exterior',surfaces:{[surface]:'white'}}},catalog).design;
+    const prompt=buildPrompt(design);
+    assert.match(prompt,/stain BOTH brick faces AND all mortar joints/);
+    assert.match(prompt,/SAME stain color/);
+    assert.match(prompt,/Keep all unselected masonry at its original color/);
+  }
+  const door=validateDesign({image,quality:'preview',design:{mode:'exterior',surfaces:{frontDoor:'white'}}},catalog).design;
+  assert.doesNotMatch(buildPrompt(door),/BRICK STAIN COVERAGE/);
 });
 
 test('failed quota persistence prevents provider calls', async () => {

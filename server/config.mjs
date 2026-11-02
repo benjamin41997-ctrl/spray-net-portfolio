@@ -41,8 +41,6 @@ export function loadConfig(env = process.env) {
     throw new Error('VISUALIZER_ACCESS_TOKEN must be a random 43–128 character base64url or hex secret.');
   }
   const allowedOrigins = new Set((env.VISUALIZER_ALLOWED_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean).map(allowedOrigin));
-  // A daily cap is deliberately explicit: missing secrets or cap never enables billing.
-  const maxDaily = env.VISUALIZER_MAX_DAILY_RENDERS ? integer(env, 'VISUALIZER_MAX_DAILY_RENDERS', '', 1, 200) : 0;
   return {
     apiKey,
     accessToken,
@@ -50,9 +48,9 @@ export function loadConfig(env = process.env) {
     tabletPassword,
     fastTestMode:fastTestMode === 'true',
     allowedOrigins,
-    configured: Boolean(apiKey && accessToken && allowedOrigins.size && maxDaily),
-    maxDaily,
-    maxHourly: integer(env, 'VISUALIZER_MAX_HOURLY_RENDERS', 12, 1, 60),
+    configured: Boolean(apiKey && accessToken && allowedOrigins.size),
+    maxTenMinutes: integer(env, 'VISUALIZER_MAX_TEN_MINUTE_RENDERS', 5, 1, 60),
+    maxHourly: integer(env, 'VISUALIZER_MAX_HOURLY_RENDERS', 30, 1, 60),
     minIntervalMs: integer(env, 'VISUALIZER_MIN_INTERVAL_SECONDS', 5, 1, 60) * 1000,
     timeoutMs: integer(env, 'VISUALIZER_TIMEOUT_SECONDS', 240, 30, 300) * 1000,
     previewModel: model(env, 'VISUALIZER_PREVIEW_MODEL', 'gpt-image-2.5-flare'),

@@ -18,7 +18,7 @@ export class VisualizerGate {
       }),
       reserveAnalysis: () => state.storage.transaction(async transaction => {
         const previous=await transaction.get('analysisUsage');
-        await transaction.put('analysisUsage',reserveAttempt(previous,{...config,maxDaily:60,maxHourly:30,minIntervalMs:1000}));
+        await transaction.put('analysisUsage',reserveAttempt(previous,{...config,maxTenMinutes:30,maxHourly:30,minIntervalMs:1000}));
       }),
       reserve: () => state.storage.transaction(async transaction => {
         const previous = await transaction.get('usage');

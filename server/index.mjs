@@ -9,7 +9,7 @@ import { connectionFingerprint } from './pairing.mjs';
 const config = loadConfig();
 const release = config.configured ? acquireLedgerLock(config.dataFile) : () => {};
 const ledger = new UsageLedger(config.dataFile, config);
-const analysisLedger = new UsageLedger(`${config.dataFile}.analysis`,{...config,maxDaily:60,maxHourly:30,minIntervalMs:1000});
+const analysisLedger = new UsageLedger(`${config.dataFile}.analysis`,{...config,maxTenMinutes:30,maxHourly:30,minIntervalMs:1000});
 const connections = new ConnectionLedger(`${config.dataFile}.connections`);
 const handle = createApi({ config, catalog: colors, reserve: () => ledger.reserve(), reserveAnalysis: () => analysisLedger.reserve(), reserveConnection: request => connections.reserve(connectionFingerprint(request)) });
 
