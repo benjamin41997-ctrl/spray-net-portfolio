@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
 import { createApi } from './api.mjs';
+import {buildAnalysisPrompt,validateRegions} from './regions.mjs';
 import { loadConfig } from './config.mjs';
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, validateImage } from './images.mjs';
@@ -307,8 +308,8 @@ test('primary and secondary siding keep independent colors without inventing new
   assert.deepEqual(validated.design.surfaces.map(item=>[item.surface,item.color.id]),[['siding','white'],['siding2','vinyl']]);
   const prompt=buildPrompt(validated.design);
   assert.match(prompt,/primary or largest siding area/);
-  assert.match(prompt,/existing secondary siding area/);
-  assert.match(prompt,/do not invent a secondary area/);
+  assert.match(prompt,/existing secondary siding group/);
+  assert.match(prompt,/do not invent a secondary group/);
   const h=harness();const result=await h.api(request(body));
   assert.equal(result.status,200);assert.equal(h.calls.length,1);
 });
@@ -456,4 +457,36 @@ test('invalid or refused surface results fail gracefully without retrying',async
     let calls=0;const api=createApi({config,catalog,reserve:()=>{},fetchImpl:async()=>{calls++;return new Response(JSON.stringify(output));}});
     const result=await api(request({image,mode:'exterior'},{path:'/api/analyze'}));assert.equal(result.status,502);assert.equal((await result.json()).error.code,'analysis_failed');assert.equal(calls,1);
   }
+});
+
+test('surface guides retain substrate, existing color and exclusion holes and reject malformed exclusions',()=>{
+  const triangle=[{x:10,y:10},{x:900,y:10},{x:900,y:900}];
+  const region={surface:'siding',description:'Main lap siding',substrate:'likely fiber cement lap',existingColor:'warm white',confidence:'medium',polygons:[triangle],holes:[triangle]};
+  assert.deepEqual(validateRegions([region],'exterior'),[region]);
+  assert.throws(()=>validateRegions([{...region,holes:[[{x:-1,y:0},...triangle]]}],'exterior'));
+  assert.throws(()=>validateRegions([{...region,confidence:'certain'}],'exterior'));
+  const prompt=buildAnalysisPrompt({mode:'exterior'});
+  assert.match(prompt,/BOTH substrate\/profile AND existing base color/);
+  assert.match(prompt,/sunlight\/shadow variations are not different paint colors/);
+  assert.match(prompt,/Use holes for openings/);
+  const design=validateDesign({...payload(),design:{mode:'exterior',surfaces:{siding:'white'}},regions:[region]},catalog);
+  const edit=buildPrompt(design.design,'',design);
+  assert.match(edit,/EXTERIOR CHANGE ALLOWLIST: siding\./);
+  assert.match(edit,/LOCKED EXTERIOR FEATURES:.*garageDoor.*windows/);
+  assert.match(edit,/exposure, white balance/);
+  assert.match(edit,/FINAL PRESERVATION CHECK/);
+  assert.match(edit,/likely fiber cement lap/);
+});
+
+
+test('native photo dimensions use separate axes and convert detected polygons and feedback without shifting the image',async()=>{
+  let sent;const region={surface:'siding',description:'Lap siding',substrate:'Vinyl lap',existingColor:'Gray',confidence:'high',polygons:[[{x:0,y:0},{x:600,y:0},{x:600,y:400}]],holes:[]};
+  const h=harness({config:passwordConfig,fetchImpl:async(url,init)=>{sent=JSON.parse(init.body);return new Response(JSON.stringify({output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({regions:[region]})}]}]}));}});
+  const normalized={...region,polygons:[[{x:0,y:0},{x:500,y:0},{x:500,y:500}]]};
+  const result=await h.api(request({image,mode:'exterior',imageSize:{width:1200,height:800},feedback:'Keep the window excluded.',previousRegions:[normalized]},{path:'/api/analyze',headers:{'X-Visualizer-Operator':passwordConfig.operatorToken}}));
+  assert.equal(result.status,200);assert.deepEqual((await result.json()).regions,[normalized]);
+  const axes=sent.text.format.schema.properties.regions.items.properties.polygons.items.items.properties;
+  assert.equal(axes.x.maximum,1200);assert.equal(axes.y.maximum,800);assert.equal(sent.input[0].content[1].detail,'original');
+  assert.match(sent.input[0].content[0].text,/1200 pixels wide by 800 pixels high/);assert.match(sent.input[0].content[0].text,/"x":600,"y":400/);
+  assert.equal((await h.api(request({image,mode:'exterior',imageSize:{width:0,height:800}},{path:'/api/analyze'}))).status,400);
 });

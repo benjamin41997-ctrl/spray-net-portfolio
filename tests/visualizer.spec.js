@@ -182,7 +182,7 @@ test('a rendering continues while the customer browses the portfolio and returns
 test('exterior surfaces are independent and going offline blocks paid generation', async ({ page, context }) => {
   const api = await stubService(page);
   await openAndConnect(page);
-  await page.getByRole('button', { name: 'Home Exterior', exact: true }).click();
+  await page.getByRole('button', { name: 'Home Exterior', exact: true }).click();await uploadPhoto(page);
   await uploadPhoto(page);
   await selectColor(page, 'siding', exteriorColors[0]);
   await selectColor(page, 'frontDoor', exteriorColors[1]);
@@ -395,7 +395,7 @@ test('one tone covers all cabinets and two-tone layouts always put the darker ch
 
 test('exterior steps retain colors and skip unchanged areas without a siding material dropdown', async ({page}) => {
   const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
-  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
   await expect(page.getByLabel('Siding Material',{exact:true})).toHaveCount(0);
   await expect(page.getByLabel('Choose a Surface',{exact:true})).toHaveCount(0);
   const steps=page.getByRole('group',{name:'Exterior surfaces',exact:true});
@@ -426,7 +426,7 @@ test('the photo and primary controls fit iPad and Lenovo portrait and landscape 
   for(const layout of ['one','two','hardware','exterior']) {
     if(layout==='two')await page.getByRole('button',{name:'Two Tone',exact:true}).click();
     if(layout==='hardware')await page.getByRole('button',{name:'Hardware Finishes',exact:true}).click();
-    if(layout==='exterior')await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
+    if(layout==='exterior'){await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);}
     for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1280,height:800},{width:800,height:1280},{width:1024,height:768}]) {
       await page.setViewportSize(viewport);
       await expect.poll(()=>page.evaluate(()=>{
@@ -496,7 +496,7 @@ test('two-tone choices guide island first then cabinets and base first then wall
 
 test('all nine exterior choices fit one row and the two siding areas render independently', async ({page}) => {
   const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);
-  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
   const row=page.getByRole('group',{name:'Exterior surfaces',exact:true});
   await expect(row.getByRole('button')).toHaveCount(9);
   for(const removed of ['Brick','Stucco','Columns'])await expect(row.getByRole('button',{name:removed,exact:true})).toHaveCount(0);
@@ -526,19 +526,19 @@ test('customers have one preview action and the detailed action is in private to
 });
 
 
-test('eight photos stay in two rows on the left and the working photo fills the right side',async({page})=>{
+test('four photos stay in two rows on the left and the working photo fills the right side',async({page})=>{
   await stubService(page);await openAndConnect(page);
-  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(Array.from({length:8},(_,i)=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
-  await expect(page.getByRole('button',{name:'Select Photo 8',exact:true})).toBeVisible();
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(Array.from({length:4},(_,i)=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
+  await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Two Tone',exact:true}).click();
   for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1024,height:768}]) {
     await page.setViewportSize(viewport);
     const geometry=await page.evaluate(()=>{
       const thumbs=[...document.querySelectorAll('.viz-photo-thumb')].map(e=>e.getBoundingClientRect());
       const photo=document.querySelector('.viz-photo-stage').getBoundingClientRect();
-      return {rows:new Set(thumbs.map(r=>Math.round(r.top))).size,left:thumbs.every(r=>r.right<=photo.left),width:photo.width,height:photo.height,overflow:document.querySelector('main').scrollHeight>document.querySelector('main').clientHeight+1};
+      return {pictureOnly:document.querySelector('.viz-canvas-column').querySelectorAll('button,.viz-look-strip,.viz-detection').length===0,rows:new Set(thumbs.map(r=>Math.round(r.top))).size,left:thumbs.every(r=>r.right<=photo.left),width:photo.width,height:photo.height,overflow:document.querySelector('main').scrollHeight>document.querySelector('main').clientHeight+1};
     });
-    expect(geometry.rows).toBe(2);expect(geometry.left).toBe(true);expect(geometry.width).toBeGreaterThan(viewport.width*.6);expect(geometry.height).toBeGreaterThan(240);expect(geometry.overflow).toBe(false);
+    expect(geometry.pictureOnly).toBe(true);expect(geometry.rows).toBe(2);expect(geometry.left).toBe(true);expect(geometry.width).toBeGreaterThan(viewport.width*.6);expect(geometry.height).toBeGreaterThan(240);expect(geometry.overflow).toBe(false);
   }
 });
 
@@ -594,4 +594,20 @@ test('stopping while surface analysis is pending does not later dispatch a rende
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.getByRole('button',{name:'Stop Waiting',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Stop Waiting',exact:true}).click();await expect(page.getByRole('button',{name:'Create My Preview',exact:true})).toBeEnabled();
   api.releaseAnalysis();await expect(page.locator('.viz-detection')).toContainText('Approximate Detected Area');expect(api.renders).toHaveLength(0);
+});
+
+
+test('kitchen and exterior each retain a separate four-photo library, selections and Looks',async({page})=>{
+  const api=await stubService(page);await openAndConnect(page);
+  const files=Array.from({length:4},(_,i)=>({name:`kitchen-${i}.webp`,mimeType:'image/webp',buffer:photo}));
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(files);await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toBeVisible();
+  await selectColor(page,'cabinets',kitchenColors[0]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(files[0]);await expect(page.getByRole('alert')).toContainText('up to 4 photos');await expect(page.getByRole('alert')).toBeVisible();expect(api.renders).toHaveLength(1);
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await expect(page.getByRole('button',{name:/Select Photo/})).toHaveCount(0);await expect(page.locator('.viz-look-strip button')).toHaveCount(0);await expect(page.getByAltText('AI design preview of the selected finishes',{exact:true})).toHaveCount(0);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(files.map(f=>({...f,name:f.name.replace('kitchen','exterior')})));await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toBeVisible();
+  await selectColor(page,'siding',exteriorColors[0]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  await page.getByRole('button',{name:'Kitchen & Cabinets',exact:true}).click();await expectSaved(page);await expect(page.locator('.viz-selection strong')).toHaveText(kitchenColors[0].name);await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toHaveAttribute('title','kitchen-3.webp');
+  await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await expectSaved(page);await expect(page.locator('.viz-selection strong')).toHaveText(exteriorColors[0].name);await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toHaveAttribute('title','exterior-3.webp');
+  const regions=await page.locator('.viz-media-panel').evaluate(e=>{const photo=document.querySelector('.viz-photo-stage').getBoundingClientRect();return [...e.querySelectorAll('button')].every(b=>b.getBoundingClientRect().right<=photo.left);});
+  if((await page.viewportSize()).width>(await page.viewportSize()).height)expect(regions).toBe(true);
 });

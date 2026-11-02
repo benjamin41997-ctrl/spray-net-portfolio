@@ -198,3 +198,13 @@ Hardware styles are Keep Existing, Knobs, Small Handles and Big Handles. Finishe
 `POST /api/render` additionally accepts optional `regions`, `corrections` (up to five notes, 1,500 characters each), and `correction:{image,feedback}`. Any correction notes or revision require operator authorization. A revision sends two Images API references: the original home first and the previous unlabelled preview second. Original geometry remains authoritative. Regular previews still send only the original photograph. Each image is validated against the existing 6 MiB decoded limit; combined request bodies are bounded to twice the original request allowance. Validated surface guides and correction notes are supplied in the edit prompt. No model output or provider error body is logged. Preview labels are added locally after generation, keeping guide overlays and previous labels out of future model inputs.
 
 The public health response identifies this service release with `X-Visualizer-Release: 2026-11-01.7`. Image model/quality settings and persistent tablet passwords are unchanged by this release.
+
+
+### Substrate-aware guides (1.4.1)
+
+Service release `2026-11-01.9` adds `substrate`, `existingColor`, `confidence` (high/medium/low) and `holes` (normalized polygon arrays) to each analysis region. The strict provider schema requests all fields; API validation also accepts older region objects for already-open tablets. Low-confidence provider results have empty positive polygons. Positive and exclusion polygons are bounded to 16 polygons of 3–32 points each, with finite coordinates in 0..1000. Exclusion holes are removed from the SVG highlight and passed to the render prompt. Material names and original colors are visual observations, not verified coating recommendations.
+
+The image prompt includes the selected-change allowlist, explicit protected features, original lighting/color constraints and protected-region references. Neither image nor analysis models were upgraded. All previous authentication, quotas, local-only storage, timeouts and no-retry behavior remain in place.
+
+
+The new client sends `imageSize:{width,height}` (positive integer dimensions up to 4,096 pixels per axis) with `/api/analyze`. Original-detail vision inputs and a per-image schema request native pixel coordinates, then independently normalize x and y back to 0..1000 for the existing UI/render contract. Correction guides are converted in the opposite direction before the next analysis. Missing imageSize keeps the normalized-coordinate path for older tablets. No stronger model or automatic retry is introduced.

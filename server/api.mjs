@@ -109,7 +109,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.7', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-01.9', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -151,7 +151,8 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
       acquired = true;
       const body = await parseBody(request, path==='/api/render' ? MAX_BODY_BYTES*2 : MAX_BODY_BYTES);
       if(path==='/api/analyze') {
-        if(!body || Array.isArray(body) || Object.keys(body).some(key=>!['image','mode','feedback','previousRegions'].includes(key)) || !Object.hasOwn(surfaceKeys,body.mode)) throw new ApiError(400,'invalid_analysis','Choose a kitchen or exterior photograph.');
+        if(!body || Array.isArray(body) || Object.keys(body).some(key=>!['image','mode','feedback','previousRegions','imageSize'].includes(key)) || !Object.hasOwn(surfaceKeys,body.mode)) throw new ApiError(400,'invalid_analysis','Choose a kitchen or exterior photograph.');
+        if(body.imageSize!==undefined && (!body.imageSize || Object.keys(body.imageSize).some(k=>!['width','height'].includes(k)) || ![body.imageSize.width,body.imageSize.height].every(n=>Number.isInteger(n)&&n>0&&n<=4096)))throw new ApiError(400,'invalid_analysis','This photo has invalid dimensions. Choose the photo again.');
         if(body.feedback!==undefined && (typeof body.feedback!=='string' || !body.feedback.trim() || body.feedback.length>1500)) throw new ApiError(400,'invalid_analysis','Describe the surface correction in up to 1,500 characters.');
         if(body.feedback && !operatorAuthorized(request,config,paired)) throw new ApiError(403,'operator_required','Surface corrections require representative access.');
         if(body.previousRegions!==undefined) body.previousRegions=validateRegions(body.previousRegions,body.mode);

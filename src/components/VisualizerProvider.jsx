@@ -6,12 +6,19 @@ const Context = createContext(null);
 export const useVisualizer = () => useContext(Context);
 export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'auto', surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
 export default function VisualizerProvider({ children }) {
-  const [photos, setPhotos] = useState([]);
-  const [photoId, setPhotoId] = useState(null);
-  const photo = photos.find(item => item.id === photoId) || null;
-  const [design, setDesign] = useState(newDesign);
+  const [allPhotos,setPhotos]=useState([]);
+  const [mode,setMode]=useState('kitchen');
+  const [photoIds,setPhotoIds]=useState({kitchen:null,exterior:null});
+  const [designs,setDesigns]=useState(()=>({kitchen:newDesign('kitchen'),exterior:newDesign('exterior')}));
+  const design=designs[mode];
+  const setDesign=next=>setDesigns(current=>({...current,[mode]:typeof next==='function'?next(current[mode]):next}));
+  const photos=allPhotos.filter(item=>item.mode===mode);
+  const photoId=photoIds[mode];
+  const photo=photos.find(item=>item.id===photoId) || null;
   const [looks, setLooks] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds,setSelectedIds]=useState({});
+  const selectedId=selectedIds[photoId] || looks.find(item=>item.photoId===photoId)?.id || null;
+  const setSelectedId=id=>setSelectedIds(current=>({...current,[photoId]:id}));
   const [label, setLabel] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +31,7 @@ export default function VisualizerProvider({ children }) {
   const epoch = useRef(0);
   const reset = () => {
     epoch.current += 1; controller.current?.abort(); controller.current = null; analysisController.current?.abort(); analysisCache.current={}; analysisTasks.current={};analysisTask.current=null; correctionsByPhoto.current={}; setAnalyses({});
-    setPhotos([]); setPhotoId(null); setDesign(newDesign()); setLooks([]); setSelectedId(null); setLabel(''); setBusy(false); setError(''); setSaveWarning('');
+    setPhotos([]); setPhotoIds({kitchen:null,exterior:null});setMode('kitchen');setDesigns({kitchen:newDesign('kitchen'),exterior:newDesign('exterior')});setLooks([]);setSelectedIds({}); setLabel(''); setBusy(false); setError(''); setSaveWarning('');
   };
   useEffect(() => {
     window.addEventListener('portfolio-session-reset', reset);
@@ -32,15 +39,18 @@ export default function VisualizerProvider({ children }) {
   }, []);
   const addPhotos = (next) => {
     if (controller.current || !next.length) return;
-    const added = next.map(item => ({ ...item, id:crypto.randomUUID() }));
+    if(photos.length+next.length>4){setError('Add up to 4 photos for each project type.');return;}
+    const added = next.map(item => ({ ...item, mode, id:crypto.randomUUID() }));
     setPhotos(current => [...current, ...added]);
-    if (!photoId) { setPhotoId(added[0].id); setSelectedId(null); }
+    if (!photoId) setPhotoIds(current=>({...current,[mode]:added[0].id}));
     setError(''); setSaveWarning('');
   };
   const selectPhoto = (id) => {
     if (controller.current) return;
-    setPhotoId(id); setSelectedId(looks.find(item => item.photoId === id)?.id || null); setError(''); setSaveWarning('');
+    if(!photos.some(item=>item.id===id))return;
+    setPhotoIds(current=>({...current,[mode]:id})); setError(''); setSaveWarning('');
   };
+  function switchMode(next){if(!controller.current && ['kitchen','exterior'].includes(next)){setMode(next);setError('');setSaveWarning('');}}
   function analyzePhoto(mode, retry=false, feedback='') {
     if(!photo || controller.current)return;
     const key=`${photo.id}:${mode}`;
@@ -53,7 +63,7 @@ export default function VisualizerProvider({ children }) {
       if(previousTask)await previousTask;
       if(epoch.current!==generation || selection.current.photoId!==photo.id || selection.current.mode!==mode)return {status:'interrupted'};
       analysisController.current=abort;
-      return callVisualizer('/api/analyze',{...connectionSettings(),signal:AbortSignal.any([abort.signal,AbortSignal.timeout(65_000)]),body:{image:photo.dataUrl,mode,...(feedback?{feedback,previousRegions:analysisCache.current[key]?.regions || []}:{})}});
+      return callVisualizer('/api/analyze',{...connectionSettings(),signal:AbortSignal.any([abort.signal,AbortSignal.timeout(65_000)]),body:{image:photo.dataUrl,mode,imageSize:{width:photo.width,height:photo.height},...(feedback?{feedback,previousRegions:analysisCache.current[key]?.regions || []}:{})}});
     })()
       .then(data=>{if(data.status==='interrupted')return data;if(!Array.isArray(data.regions))throw new Error('Surface detection is unavailable.');return {status:'ready',regions:data.regions};})
       .catch(e=>({status:'error',message:e.message}))
@@ -102,5 +112,5 @@ export default function VisualizerProvider({ children }) {
       if (epoch.current === generation) { setBusy(false); controller.current = null; }
     }
   }
-  return <Context.Provider value={{ photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, analyses, analyzePhoto, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, analyses, analyzePhoto, switchMode, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
 }
