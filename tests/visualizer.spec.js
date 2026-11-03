@@ -16,7 +16,7 @@ const generatedImage = `data:image/webp;base64,${(await readFile(new URL(`../pub
 
 test.use({ serviceWorkers: 'block' });
 
-async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false } = {}) {
+async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false, renderImages = [] } = {}) {
   await page.addInitScript(endpoint => localStorage.setItem('spray-net-render-endpoint',endpoint),endpoint);
   const renders = []; const analyses=[];
   let releaseAnalysis;const analysisGate=new Promise(resolve=>{releaseAnalysis=resolve;});
@@ -49,7 +49,7 @@ async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = 
     if (request.url().endsWith('/api/render')) {
       renders.push({ body: request.postDataJSON(), authorization: request.headers().authorization });
       if (holdFirstRender && renders.length === 1) await firstRenderGate;
-      await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ image: generatedImage, model: 'test-image-model' }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ image: renderImages[renders.length-1] || generatedImage, model: 'test-image-model' }) });
       return;
     }
     await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ ready: true, operatorAuthorized:request.headers()['x-visualizer-operator'] === operatorCode }) });
@@ -157,6 +157,23 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   await expect(page.getByRole('button', { name: 'Create My Preview', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Show Original', exact: true }).click();
   await expect(page.getByAltText('Original photo of your home', { exact: true })).toBeVisible();
+});
+
+test('hardware and counter variants hold the same cabinet root, including after viewing an earlier Look',async({page})=>{
+  const secondImage='data:image/webp;base64,'+(await readFile(new URL('../public/media/projects/white-brick-stucco/after.webp',import.meta.url))).toString('base64');
+  const api=await stubService(page,{renderImages:[generatedImage,secondImage,secondImage]});await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[0].body.appearanceReference).toBeUndefined();
+  await page.getByRole('button',{name:'Hardware Finishes',exact:true}).click();await page.getByLabel('Hardware Finish',{exact:true}).selectOption('gold');
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,2);
+  expect(api.renders[1].body.appearanceReference.image).toBe(generatedImage);expect(api.renders[1].body.design.surfaces).toEqual(api.renders[0].body.design.surfaces);
+  await page.getByLabel('Countertops',{exact:true}).selectOption('dark-stone');await page.getByLabel('Backsplash',{exact:true}).selectOption('white-subway');
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,3);
+  expect(api.renders[2].body.appearanceReference.image).toBe(generatedImage);expect(api.renders[2].body.appearanceReference.image).not.toBe(secondImage);
+  await page.getByRole('button',{name:'Look 2',exact:true}).click();await page.getByLabel('Hardware Finish',{exact:true}).selectOption('copper');
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,4);expect(api.renders[3].body.appearanceReference.image).toBe(generatedImage);
+  await selectColor(page,'cabinets',kitchenColors[1]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,5);
+  expect(api.renders[4].body.appearanceReference).toBeUndefined();expect(api.renders[4].body.image).toBe(api.renders[0].body.image);
 });
 
 test('a rendering continues while the customer browses the portfolio and returns to the same design', async ({ page }) => {

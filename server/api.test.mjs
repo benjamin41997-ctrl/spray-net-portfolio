@@ -217,6 +217,29 @@ test('builds one stateless, constrained edit and never exposes server credential
   assert.ok(!body.prompt.includes('test-server-secret'));
 });
 
+test('finish-only kitchen edits use the established unlabelled appearance as the primary image and only edit changed finishes',async()=>{
+  const base={...payload().design,hardwareStyle:'knob',hardwareFinish:'brass',backsplash:'marble',countertop:'white-quartz'};
+  const changed={...base,hardwareFinish:'copper',countertop:'dark-stone'};
+  const referenceImage='data:image/webp;base64,'+readFileSync(new URL('../public/media/projects/chantilly-lace-kitchen/after.webp',import.meta.url)).toString('base64');
+  const h=harness();const result=await h.api(request({image,quality:'preview',design:changed,appearanceReference:{image:referenceImage,design:base}}));
+  assert.equal(result.status,200);assert.equal(h.calls.length,1);assert.equal(h.reservations,1);
+  const sent=JSON.parse(h.calls[0][1].body);assert.deepEqual(sent.images,[{image_url:referenceImage}]);
+  assert.match(sent.prompt,/FINISH CHANGE ALLOWLIST: hardwareFinish, countertop/);
+  assert.match(sent.prompt,/Copy those appearances/);assert.match(sent.prompt,/Do not simulate new light bounce/);
+  assert.match(sent.prompt,/metallic copper/);assert.match(sent.prompt,/dark charcoal stone/);
+  assert.doesNotMatch(sent.prompt,/Recolor all cabinet/);assert.doesNotMatch(sent.prompt,/Cabinet hardware: simple round knobs/);
+  const restore=harness();assert.equal((await restore.api(request({image,quality:'preview',design:{...base,backsplash:'keep',countertop:'keep'},appearanceReference:{image,design:base}}))).status,200);
+  const restored=JSON.parse(restore.calls[0][1].body);assert.equal(restored.images.length,2);const prompt=restored.prompt;assert.match(prompt,/Restore the original backsplash appearance from IMAGE 2/);assert.match(prompt,/Restore the original countertop appearance from IMAGE 2/);
+});
+
+test('bad or mismatched appearance references are rejected before image billing',async()=>{
+  for(const reference of [{image:'https://example.com/reference.jpg',design:payload().design},{image,design:{...payload().design,surfaces:{cabinets:'white'}}},{image,design:{mode:'exterior',surfaces:{frontDoor:'white'}}},{image,design:payload().design,extra:'bad'}]){
+    const h=harness();assert.equal((await h.api(request({...payload(),appearanceReference:reference}))).status,400);assert.equal(h.calls.length,0);assert.equal(h.reservations,0);
+  }
+  const h=harness({config:passwordConfig});assert.equal((await h.api(request({...payload(),appearanceReference:{image,design:payload().design},customPrompt:'Change cabinets'}))).status,400);
+  assert.equal((await h.api(request({...payload(),appearanceReference:{image,design:payload().design},correction:{image,feedback:'Fix this'}}))).status,400);
+});
+
 test('detail mode selects the configured precise model and high quality', async () => {
   const operatorToken='detail-operator-'.padEnd(43,'x');
   const h = harness({config:{...config,operatorToken}});

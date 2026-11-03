@@ -33,6 +33,16 @@ test('the one-hour clear preserves originals and renders and representative reop
   assert.equal((await h.request(path,undefined,false)).status,200);assert.equal(h.renders,0);
 });
 
+test('stable cabinet references sync and survive archive reopening with color and photo validation',async()=>{
+  const h=consultationFixture();await create(h);await upload(h);
+  const base={id:'cabinet-base-0000000001',photoId:photo().id,design,cabinetReferenceId:'cabinet-base-0000000001',quality:'preview'};
+  const variant={...base,id:'cabinet-variant-000000001',design:{...design,hardwareFinish:'gold'}};
+  for(const look of [base,variant])assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look,image:fixtureImage})).status,200);
+  const active=await h.request('/api/consultations/active',undefined,false).then(r=>r.json());assert.equal(active.active.looks[1].cabinetReferenceId,base.id);
+  const wrong={...variant,id:'bad-cabinet-00000000001',design:{...design,surfaces:{cabinets:'sw-6258'}}};assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look:wrong,image:fixtureImage})).status,400);
+  h.advance(3_600_001);const reopened=await h.request('/api/consultations',{action:'activate',consultationId:id}).then(r=>r.json());assert.equal(reopened.consultation.looks[1].cabinetReferenceId,base.id);
+});
+
 test('shutter colors and removal choices sync and survive archive reopening',async()=>{
   const h=consultationFixture();await create(h);const p=photo(0,'exterior');await upload(h,p);
   for(const [index,finish]of [{mode:'exterior',surfaces:{shutters:'sw-7008'},shutterAction:'keep'},{mode:'exterior',surfaces:{},shutterAction:'remove'}].entries()) {

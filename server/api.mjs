@@ -65,7 +65,7 @@ async function render(body, design, request, config, fetchImpl) {
       signal,
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        images: [{ image_url: body.image }, ...(design.correction ? [{image_url:design.correction.image}] : [])],
+        images: design.appearanceReference?[{image_url:design.appearanceReference.image},...(design.appearanceReference.restoreOriginal?[{image_url:body.image}]:[])]:[{ image_url: body.image }, ...(design.correction ? [{image_url:design.correction.image}] : [])],
         prompt: buildPrompt(design.design, design.customPrompt, design),
         model,
         quality,
@@ -111,7 +111,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-02.13', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-02.14', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -169,6 +169,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
       if (design.customPrompt && !operatorAuthorized(request, config, paired)) throw new ApiError(403, 'operator_required', 'Connect this tablet with the representative\'s password to use custom instructions.');
       if((design.correction || design.corrections.length) && !operatorAuthorized(request,config,paired)) throw new ApiError(403,'operator_required','Corrections require representative access.');
       if(design.correction) validateImage(design.correction.image);
+      if(design.appearanceReference)validateImage(design.appearanceReference.image);
       validateImage(body.image);
       // Reserve before making the billable request. Failed/aborted attempts also count.
       await reserve();

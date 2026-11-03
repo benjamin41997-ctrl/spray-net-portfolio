@@ -4,7 +4,7 @@ import {cacheGet,cachePut,cacheDelete,cacheMedia,cachedMedia,blobDataUrl,queuedT
 
 const defaultName=()=>`Consultation ${new Date().toLocaleString()}`;
 const metaPhoto=({id,mode,name,width,height})=>({id,mode,name,width,height});
-const metaLook=({id,photoId,design,corrections=[],regions=[],createdAt,quality,model})=>({id,photoId,design,corrections,regions,createdAt,quality:quality || 'preview',model});
+const metaLook=({id,photoId,design,cabinetReferenceId,corrections=[],regions=[],createdAt,quality,model})=>({id,photoId,design,...(cabinetReferenceId?{cabinetReferenceId}:{}),corrections,regions,createdAt,quality:quality || 'preview',model});
 export default function useConsultationSync({snapshot,onRemote,onClear}) {
   const [enabled,setEnabled]=useState(false);const [session,setSession]=useState(null);const [status,setStatus]=useState('');const [pending,setPending]=useState(0);
   const state=useRef({enabled:false,session:null,revision:'',pumping:false,polling:false,epoch:0,prepare:null,online:navigator.onLine});

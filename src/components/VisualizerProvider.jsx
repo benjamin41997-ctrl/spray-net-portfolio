@@ -3,6 +3,8 @@ import {navigate} from '../lib/navigation';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { callVisualizer, connectionSettings, imageDataBlob } from '../lib/visualizerClient';
 import { saveRender } from '../lib/visualizerStorage';
+import {findCabinetReference} from '../lib/cabinetAppearance';
+import {blobDataUrl} from '../lib/consultationCache';
 
 const Context = createContext(null);
 export const useVisualizer = () => useContext(Context);
@@ -93,6 +95,9 @@ export default function VisualizerProvider({ children }) {
       }
       delete submittedDesign.customPrompt;
       const manual = (customPrompt || correction?.record.design.customPrompt || '').trim();
+      const cabinetReference=!manual && !correction?findCabinetReference(looks,photo.id,submittedDesign,selectedId):null;
+      let appearanceReference;
+      if(cabinetReference){const {customPrompt:unused,...referenceDesign}=cabinetReference.design;appearanceReference={image:await blobDataUrl(cabinetReference.rawRenderPhoto),design:referenceDesign};}
       const key=`${photo.id}:${submittedDesign.mode}`;
       if(analysisTasks.current[key] && analysisCache.current[key]?.status==='loading')await Promise.race([analysisTasks.current[key],new Promise(resolve=>abort.signal.addEventListener('abort',resolve,{once:true}))]);
       if(abort.signal.aborted || epoch.current!==generation)return;
@@ -104,13 +109,15 @@ export default function VisualizerProvider({ children }) {
         const image=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Unable to read the previous preview.'));reader.readAsDataURL(correction.record.rawRenderPhoto || correction.record.renderPhoto);});
         revision={image,feedback:correction.feedback.trim()};
       }
-      const data = await callVisualizer('/api/render', { ...connectionSettings(), signal: abort.signal, body: { image: photo.dataUrl, design: submittedDesign, quality, ...(regions.length?{regions}:{}), ...(corrections.length?{corrections}:{}), ...(revision?{correction:revision}:{}), ...(manual ? {customPrompt:manual} : {}) } });
+      if(abort.signal.aborted || epoch.current!==generation)return;
+      const data = await callVisualizer('/api/render', { ...connectionSettings(), signal: abort.signal, body: { image: photo.dataUrl, design: submittedDesign, quality, ...(appearanceReference?{appearanceReference}:{}), ...(regions.length?{regions}:{}), ...(corrections.length?{corrections}:{}), ...(revision?{correction:revision}:{}), ...(manual ? {customPrompt:manual} : {}) } });
       const {labelRender}=await import('../lib/renderLabel');
       const finalDesign=structuredClone({...submittedDesign,...(manual?{customPrompt:manual}:{})});
       const rawRenderPhoto=imageDataBlob(data.image);
       const renderPhoto = await labelRender(rawRenderPhoto,finalDesign);
       if (epoch.current !== generation) return;
-      const record = { id: crypto.randomUUID(), consultationId:consultation?.id, photoId:photo.id, originalPhoto: photo.blob, renderPhoto, rawRenderPhoto, corrections, regions, design: structuredClone({...submittedDesign,...(manual ? {customPrompt:manual} : {})}), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
+      const id=crypto.randomUUID();
+      const record = { id, ...(submittedDesign.mode==='kitchen' && !manual?{cabinetReferenceId:cabinetReference?.id || id}:{}), consultationId:consultation?.id, photoId:photo.id, originalPhoto: photo.blob, renderPhoto, rawRenderPhoto, corrections, regions, design: structuredClone({...submittedDesign,...(manual ? {customPrompt:manual} : {})}), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
       let saved = false;
       try { await saveRender(record); saved = true; }
       catch (e) { if (epoch.current === generation) setSaveWarning(e.message || 'This preview could not be saved on this tablet. Use Save Image before leaving.'); }

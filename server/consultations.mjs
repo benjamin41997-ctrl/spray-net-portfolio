@@ -1,6 +1,7 @@
 import {ApiError} from './errors.mjs';
 import {validateImage} from './images.mjs';
 import {validateDesign} from './design.mjs';
+import {sameCabinetColors} from '../src/lib/cabinetAppearance.js';
 
 const HOUR=3_600_000;
 const idPattern=/^[a-zA-Z0-9-]{16,80}$/;
@@ -99,13 +100,14 @@ export class ConsultationStore {
         if(c.looks.some(look=>look.id===r.id))return json({saved:true,revision:c.revision});
         if(c.looks.length>=120)throw new ApiError(409,'look_limit','This consultation has reached 120 previews. Start a new consultation for more.');
         const design=structuredClone(r.design);const customPrompt=design.customPrompt;delete design.customPrompt;
+        if(r.cabinetReferenceId!==undefined){requireId(r.cabinetReferenceId);if(design.mode!=='kitchen' || (r.cabinetReferenceId!==r.id && !c.looks.some(base=>base.id===r.cabinetReferenceId && base.photoId===r.photoId && sameCabinetColors(base.design,design))))invalid('Save a matching cabinet reference before saving this preview.');}
         const checked=validateDesign({image:body.image,design,quality:r.quality || 'preview',...(customPrompt?{customPrompt}:{}),...(r.corrections?.length?{corrections:r.corrections}:{}),...(r.regions?.length?{regions:r.regions}:{})},this.catalog);
         if((checked.customPrompt || checked.corrections.length || checked.quality==='detail')&&!operator)operatorOnly(operator);
         const image=validateImage(body.image);const raw=validateImage(body.rawImage || body.image);
         let bytes=0;
         try{
           for(const [kind,data]of [['render',image],['raw',raw]]){const binary=Buffer.from(data.split(',')[1],'base64');bytes+=binary.length;await this.bucket.put(assetKey(id,r.id,kind),binary,{httpMetadata:{contentType:data.slice(5,data.indexOf(';'))}});}
-          c.looks.push({id:r.id,photoId:r.photoId,design:{...design,...(checked.customPrompt?{customPrompt:checked.customPrompt}:{})},corrections:checked.corrections,regions:checked.regions,createdAt:Number.isNaN(Date.parse(r.createdAt))?new Date(this.now()).toISOString():new Date(r.createdAt).toISOString(),quality:checked.quality,model:text(r.model,100),bytes});
+          c.looks.push({id:r.id,photoId:r.photoId,...(r.cabinetReferenceId?{cabinetReferenceId:r.cabinetReferenceId}:{}),design:{...design,...(checked.customPrompt?{customPrompt:checked.customPrompt}:{})},corrections:checked.corrections,regions:checked.regions,createdAt:Number.isNaN(Date.parse(r.createdAt))?new Date(this.now()).toISOString():new Date(r.createdAt).toISOString(),quality:checked.quality,model:text(r.model,100),bytes});
           await this.commit(c,bytes);
         }catch(error){await this.bucket.delete([assetKey(id,r.id,'render'),assetKey(id,r.id,'raw')]).catch(()=>{});throw error;}
         return json({saved:true,revision:c.revision});
