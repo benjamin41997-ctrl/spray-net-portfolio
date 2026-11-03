@@ -50,7 +50,7 @@ function harness(options = {}) {
 test('configuration is fail-closed and accepts only exact approved origins and models', () => {
   assert.equal(loadConfig({}).configured, false);
   assert.equal(loadConfig({ OPENAI_API_KEY: 'key', VISUALIZER_ACCESS_TOKEN: token, VISUALIZER_ALLOWED_ORIGINS: origin }).configured, true);
-  assert.equal(config.maxTenMinutes,5);
+  assert.equal(config.maxTenMinutes,10);
   assert.equal(config.maxHourly,30);
   assert.throws(() => loadConfig({ VISUALIZER_ACCESS_TOKEN: '1234' }));
   assert.throws(() => loadConfig({ VISUALIZER_ALLOWED_ORIGINS: '*' }));
@@ -472,15 +472,15 @@ test('persistent limiter enforces hourly and interval limits, including around U
   assert.throws(() => reserveAttempt({ ...first, day: '2029-01-01' }, config, now), error => error.code === 'quota_unavailable');
 });
 
-test('five-per-ten-minute and thirty-per-hour windows expire exactly without a daily lockout', () => {
+test('ten-per-ten-minute and thirty-per-hour windows expire exactly without a daily lockout', () => {
   const now=Date.parse('2026-11-02T12:00:00Z');
   let record=null;
-  for(let i=0;i<5;i++)record=reserveAttempt(record,config,now+i*5000);
-  assert.throws(()=>reserveAttempt(record,config,now+25_000),e=>e.code==='ten_minute_limit' && e.retryAfter===575);
+  for(let i=0;i<10;i++)record=reserveAttempt(record,config,now+i*5000);
+  assert.throws(()=>reserveAttempt(record,config,now+50_000),e=>e.code==='ten_minute_limit' && e.retryAfter===550);
   record=reserveAttempt(record,config,now+600_000);
-  assert.equal(record.count,6);
+  assert.equal(record.count,11);
   record=null;
-  for(let batch=0;batch<6;batch++)for(let i=0;i<5;i++)record=reserveAttempt(record,config,now+batch*600_000+i*5000);
+  for(let batch=0;batch<3;batch++)for(let i=0;i<10;i++)record=reserveAttempt(record,config,now+batch*600_000+i*5000);
   assert.equal(record.recentAttempts.length,30);
   assert.throws(()=>reserveAttempt(record,config,now+3_599_999),e=>e.code==='hourly_limit' && e.retryAfter===1);
   assert.equal(reserveAttempt(record,config,now+3_600_000).count,31);

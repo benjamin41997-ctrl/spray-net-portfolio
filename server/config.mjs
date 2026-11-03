@@ -49,7 +49,7 @@ export function loadConfig(env = process.env) {
     fastTestMode:fastTestMode === 'true',
     allowedOrigins,
     configured: Boolean(apiKey && accessToken && allowedOrigins.size),
-    maxTenMinutes: integer(env, 'VISUALIZER_MAX_TEN_MINUTE_RENDERS', 5, 1, 60),
+    maxTenMinutes: integer(env, 'VISUALIZER_MAX_TEN_MINUTE_RENDERS', 10, 1, 60),
     maxHourly: integer(env, 'VISUALIZER_MAX_HOURLY_RENDERS', 30, 1, 60),
     minIntervalMs: integer(env, 'VISUALIZER_MIN_INTERVAL_SECONDS', 5, 1, 60) * 1000,
     timeoutMs: integer(env, 'VISUALIZER_TIMEOUT_SECONDS', 240, 30, 300) * 1000,

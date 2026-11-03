@@ -8,6 +8,42 @@ const design={mode:'kitchen',surfaces:{cabinets:'sw-7008'},hardwareStyle:'keep',
 const create=h=>h.request('/api/consultations',{action:'create',id,name:'Smith Kitchen'});
 const upload=(h,p=photo())=>h.request('/api/consultations',{action:'photo',consultationId:id,photo:p,image:fixtureImage});
 
+test('individual deletion protects originals, rebases cabinet references and prevents stale reuploads',async()=>{
+  const h=consultationFixture();await create(h);await upload(h);
+  const base={id:'cabinet-root-0000000001',photoId:photo().id,design,cabinetReferenceId:'cabinet-root-0000000001',createdAt:'2026-11-02T12:00:00Z'};
+  const next={...base,id:'cabinet-next-0000000001',design:{...design,hardwareFinish:'gold'},createdAt:'2026-11-02T12:01:00Z'};
+  for(const look of [base,next])assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look,image:fixtureImage})).status,200);
+  const before=h.records.get('consultation:mediaBytes');
+  const remove=operator=>h.request('/api/consultations',{action:'deleteLook',consultationId:id,lookId:base.id},operator);
+  assert.equal((await remove(false)).status,403);assert.equal(h.objects.size,5);
+  assert.equal((await remove(true)).status,200);
+  const active=(await h.request('/api/consultations/active').then(r=>r.json())).active;
+  assert.equal(active.looks.length,1);assert.equal(active.looks[0].cabinetReferenceId,next.id);assert.deepEqual(active.deletedLookIds,[base.id]);
+  assert.equal(h.objects.size,3);assert.ok(h.records.get('consultation:mediaBytes')<before);
+  assert.equal((await h.request(`/api/consultations/media/${id}/${base.id}/render`)).status,404);
+  assert.equal((await h.request(`/api/consultations/media/${id}/${photo().id}/original`)).status,200);
+  const after=h.records.get('consultation:mediaBytes');assert.equal((await remove(true)).status,200);assert.equal(h.records.get('consultation:mediaBytes'),after);
+  assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look:base,image:fixtureImage})).status,410);
+  // A paid result already in flight may finish after its reference was deleted.
+  const late={...next,id:'cabinet-late-0000000001',cabinetReferenceId:base.id};
+  assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look:late,image:fixtureImage})).status,200);
+  assert.equal(h.records.get('consultation:'+id).looks[1].cabinetReferenceId,next.id);
+  await h.request('/api/consultations',{action:'delete',consultationId:id});assert.equal(h.objects.size,0);assert.equal(h.records.get('consultation:mediaBytes'),0);
+});
+
+test('failed media deletion leaves a durable cleanup record and retry decrements storage once',async()=>{
+  const h=consultationFixture();await create(h);await upload(h);
+  const look={id:'delete-test-0000000001',photoId:photo().id,design};
+  await h.request('/api/consultations',{action:'look',consultationId:id,look,image:fixtureImage});
+  const remove=()=>h.request('/api/consultations',{action:'deleteLook',consultationId:id,lookId:look.id});
+  const before=h.records.get('consultation:mediaBytes');h.failDeletes(true);
+  assert.equal((await remove()).status,503);assert.equal(h.records.get('consultation:'+id).looks.length,0);assert.equal(h.records.get('consultation:mediaBytes'),before);
+  assert.equal(h.records.get('consultation:'+id).pendingDeletedLooks.length,1);
+  h.failDeletes(false);await h.request('/api/consultations/active');assert.equal(h.objects.size,1);
+  assert.equal(h.records.get('consultation:'+id).pendingDeletedLooks.length,0);assert.equal((await remove()).status,200);
+  const after=h.records.get('consultation:mediaBytes');assert.ok(after<before);await remove();assert.equal(h.records.get('consultation:mediaBytes'),after);
+});
+
 test('shared consultations require tablet access and representative access protects the archive and session controls',async()=>{
   const h=consultationFixture();assert.equal((await h.request('/api/consultations/active',undefined,false,'bad')).status,401);
   assert.equal((await h.request('/api/consultations',undefined,false)).status,403);

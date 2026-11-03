@@ -154,3 +154,16 @@
 .is-visualizing .app-footer { flex:0 0 auto; flex-wrap:nowrap; padding:7px 20px max(7px,env(safe-area-inset-bottom)); gap:8px; }
 .is-visualizing .app-footer .offline-status { font-size:11px; }
 @media(max-width:699px) { .is-visualizing { height:auto; min-height:100dvh; overflow:visible; } .is-visualizing .page { height:auto; padding:10px 12px; } .is-visualizing main { overflow:visible; } }
+
+.viz-render-library { border-top:1px solid #bccbd6; margin-top:24px; padding-top:16px; }
+.viz-render-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; max-height:520px; overflow:auto; padding:4px; }
+.viz-render-card { display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid #9bafbf; border-radius:12px; background:white; min-width:0; }
+.viz-render-card label { cursor:pointer; display:block; }
+.viz-render-card img { width:100%; aspect-ratio:4/3; object-fit:contain; background:#edf2f6; border-radius:6px; }
+.viz-render-card label span { display:flex; align-items:center; gap:10px; min-height:44px; font-weight:700; }
+.viz-tools .viz-render-card input[type=checkbox] { width:24px; height:24px; min-height:24px; flex:none; accent-color:#003965; }
+.viz-render-card small { overflow-wrap:anywhere; }
+.viz-render-card .button { margin-top:auto; }
+.viz-batch-result { font-size:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+.viz-generate:has(.viz-render-all) { grid-template-columns:1fr 1fr; }
+.viz-generate .viz-batch-result { grid-column:1/-1; }

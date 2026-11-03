@@ -2,7 +2,8 @@ import useConsultationSync from '../hooks/useConsultationSync';
 import {navigate} from '../lib/navigation';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { callVisualizer, connectionSettings, imageDataBlob } from '../lib/visualizerClient';
-import { saveRender } from '../lib/visualizerStorage';
+import {withoutRender} from '../lib/renderCollection';
+import { saveRender, deleteRender } from '../lib/visualizerStorage';
 import {findCabinetReference} from '../lib/cabinetAppearance';
 import {blobDataUrl} from '../lib/consultationCache';
 
@@ -24,6 +25,7 @@ export default function VisualizerProvider({ children }) {
   const selectedId=selectedIds[photoId] || looks.find(item=>item.photoId===photoId)?.id || null;
   const setSelectedId=id=>setSelectedIds(current=>({...current,[photoId]:id}));
   const [label, setLabel] = useState('');
+  const [batch,setBatch]=useState(null);const batchPlan=useRef(null);const lastRenderStartedAt=useRef(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [saveWarning, setSaveWarning] = useState('');
@@ -35,6 +37,7 @@ export default function VisualizerProvider({ children }) {
   const controller = useRef(null);
   const epoch = useRef(0);
   const reset = () => {
+    setBatch(null);batchPlan.current=null;
     epoch.current += 1; controller.current?.abort(); controller.current = null; analysisController.current?.abort(); analysisCache.current={}; analysisTasks.current={};analysisTask.current=null; correctionsByPhoto.current={}; setAnalyses({});
     setPhotos([]); setPhotoIds({kitchen:null,exterior:null});setMode('kitchen');setDesigns({kitchen:newDesign('kitchen'),exterior:newDesign('exterior')});setLooks([]);setSelectedIds({}); setLabel(''); setBusy(false); setError(''); setSaveWarning('');
   };
@@ -79,14 +82,7 @@ export default function VisualizerProvider({ children }) {
       .then(result=>{if(epoch.current===generation && analysisCache.current[key]?.requestId===requestId){analysisCache.current[key]=abort.signal.aborted?{status:'interrupted'}:result;setAnalyses({...analysisCache.current});} return result;});
     analysisTask.current={key,promise};analysisTasks.current[key]=promise;return promise;
   }
-  async function generate(quality, customPrompt = '', correction = null, availableSurfaces = null) {
-    if (!photo || controller.current) return;
-    const consultation=syncRef.current.session;
-    const generation = epoch.current;
-    const abort = new AbortController(); controller.current = abort;
-    const timer = setTimeout(() => abort.abort('timeout'), 270_000);
-    setBusy(true); setError(''); setSaveWarning('');
-    try {
+  async function renderPhoto({photo,design,quality,customPrompt='',correction=null,availableSurfaces=null,consultation,generation,abort}) {
       const chosenDesign=correction?.record.design || design;
       const submittedDesign = { ...chosenDesign, surfaces: Object.fromEntries(Object.entries(chosenDesign.surfaces).filter(([, value]) => value)) };
       if(submittedDesign.mode==='exterior' && Array.isArray(availableSurfaces)) {
@@ -95,12 +91,12 @@ export default function VisualizerProvider({ children }) {
       }
       delete submittedDesign.customPrompt;
       const manual = (customPrompt || correction?.record.design.customPrompt || '').trim();
-      const cabinetReference=!manual && !correction?findCabinetReference(looks,photo.id,submittedDesign,selectedId):null;
+      const cabinetReference=!manual && !correction?findCabinetReference(looks,photo.id,submittedDesign,selectedIds[photo.id]):null;
       let appearanceReference;
       if(cabinetReference){const {customPrompt:unused,...referenceDesign}=cabinetReference.design;appearanceReference={image:await blobDataUrl(cabinetReference.rawRenderPhoto),design:referenceDesign};}
       const key=`${photo.id}:${submittedDesign.mode}`;
       if(analysisTasks.current[key] && analysisCache.current[key]?.status==='loading')await Promise.race([analysisTasks.current[key],new Promise(resolve=>abort.signal.addEventListener('abort',resolve,{once:true}))]);
-      if(abort.signal.aborted || epoch.current!==generation)return;
+      if(abort.signal.aborted || epoch.current!==generation)throw new DOMException('Rendering stopped.','AbortError');
       const regions=submittedDesign.mode==='exterior'?(analysisCache.current[key]?.regions || []):[];
       const previousNotes=[...new Set([...(correction?.record.corrections || []),...(correctionsByPhoto.current[key] || [])])].slice(-5);
       const corrections=correction?[...previousNotes,correction.feedback.trim()].slice(-5):previousNotes;
@@ -109,7 +105,14 @@ export default function VisualizerProvider({ children }) {
         const image=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Unable to read the previous preview.'));reader.readAsDataURL(correction.record.rawRenderPhoto || correction.record.renderPhoto);});
         revision={image,feedback:correction.feedback.trim()};
       }
-      if(abort.signal.aborted || epoch.current!==generation)return;
+      if(abort.signal.aborted || epoch.current!==generation)throw new DOMException('Rendering stopped.','AbortError');
+      const wait=Math.max(0,5250-(Date.now()-lastRenderStartedAt.current));
+      if(wait)await new Promise((resolve,reject)=>{
+        const stop=()=>{clearTimeout(timer);reject(new DOMException('Rendering stopped.','AbortError'));};
+        const timer=setTimeout(()=>{abort.signal.removeEventListener('abort',stop);resolve();},wait);
+        abort.signal.addEventListener('abort',stop,{once:true});if(abort.signal.aborted)stop();
+      });
+      abort.signal.throwIfAborted();lastRenderStartedAt.current=Date.now();
       const data = await callVisualizer('/api/render', { ...connectionSettings(), signal: abort.signal, body: { image: photo.dataUrl, design: submittedDesign, quality, ...(appearanceReference?{appearanceReference}:{}), ...(regions.length?{regions}:{}), ...(corrections.length?{corrections}:{}), ...(revision?{correction:revision}:{}), ...(manual ? {customPrompt:manual} : {}) } });
       const {labelRender}=await import('../lib/renderLabel');
       const finalDesign=structuredClone({...submittedDesign,...(manual?{customPrompt:manual}:{})});
@@ -125,27 +128,70 @@ export default function VisualizerProvider({ children }) {
       try{await syncRef.current.saveLook(consultation,record);}catch(e){if(epoch.current===generation)setSaveWarning('Preview saved here but not synced: '+e.message);}
       if(epoch.current!==generation)return;
       correctionsByPhoto.current[key]=corrections;
-      setLooks(current => [{ ...record, saved }, ...current]); setSelectedId(record.id);
-    } catch (e) {
-      if (epoch.current === generation) setError(abort.signal.aborted ? 'Rendering stopped. If it had already started, the image service may still charge for it. You can try again when ready.' : (e.message || 'Unable to reach the image service. Check your connection.'));
-    } finally {
-      clearTimeout(timer);
-      if (epoch.current === generation) { setBusy(false); controller.current = null; }
+      setLooks(current => [{ ...record, saved }, ...current]); setSelectedIds(current=>({...current,[photo.id]:record.id}));
+      if(!saved)throw new Error('The last preview could not be saved on this tablet. Save it before creating more previews.');
+      return record;
+  }
+  async function runRenderPlan(plan) {
+    if(controller.current)return;
+    const generation=epoch.current;const abort=new AbortController();controller.current=abort;
+    setBusy(true);setError('');setSaveWarning('');
+    try {
+      for(const job of plan.jobs){
+        if(job.status==='done')continue;
+        abort.signal.throwIfAborted();
+        job.status='running';if(plan.batch)setBatch({...plan,jobs:plan.jobs.map(j=>({...j}))});
+        const timer=setTimeout(()=>abort.abort('timeout'),270_000);
+        try{
+          const record=await renderPhoto({...plan,photo:job.photo,generation,abort});
+          if(epoch.current!==generation)return;
+          if(!record)throw new Error('The consultation changed before this preview could be saved.');
+          job.status='done';
+        }catch(e){job.status=abort.signal.aborted?'stopped':'failed';throw e;}
+        finally{clearTimeout(timer);}
+        if(plan.batch)setBatch({...plan,jobs:plan.jobs.map(j=>({...j}))});
+      }
+    }catch(e){
+      if(epoch.current===generation)setError(abort.signal.aborted?'Rendering stopped. Completed previews are saved. An image already started may still be charged.':(e.message || 'Unable to create this preview.'));
+    }finally{
+      if(epoch.current===generation){if(plan.batch)setBatch({...plan,jobs:plan.jobs.map(j=>({...j}))});setBusy(false);controller.current=null;}
     }
   }
-  const sync=useConsultationSync({snapshot:{allPhotos,looks},onClear:(home)=>{window.dispatchEvent(new Event('portfolio-session-reset'));if(home)navigate('/',{replace:true});},onRemote:({id,name,photos:remotePhotos,looks:remoteLooks,replacing})=>{
+  async function generate(quality,customPrompt='',correction=null,availableSurfaces=null) {
+    if(!photo || controller.current)return;
+    setBatch(null);batchPlan.current=null;
+    return runRenderPlan({jobs:[{photo,status:'waiting'}],design:structuredClone(design),quality,customPrompt,correction,availableSurfaces,consultation:syncRef.current.session});
+  }
+  async function generateAll(retry=false) {
+    if(controller.current || mode!=='kitchen' || photos.length<2)return;
+    const plan=retry?batchPlan.current:{batch:true,jobs:photos.map(photo=>({photo,status:'waiting'})),design:structuredClone(design),quality:'preview',consultation:syncRef.current.session};
+    if(!plan)return;
+    batchPlan.current=plan;return runRenderPlan(plan);
+  }
+  async function removeLook(record) {
+    if(controller.current)throw new Error('Wait for rendering to finish before deleting a preview.');
+    if(record.consultationId)await syncRef.current.removeLook(record);
+    await deleteRender(record.id);
+    window.dispatchEvent(new CustomEvent('visualizer-renders-deleted',{detail:[record.id]}));
+    setLooks(current=>withoutRender(current,record.id));
+    setSelectedIds(current=>Object.fromEntries(Object.entries(current).filter(([,id])=>id!==record.id)));
+  }
+  const sync=useConsultationSync({snapshot:{allPhotos,looks},onClear:(home)=>{window.dispatchEvent(new Event('portfolio-session-reset'));if(home)navigate('/',{replace:true});},onRemote:({id,name,photos:remotePhotos,looks:remoteLooks,deletedLookIds=[],replacing})=>{
+    for(const id of deletedLookIds)void deleteRender(id).catch(()=>{});
+    if(deletedLookIds.length)window.dispatchEvent(new CustomEvent('visualizer-renders-deleted',{detail:deletedLookIds}));
     if(replacing){reset();setPhotos(remotePhotos);setLooks([...remoteLooks].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));setPhotoIds({kitchen:remotePhotos.find(p=>p.mode==='kitchen')?.id || null,exterior:remotePhotos.find(p=>p.mode==='exterior')?.id || null});setMode(remotePhotos[0]?.mode || 'kitchen');
       const initial={kitchen:newDesign('kitchen'),exterior:newDesign('exterior')};
       for(const mode of ['kitchen','exterior']){const latest=[...remoteLooks].filter(r=>r.design.mode===mode).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];if(latest){const {customPrompt,...design}=latest.design;initial[mode]=design;}}
       setDesigns(initial);window.dispatchEvent(new Event('consultation-switched'));
     }else{
       setPhotos(current=>[...current,...remotePhotos.filter(p=>!current.some(item=>item.id===p.id))]);
-      setLooks(current=>[...current,...remoteLooks.filter(r=>!current.some(item=>item.id===r.id))].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
+      setLooks(current=>[...current.filter(r=>!deletedLookIds.includes(r.id)).map(r=>remoteLooks.find(remote=>remote.id===r.id) || r),...remoteLooks.filter(r=>!current.some(item=>item.id===r.id))].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
+      setSelectedIds(current=>Object.fromEntries(Object.entries(current).filter(([,id])=>!deletedLookIds.includes(id))));
       setPhotoIds(current=>({...current,kitchen:current.kitchen || remotePhotos.find(p=>p.mode==='kitchen')?.id || null,exterior:current.exterior || remotePhotos.find(p=>p.mode==='exterior')?.id || null}));
     }
     for(const r of remoteLooks){const key=`${r.photoId}:${r.design.mode}`;if(r.regions?.length && !analysisCache.current[key])analysisCache.current[key]={status:r.regions.some(region=>region.surface==='shutters')?'ready':'interrupted',regions:r.regions};if(!correctionsByPhoto.current[key])correctionsByPhoto.current[key]=r.corrections || [];}
     setAnalyses({...analysisCache.current});setLabel(name);
   }});
   syncRef.current=sync;
-  return <Context.Provider value={{ photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, analyses, analyzePhoto, switchMode, sync, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, generateAll, batch, removeLook, analyses, analyzePhoto, switchMode, sync, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
 }

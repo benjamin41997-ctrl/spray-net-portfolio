@@ -36,14 +36,15 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
     }
     for(const r of c.looks) {
       const existing=!replacing&&local.looks.find(item=>item.id===r.id);
-      if(existing){looks.push(existing);continue;}
+      if(existing){looks.push({...existing,...r});continue;}
       const original=photos.find(p=>p.id===r.photoId);if(!original)continue;
       const [renderPhoto,rawRenderPhoto]=await Promise.all([media(c.id,r.id,'render'),media(c.id,r.id,'raw')]);
       looks.push({...r,originalPhoto:original.blob,renderPhoto,rawRenderPhoto,consultationId:c.id,consultationLabel:c.name,saved:true});
     }
     if(generation!==state.current.epoch)return;
+    for(const id of c.deletedLookIds || [])await Promise.all(['render','raw'].map(kind=>cacheDelete(mediaPath(c.id,id,kind))));
     await cachePut('session:'+c.id,c);await setCurrent({id:c.id,name:c.name,expiresAt:c.expiresAt});state.current.revision=revision;
-    callbacks.current.onRemote({id:c.id,name:c.name,photos,looks,replacing});
+    callbacks.current.onRemote({id:c.id,name:c.name,photos,looks,deletedLookIds:c.deletedLookIds || [],replacing});
   }
   async function pump() {
     if(!state.current.enabled || !navigator.onLine || state.current.pumping)return;
@@ -52,7 +53,10 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
       let tasks=await queuedTasks();setPending(tasks.length);
       while(tasks.length && navigator.onLine) {
         setStatus(`Syncing ${tasks.length} ${tasks.length===1?'item':'items'}...`);
-        const task=tasks[0];await api('/api/consultations',task.body);await removeTask(task.taskId);
+        const task=tasks[0];
+        try{await api('/api/consultations',task.body);}
+        catch(error){if(error.code!=='look_deleted')throw error;state.current.revision='';}
+        await removeTask(task.taskId);
         tasks=await queuedTasks();setPending(tasks.length);
       }
       setStatus(tasks.length?'Waiting for Internet':settledStatus());
@@ -133,6 +137,15 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
   }
   async function end() {const c=state.current.session;if(c)await api('/api/consultations',{action:'close',consultationId:c.id});await clearCurrent();}
   async function remove(id) {if((await queuedTasks()).some(task=>(task.body.consultationId || task.body.id)===id))throw new Error('Finish syncing this consultation before deleting it.');await api('/api/consultations',{action:'delete',consultationId:id});if(state.current.session?.id===id)await clearCurrent();await cacheDelete('session:'+id);}
+  async function removeLook(look) {
+    if(!navigator.onLine)throw new Error('Connect to the internet to delete this shared preview from both tablets.');
+    if((await queuedTasks()).some(task=>(task.body.consultationId || task.body.id)===look.consultationId))throw new Error('Let this consultation finish syncing before deleting a preview.');
+    state.current.epoch++;state.current.revision='';
+    const result=await api('/api/consultations',{action:'deleteLook',consultationId:look.consultationId,lookId:look.id});
+    for(const kind of ['render','raw'])await cacheDelete(mediaPath(look.consultationId,look.id,kind));
+    if(state.current.session?.id===look.consultationId)await hydrate({...result.consultation,expiresAt:state.current.session.expiresAt});
+    else await cachePut('session:'+look.consultationId,result.consultation);
+  }
   useEffect(()=>{
     let alive=true;
     (async()=>{
@@ -148,5 +161,5 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
     window.addEventListener('online',reconnect);window.addEventListener('offline',disconnect);window.addEventListener('visualizer-connection-changed',reconnect);document.addEventListener('visibilitychange',tick);
     return()=>{alive=false;clearInterval(timer);window.removeEventListener('online',reconnect);window.removeEventListener('offline',disconnect);window.removeEventListener('visualizer-connection-changed',reconnect);document.removeEventListener('visibilitychange',tick);};
   },[]);
-  return {enabled,session,status:!navigator.onLine&&enabled?'Offline - Changes Saved Here':status,pending,prepare,savePhotos,saveLook,startNew,rename,list,activate,end,remove,retry:async()=>{if(state.current.localError && state.current.session){await savePhotos(state.current.session,callbacks.current.snapshot.allPhotos);for(const look of callbacks.current.snapshot.looks)await saveLook(state.current.session,look);}await pump();await poll();}};
+  return {enabled,session,status:!navigator.onLine&&enabled?'Offline - Changes Saved Here':status,pending,prepare,savePhotos,saveLook,startNew,rename,list,activate,end,remove,removeLook,retry:async()=>{if(state.current.localError && state.current.session){await savePhotos(state.current.session,callbacks.current.snapshot.allPhotos);for(const look of callbacks.current.snapshot.looks)await saveLook(state.current.session,look);}await pump();await poll();}};
 }

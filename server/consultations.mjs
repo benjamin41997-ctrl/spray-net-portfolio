@@ -1,6 +1,7 @@
 import {ApiError} from './errors.mjs';
 import {validateImage} from './images.mjs';
 import {validateDesign} from './design.mjs';
+import {withoutRender} from '../src/lib/renderCollection.js';
 import {sameCabinetColors} from '../src/lib/cabinetAppearance.js';
 
 const HOUR=3_600_000;
@@ -34,6 +35,13 @@ export class ConsultationStore {
     });
     return c;
   }
+  async cleanupDeleted(c,onlyId) {
+    const pending=(c.pendingDeletedLooks || []).filter(r=>!onlyId || r.id===onlyId);
+    if(!pending.length)return;
+    await this.bucket.delete(pending.flatMap(r=>[assetKey(c.id,r.id,'render'),assetKey(c.id,r.id,'raw')]));
+    c.pendingDeletedLooks=c.pendingDeletedLooks.filter(r=>!pending.some(p=>p.id===r.id));
+    await this.commit(c,-pending.reduce((sum,r)=>sum+r.bytes,0));
+  }
   async handle(request,{operator,parseBody,json,headers}) {
     if(!this.bucket)throw new ApiError(503,'sync_unavailable','Consultation sync needs setup. Photos remain on this tablet.');
     const url=new URL(request.url);const path=url.pathname;
@@ -41,7 +49,11 @@ export class ConsultationStore {
       if(path==='/api/consultations') {operatorOnly(operator);return json({consultations:(await this.storage.get('consultation:index')) || []});}
       if(path==='/api/consultations/active') {
         const active=await this.active();if(!active)return json({active:null});
-        const c=await this.record(active.id);const revision=`${c.id}:${c.revision}:${active.expiresAt}`;
+        const c=await this.serial(async()=>{
+          const c=await this.record(active.id);
+          // A prior deletion may have reached metadata before object storage recovered.
+          await this.cleanupDeleted(c).catch(()=>{});return c;
+        });const revision=`${c.id}:${c.revision}:${active.expiresAt}`;
         if(url.searchParams.get('since')===revision)return json({unchanged:true,revision,expiresAt:active.expiresAt});
         return json({active:{...c,expiresAt:active.expiresAt},revision});
       }
@@ -58,7 +70,7 @@ export class ConsultationStore {
     const body=await parseBody(request,17*1024*1024);
     if(!body || Array.isArray(body) || typeof body.action!=='string')invalid('Choose a consultation action.');
     return this.serial(async()=>{
-      if(['create','activate','rename','close','delete'].includes(body.action))operatorOnly(operator);
+      if(['create','activate','rename','close','delete','deleteLook'].includes(body.action))operatorOnly(operator);
       if(body.action==='create') {
         const id=requireId(body.id);let c=await this.storage.get(`consultation:${id}`);
         if(!c) {
@@ -80,12 +92,26 @@ export class ConsultationStore {
       if(body.action==='rename') {const c=await this.record(id);c.name=text(body.name,160);if(!c.name)invalid('Enter a consultation name.');return json({consultation:await this.commit(c)});}
       if(body.action==='close') {const pointer=await this.active();if(pointer?.id===id)await this.storage.delete('consultation:active');return json({closed:true});}
       if(body.action==='delete') {
-        const c=await this.record(id);const keys=[...c.photos.map(p=>assetKey(id,p.id,'original')),...c.looks.flatMap(r=>[assetKey(id,r.id,'render'),assetKey(id,r.id,'raw')])];
+        const c=await this.record(id);const keys=[...c.photos.map(p=>assetKey(id,p.id,'original')),...[...c.looks,...(c.pendingDeletedLooks || [])].flatMap(r=>[assetKey(id,r.id,'render'),assetKey(id,r.id,'raw')])];
         for(let i=0;i<keys.length;i+=100)await this.bucket.delete(keys.slice(i,i+100));
-        await this.storage.transaction(async tx=>{await tx.delete(`consultation:${id}`);await tx.put('consultation:index',((await tx.get('consultation:index')) || []).filter(c=>c.id!==id));await tx.put('consultation:mediaBytes',Math.max(0,((await tx.get('consultation:mediaBytes')) || 0)-[...c.photos,...c.looks].reduce((sum,r)=>sum+(r.bytes || 0),0)));const pointer=await tx.get('consultation:active');if(pointer?.id===id)await tx.delete('consultation:active');});
+        await this.storage.transaction(async tx=>{await tx.delete(`consultation:${id}`);await tx.put('consultation:index',((await tx.get('consultation:index')) || []).filter(c=>c.id!==id));await tx.put('consultation:mediaBytes',Math.max(0,((await tx.get('consultation:mediaBytes')) || 0)-[...c.photos,...c.looks,...(c.pendingDeletedLooks || [])].reduce((sum,r)=>sum+(r.bytes || 0),0)));const pointer=await tx.get('consultation:active');if(pointer?.id===id)await tx.delete('consultation:active');});
         return json({deleted:true});
       }
       const c=await this.access(id,operator);
+      if(body.action==='deleteLook') {
+        const lookId=requireId(body.lookId);
+        const look=c.looks.find(r=>r.id===lookId);
+        if(!look && !(c.deletedLookIds || []).includes(lookId))throw new ApiError(404,'look_not_found','This preview could not be found.');
+        if(look){
+          c.looks=withoutRender(c.looks,lookId);
+          c.deletedLookIds=[...(c.deletedLookIds || []),lookId];
+          c.pendingDeletedLooks=[...(c.pendingDeletedLooks || []),{id:lookId,bytes:look.bytes || 0}];
+          // Publish the tombstone before removing bytes, so stale tablets cannot restore it.
+          await this.commit(c);
+        }
+        await this.cleanupDeleted(c,lookId);
+        return json({deleted:true,consultation:c});
+      }
       if(body.action==='photo') {
         const p=body.photo;if(!p || !['kitchen','exterior'].includes(p.mode) || ![p.width,p.height].every(n=>Number.isInteger(n)&&n>0&&n<=4096))invalid('This photo could not be read.');requireId(p.id);
         if(c.photos.some(photo=>photo.id===p.id))return json({saved:true,revision:c.revision});
@@ -97,9 +123,14 @@ export class ConsultationStore {
       }
       if(body.action==='look') {
         const r=body.look;if(!r || !c.photos.some(p=>p.id===r.photoId && p.mode===r.design?.mode))invalid('Save the original photo before saving this preview.');requireId(r.id);
+        if((c.deletedLookIds || []).includes(r.id))throw new ApiError(410,'look_deleted','This preview was deleted on another tablet.');
         if(c.looks.some(look=>look.id===r.id))return json({saved:true,revision:c.revision});
         if(c.looks.length>=120)throw new ApiError(409,'look_limit','This consultation has reached 120 previews. Start a new consultation for more.');
         const design=structuredClone(r.design);const customPrompt=design.customPrompt;delete design.customPrompt;
+        if((c.deletedLookIds || []).includes(r.cabinetReferenceId)){
+          const replacement=c.looks.filter(base=>base.photoId===r.photoId && !base.design.customPrompt && sameCabinetColors(base.design,design)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
+          r.cabinetReferenceId=replacement?.cabinetReferenceId || replacement?.id || r.id;
+        }
         if(r.cabinetReferenceId!==undefined){requireId(r.cabinetReferenceId);if(design.mode!=='kitchen' || (r.cabinetReferenceId!==r.id && !c.looks.some(base=>base.id===r.cabinetReferenceId && base.photoId===r.photoId && sameCabinetColors(base.design,design))))invalid('Save a matching cabinet reference before saving this preview.');}
         const checked=validateDesign({image:body.image,design,quality:r.quality || 'preview',...(customPrompt?{customPrompt}:{}),...(r.corrections?.length?{corrections:r.corrections}:{}),...(r.regions?.length?{regions:r.regions}:{})},this.catalog);
         if((checked.customPrompt || checked.corrections.length || checked.quality==='detail')&&!operator)operatorOnly(operator);

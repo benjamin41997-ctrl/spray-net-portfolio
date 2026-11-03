@@ -16,7 +16,7 @@ const generatedImage = `data:image/webp;base64,${(await readFile(new URL(`../pub
 
 test.use({ serviceWorkers: 'block' });
 
-async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false, renderImages = [] } = {}) {
+async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false, renderImages = [], failRenderAt = 0 } = {}) {
   await page.addInitScript(endpoint => localStorage.setItem('spray-net-render-endpoint',endpoint),endpoint);
   const renders = []; const analyses=[];
   let releaseAnalysis;const analysisGate=new Promise(resolve=>{releaseAnalysis=resolve;});
@@ -49,6 +49,7 @@ async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = 
     if (request.url().endsWith('/api/render')) {
       renders.push({ body: request.postDataJSON(), authorization: request.headers().authorization });
       if (holdFirstRender && renders.length === 1) await firstRenderGate;
+      if(renders.length===failRenderAt){await route.fulfill({status:502,contentType:'application/json',headers,body:JSON.stringify({error:{message:'This photo could not render. Try again when ready.'}})});return;}
       await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ image: renderImages[renders.length-1] || generatedImage, model: 'test-image-model' }) });
       return;
     }
@@ -178,6 +179,7 @@ test('Calacatta and a matching slab backsplash remain linked while the cabinet r
 });
 
 test('hardware and counter variants hold the same cabinet root, including after viewing an earlier Look',async({page})=>{
+  test.setTimeout(60_000);
   const secondImage='data:image/webp;base64,'+(await readFile(new URL('../public/media/projects/white-brick-stucco/after.webp',import.meta.url))).toString('base64');
   const api=await stubService(page,{renderImages:[generatedImage,secondImage,secondImage]});await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
@@ -711,6 +713,7 @@ test('cabinets skip surface detection while previews and correction tools remain
 });
 
 test('Looks wrap into pairs on the left without horizontal scrolling',async({page})=>{
+  test.setTimeout(60_000);
   await stubService(page);await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
   for(let i=1;i<=6;i++){await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,i);}
   for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1280,height:800},{width:800,height:1280},{width:1024,height:768}]){
@@ -718,4 +721,57 @@ test('Looks wrap into pairs on the left without horizontal scrolling',async({pag
     const geometry=await page.locator('.viz-look-strip').evaluate(strip=>{const buttons=[...strip.querySelectorAll('button')].map(b=>b.getBoundingClientRect()),photo=document.querySelector('.viz-photo-stage').getBoundingClientRect(),main=document.querySelector('main');return {rows:new Set(buttons.map(r=>Math.round(r.top))).size,pairs:[0,2,4].every(i=>Math.abs(buttons[i].top-buttons[i+1].top)<1),scroll:strip.scrollWidth>strip.clientWidth,left:buttons.every(b=>b.right<=photo.left+1),mainFits:main.scrollHeight<=main.clientHeight+1,visible:buttons.every(b=>b.bottom<=innerHeight)};});
     expect(geometry).toEqual({rows:3,pairs:true,scroll:false,left:true,mainFits:true,visible:true});
   }
+});
+
+
+test('Render All applies one design to four separate kitchen angles and preserves progress while browsing',async({page})=>{
+  test.setTimeout(75_000);
+  const api=await stubService(page,{holdFirstRender:true});await openAndConnect(page);
+  const files=await Promise.all(projects.slice(0,4).map(async(project,index)=>({name:`angle-${index+1}.webp`,mimeType:'image/webp',buffer:await readFile(new URL('../public/'+project.beforeImage,import.meta.url))})));
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(files);
+  await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toBeVisible();
+  await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Hardware Finishes',exact:true}).click();
+  await page.getByLabel('Countertops',{exact:true}).selectOption('calacatta');await page.getByLabel('Backsplash',{exact:true}).selectOption('match-countertop');
+  await page.getByRole('button',{name:'Render All 4 Photos',exact:true}).click();
+  await expect(page.getByText('Creating Photo 1 of 4',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Select Photo 2',exact:true})).toBeDisabled();
+  await page.getByRole('link',{name:'Home',exact:true}).click();api.release();
+  await page.getByRole('link',{name:/Visualize Your Home/}).click();
+  await expect(page.getByText('4 of 4 Previews Saved',{exact:true})).toBeVisible({timeout:45_000});
+  expect(api.renders).toHaveLength(4);expect(new Set(api.renders.map(r=>r.body.image)).size).toBe(4);
+  for(const r of api.renders){expect(r.body.design).toEqual(api.renders[0].body.design);expect(r.body.design.countertop).toBe('calacatta');expect(r.body.design.backsplash).toBe('match-countertop');expect(r.body).not.toHaveProperty('appearanceReference');}
+  for(let index=1;index<=4;index++){await page.getByRole('button',{name:`Select Photo ${index}`,exact:true}).click();await expectSaved(page,1);}
+  for(const size of [{width:1180,height:820},{width:834,height:1194}]){await page.setViewportSize(size);const box=await page.getByRole('button',{name:'Render All 4 Photos',exact:true}).boundingBox();expect(box.y+box.height).toBeLessThanOrEqual(size.height);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+});
+
+test('a failed batch keeps completed images and retry renders only unfinished photos using the original choices',async({page})=>{
+  test.setTimeout(60_000);const api=await stubService(page,{failRenderAt:2});await openAndConnect(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles([1,2,3].map(i=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
+  await expect(page.getByRole('button',{name:'Select Photo 3',exact:true})).toBeVisible();await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Render All 3 Photos',exact:true}).click();
+  await expect(page.getByText('1 of 3 Previews Saved',{exact:true})).toBeVisible({timeout:20_000});expect(api.renders).toHaveLength(2);await expectSaved(page,1);
+  await selectColor(page,'cabinets',kitchenColors[1]);
+  await page.getByRole('button',{name:'Retry Unfinished Photos',exact:true}).click();
+  await expect(page.getByText('3 of 3 Previews Saved',{exact:true})).toBeVisible({timeout:25_000});expect(api.renders).toHaveLength(4);
+  expect(api.renders[2].body.design).toEqual(api.renders[0].body.design);expect(api.renders[3].body.design).toEqual(api.renders[0].body.design);
+  await page.getByRole('button',{name:'Select Photo 1',exact:true}).click();await expectSaved(page,1);
+});
+
+test('a stopped batch starts no remaining requests and selected previews become email attachments; deleting keeps originals',async({page})=>{
+  test.setTimeout(60_000);const api=await stubService(page);await openAndConnect(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles([1,2].map(i=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
+  await expect(page.getByRole('button',{name:'Select Photo 2',exact:true})).toBeVisible();await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Render All 2 Photos',exact:true}).click();await expectSaved(page,1);
+  await page.getByRole('button',{name:'Stop Remaining Previews',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Retry Unfinished Photos',exact:true})).toBeVisible();expect(api.renders).toHaveLength(1);
+  await page.getByRole('button',{name:'Retry Unfinished Photos',exact:true}).click();await expect(page.getByText('2 of 2 Previews Saved',{exact:true})).toBeVisible({timeout:20_000});
+  await openTools(page);
+  await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:({files})=>files.length>0});Object.defineProperty(navigator,'share',{configurable:true,value:data=>{window.__emailShare={title:data.title,files:data.files.map(f=>({name:f.name,type:f.type,size:f.size})),active:navigator.userActivation?.isActive};return Promise.resolve();}});});
+  await page.getByRole('button',{name:'Select All Previews',exact:true}).click();await page.getByRole('button',{name:'Email Selected (2)',exact:true}).click();
+  const shared=await page.evaluate(()=>window.__emailShare);expect(shared.files).toHaveLength(2);expect(shared.title).toBe('Your Spray-Net Design Previews');for(const f of shared.files){expect(f.type).toMatch(/^image\//);expect(f.size).toBeGreaterThan(0);}if(shared.active!==undefined)expect(shared.active).toBe(true);
+  await page.evaluate(()=>Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false}));await page.getByRole('button',{name:'Email Selected (2)',exact:true}).click();await expect(page.getByText(/This browser cannot attach these images/)).toBeVisible();
+  page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Delete Preview 1',exact:true}).click();
+  await expect(page.locator('.viz-render-card')).toHaveCount(1);await expect(page.getByRole('button',{name:'Email Selected (1)',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Close Tools',exact:true}).click();await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Select Photo 2',exact:true})).toBeVisible();
 });

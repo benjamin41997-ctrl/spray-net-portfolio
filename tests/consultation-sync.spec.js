@@ -17,6 +17,26 @@ async function install(context,h) {
 async function upload(page) {await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(fileURLToPath(new URL('../public/'+projects[0].beforeImage,import.meta.url)));await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();}
 async function create(page) {await page.getByLabel('Find a Color',{exact:true}).fill('SW7008');await page.locator('.viz-swatch').first().click();await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.locator('.viz-look-strip button')).toHaveCount(1);}
 
+test('deleting one shared preview removes it on both tablets, preserves originals and a usable cabinet reference',async({browser,baseURL})=>{
+  test.setTimeout(90_000);const h=consultationFixture({origin:new URL(baseURL).origin,renderImage});
+  const first=await browser.newContext({serviceWorkers:'block'}),second=await browser.newContext({serviceWorkers:'block'});
+  await Promise.all([install(first,h),install(second,h)]);const rep=await first.newPage(),customer=await second.newPage();
+  try{
+    await rep.goto(baseURL+'#/visualize');await upload(rep);await create(rep);
+    await rep.getByRole('button',{name:'Hardware Finishes',exact:true}).click();await rep.getByLabel('Hardware Finish',{exact:true}).selectOption('gold');
+    await rep.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(rep.locator('.viz-look-strip button')).toHaveCount(2,{timeout:15000});
+    await customer.goto(baseURL+'#/visualize');await expect(customer.locator('.viz-look-strip button')).toHaveCount(2,{timeout:20000});
+    await expect(rep.locator('.viz-sync-status')).toContainText('Synced');
+    await tools(rep);await rep.getByRole('button',{name:'Saved Previews on This Tablet',exact:true}).click();await expect(rep.locator('.viz-saved-item')).toHaveCount(2);
+    rep.once('dialog',d=>d.accept());await rep.getByRole('button',{name:'Delete Preview 2',exact:true}).click();
+    await expect(rep.locator('.viz-render-card')).toHaveCount(1);await expect(rep.locator('.viz-saved-item')).toHaveCount(1);
+    await expect(customer.locator('.viz-look-strip button')).toHaveCount(1,{timeout:20000});await expect(customer.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();
+    const c=(await h.request('/api/consultations/active').then(r=>r.json())).active;expect(c.looks[0].cabinetReferenceId).toBe(c.looks[0].id);expect(h.objects.size).toBe(3);
+    await customer.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(customer.locator('.viz-look-strip button')).toHaveCount(2,{timeout:15000});expect(h.renders).toBe(3);
+    await rep.reload();await expect(rep.locator('.viz-look-strip button')).toHaveCount(2,{timeout:20000});
+  }finally{await first.close();await second.close();}
+});
+
 async function offlineControl(context,page,browserName) {
   if(browserName!=='webkit')return offline=>context.setOffline(offline);
   // Playwright WebKit's native offline emulation also blocks local FileReader

@@ -64,7 +64,7 @@ Open the hidden menu by holding **Kitchen & Cabinets** or **Home Exterior** for 
 
 Set `VISUALIZER_ALLOWED_ORIGINS` to exact HTTPS **origins**, not full page URLs. For GitHub Pages this is `https://benjamin41997-ctrl.github.io`, without `/spray-net-portfolio/`. There is no wildcard CORS setting. An origin restriction is supplementary; the device token is the authorization boundary.
 
-The configuration allows five attempts per rolling ten minutes and 30 per rolling hour, a five-second minimum interval, and one active rendering. There is no daily rendering cap. Adjust these values in `server/wrangler.toml` before deployment as needed. An attempt is persisted before the paid request. Rolling windows survive Worker restarts, deployments and token rotation, including across midnight. Legacy daily counters remain readable for compatibility but never block a render. A limit response includes the remaining wait in its message and `Retry-After` header. Use the same Durable Object binding and name when redeploying; creating a different Worker/object creates separate usage history.
+The configuration allows ten attempts per rolling ten minutes and 30 per rolling hour, a five-second minimum interval, and one active rendering. There is no daily rendering cap. Adjust these values in `server/wrangler.toml` before deployment as needed. An attempt is persisted before the paid request. Rolling windows survive Worker restarts, deployments and token rotation, including across midnight. Legacy daily counters remain readable for compatibility but never block a render. A limit response includes the remaining wait in its message and `Retry-After` header. Use the same Durable Object binding and name when redeploying; creating a different Worker/object creates separate usage history.
 
 Cloudflare may defer active Durable Object code updates for up to five minutes after deployment. Check the `X-Visualizer-Release` response header on `/api/session` before a live smoke test, or use a current Wrangler release with `--durable-objects-code-update-mode immediate` when no render is running. The request adapter uses `redirect: 'manual'`; Workers rejects the Fetch standard's `redirect: 'error'` before sending a request. Non-2xx responses are handled without following redirects. See [Cloudflare code update behavior](https://developers.cloudflare.com/changelog/post/2026-10-30-durable-objects-deferred-code-updates/) and [Request options](https://developers.cloudflare.com/workers/runtime-apis/request/).
 
@@ -72,7 +72,7 @@ Rendering incurs OpenAI API usage. A ChatGPT subscription does not supply this s
 
 ## Local Node 24 server
 
-Copy `.env.example` to the ignored `.env` file and fill in the server key and generated token. The token, key and allowed origins are required; otherwise rendering stays disabled. Rolling limits default to five per ten minutes and 30 per hour. The former `VISUALIZER_MAX_DAILY_RENDERS` setting is obsolete and ignored.
+Copy `.env.example` to the ignored `.env` file and fill in the server key and generated token. The token, key and allowed origins are required; otherwise rendering stays disabled. Rolling limits default to ten per ten minutes and 30 per hour. The former `VISUALIZER_MAX_DAILY_RENDERS` setting is obsolete and ignored.
 
 ```powershell
 node --env-file=.env server/index.mjs
@@ -93,7 +93,7 @@ For a self-hosted Node deployment, put it behind an HTTPS reverse proxy, keep on
 | `VISUALIZER_OPERATOR_TOKEN` | Optional separate random operator secret, 43–128 characters; custom prompts disabled without it |
 | `VISUALIZER_TABLET_PASSWORD` | Optional private 12–128 character password; required for one-password activation |
 | `VISUALIZER_ALLOWED_ORIGINS` | Required comma-separated exact HTTPS origins; localhost HTTP allowed for development |
-| `VISUALIZER_MAX_TEN_MINUTE_RENDERS` | 5, permitted range 1–60; rolling ten-minute window |
+| `VISUALIZER_MAX_TEN_MINUTE_RENDERS` | 10, permitted range 1–60; rolling ten-minute window |
 | `VISUALIZER_MAX_HOURLY_RENDERS` | 30, permitted range 1–60; rolling hour |
 | `VISUALIZER_MIN_INTERVAL_SECONDS` | 5, permitted range 1–60 |
 | `VISUALIZER_TIMEOUT_SECONDS` | 240, permitted range 30–300 |
@@ -271,3 +271,12 @@ Look metadata supports optional `cabinetReferenceId`. Shared storage validates t
 Service release `2026-11-02.15` adds `design.countertop: "calacatta"`, `design.backsplash: "calacatta"`, and `design.backsplash: "match-countertop"`. Calacatta uses a bright white slab with broad irregular contrasting gray-to-charcoal veins. The matching option carries the final selected/existing countertop design into the backsplash zone as a continuous slab with coherent veining and only necessary corner/cutout joints, protecting windows, outlets, cabinet faces and counter geometry. Legacy finish IDs stay valid.
 
 Appearance-reference change detection treats a linked backsplash as dependent on the countertop. If the countertop changes while `backsplash` remains `match-countertop`, the server adds `backsplash` to `changedFinishes`. This prevents the cabinet appearance lock from freezing an obsolete backsplash material. Countertop Keep Existing restoration still requests the original second image when needed; the matching wall then uses that restored final material. No additional model call or kitchen analysis is introduced. Nested design fields use the existing consultation/local persistence.
+
+
+## Batch Rendering and Per-Preview Deletion (1.7.0)
+
+Release `2026-11-02.16` sets `VISUALIZER_MAX_TEN_MINUTE_RENDERS=10`; the 30/hour window, five-second interval and one active request remain. Kitchen Render All snapshots the current preset design and queues one request for each of the two to four kitchen originals. Separate source images and cabinet appearance references are preserved per photo. The client waits between request starts when necessary, stops on any failure, retains completed previews and requires an explicit tap to retry unfinished work. The queue is in memory; completed images and upload outbox entries remain persistent. Exterior rendering stays per angle.
+
+Representative-only `POST /api/consultations` action `deleteLook` accepts `consultationId` and `lookId`. It publishes a tombstone and rebases cabinet-reference metadata before deleting the labelled/raw R2 objects. The original is retained. A durable pending-deletion record allows a failed object cleanup to retry idempotently on a later active-session poll and decrement the media budget once. Whole-consultation deletion includes those pending objects. The active consultation response includes `deletedLookIds`; clients purge matching local saved images/cache and reconcile metadata. Uploading a tombstoned ID returns 410 `look_deleted`, which removes that stale outbox task. A late completed render referencing a deleted cabinet image is saved with a surviving matching reference or as its own root.
+
+Email Selected uses the native Web Share API with labelled image `File` attachments. It invokes sharing directly within the tap gesture, without asynchronous file loading that would consume iPad user activation. No `mailto:` attachment parameters, mailbox tokens or automated Send operation are used. Unsupported file-sharing configurations receive an explanatory message; the existing Save Image action remains available in representative controls.

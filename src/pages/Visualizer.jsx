@@ -3,7 +3,8 @@ import { useVisualizer } from '../components/VisualizerProvider';
 import { colors } from '../data/colors';
 import { useOnline } from '../hooks/useOnline';
 import { preparePhoto } from '../lib/visualizerPhoto';
-import { listRenders, deleteRender } from '../lib/visualizerStorage';
+import RenderLibrary from '../components/RenderLibrary';
+import { listRenders } from '../lib/visualizerStorage';
 import { callVisualizer, connectionSettings, saveConnection } from '../lib/visualizerClient';
 import { navigate } from '../lib/navigation';
 import { useOperatorUnlock } from '../hooks/useOperatorUnlock';
@@ -53,6 +54,7 @@ export default function Visualizer() {
   const fullscreenDialog = useRef(null);
   const fileInput = useRef(null); const cameraInput = useRef(null); const photoEpoch = useRef(0);
   const current = archived || v.looks.find(r => r.id === v.selectedId);
+  useEffect(()=>{const deleted=event=>{setSaved(current=>current.filter(r=>!event.detail.includes(r.id)));setArchived(current=>event.detail.includes(current?.id)?null:current);};window.addEventListener('visualizer-renders-deleted',deleted);return()=>window.removeEventListener('visualizer-renders-deleted',deleted);},[]);
   const angleLooks = v.looks.filter(r => r.photoId === v.photo?.id);
   const unlock = useOperatorUnlock(() => setToolsOpen(true));
   const closeTools = () => { setToolsOpen(false); setCustomPrompt(''); };
@@ -133,7 +135,7 @@ export default function Visualizer() {
     v.setDesign(d=>{const current=cabinetTones(d.surfaces);return {...d,surfaces:cabinetSurfaces(nextLayout,current.light,current.dark)};});
   }
   async function loadSaved() { const epoch = photoEpoch.current; try { const records = await listRenders(); if (epoch !== photoEpoch.current) return; setSaved(records); setToolMessage('Saved previews are stored on this device only.'); } catch(e) { if (epoch === photoEpoch.current) setToolMessage(e.message); } }
-  async function removeSaved() { if (!archived || !window.confirm('Delete this saved preview from this tablet?')) return; try { await deleteRender(archived.id); setArchived(null); await loadSaved(); } catch(e) { setToolMessage(e.message); } }
+  async function removeSaved() { if (!archived || !window.confirm('Permanently delete this preview? Shared previews will be removed from both tablets.')) return; try { await v.removeLook(archived); setArchived(null); await loadSaved(); } catch(e) { setToolMessage(e.message); } }
   async function exportCurrent(share) { try { await exportImage(current, share); } catch(e) { if(e.name !== 'AbortError') setToolMessage('Unable to export this image. Please try Save Image.'); } }
   function showPreview(quality, manual = '') { setBefore(false); setShowHighlight(false); v.generate(quality, manual, null, v.design.mode==='exterior'?availableSurfaces:null); }
   return <div className={`visualizer-app ${v.design.mode==='exterior'?'is-exterior':''} ${toolsOpen?'with-tools':''}`}>
@@ -146,9 +148,10 @@ export default function Visualizer() {
       <VisualizerConnection connected={connected} online={online} onConnected={data => {setConnected(true);setOperatorReady(Boolean(data.operatorAuthorized));setToolMessage('');}} onForgotten={() => {setConnected(false);setOperatorReady(false);setCustomPrompt('');setToolMessage('');}} />
       {v.sync.enabled && <ConsultationLibrary sync={v.sync} busy={v.busy || loadingPhoto} onOpened={()=>{setArchived(null);setSaved([]);setBefore(false);closeTools();}}/>}
       <div className="viz-actions"><button className="button" onClick={loadSaved}>Saved Previews on This Tablet</button></div>
+      <RenderLibrary records={[...v.looks,...saved.filter(r=>!v.looks.some(look=>look.id===r.id))]} busy={v.busy} operatorReady={operatorReady} onDelete={async record=>{await v.removeLook(record);if(archived?.id===record.id)setArchived(null);if(saved.length)await loadSaved();}}/>
       <p role="status">{toolMessage}</p>
       {!!saved.length && <div className="viz-saved-list">{saved.map(record => <SavedThumb key={record.id} record={record} onSelect={r => { setArchived(r); setBefore(false); }} />)}</div>}
-      {archived && <div className="viz-actions"><button className="button" onClick={() => setArchived(null)}>Back to Current Consultation</button><button className="button" onClick={removeSaved}>Delete Selected Preview</button></div>}
+      {archived && <div className="viz-actions"><button className="button" onClick={() => setArchived(null)}>Back to Current Consultation</button><button className="button" disabled={!operatorReady || v.busy} onClick={removeSaved}>Delete Selected Preview</button></div>}
       <button className="button button-dark" disabled={!operatorReady || !v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>showPreview('detail')}>Create Detailed Preview</button>
       {current && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy} onClick={()=>{setCorrectionTarget({kind:'preview',record:current});closeTools();}}>Correct This Preview</button></div>}
       {v.design.mode==='exterior' && v.photo && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy || analysis?.status==='loading'} onClick={()=>{setCorrectionTarget({kind:'areas'});closeTools();}}>Correct Detected Areas</button></div>}
@@ -188,11 +191,14 @@ export default function Visualizer() {
         {!online && <p className="viz-notice">Connect to the internet to create a new preview. Saved images and color selections still work offline.</p>}
         {!connected && online && <p className="viz-notice">Ask your representative to connect this tablet.</p>}
         {v.error && <p className="viz-error" role="alert">{v.error}</p>}
-        <div className="viz-generate"><button className="button button-dark" disabled={!v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={() => showPreview('preview')}>{v.busy ? 'Creating Preview...' : 'Create My Preview'}</button></div>
+        <div className="viz-generate"><button className="button button-dark" disabled={!v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={() => showPreview('preview')}>{v.busy ? 'Creating Preview...' : 'Create My Preview'}</button>
+          {v.design.mode==='kitchen' && v.photos.length>1 && <button className="button viz-render-all" disabled={!v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>{setBefore(false);setShowHighlight(false);v.generateAll();}}>Render All {v.photos.length} Photos</button>}
+          {v.design.mode==='kitchen' && v.batch && !v.busy && <div className="viz-batch-result" role="status"><span>{v.batch.jobs.filter(j=>j.status==='done').length} of {v.batch.jobs.length} Previews Saved</span>{v.batch.jobs.some(j=>j.status!=='done') && <button className="button" disabled={!connected || !online || !!archived} onClick={()=>v.generateAll(true)}>Retry Unfinished Photos</button>}</div>}
+        </div>
       </section>
         <VisualizerPhotos photos={v.photos} photoId={v.photo?.id} disabled={v.busy || loadingPhoto} onSelect={id => { v.selectPhoto(id); setArchived(null); setBefore(false); }} />
       <section className="viz-media-panel" aria-label="Photo controls">
-          {v.busy && <div className="viz-working" role="status"><span className="viz-spinner" /><strong>Creating Your Preview</strong><span>{elapsed}s elapsed. You can browse the portfolio while we work.</span><button onClick={v.cancel}>Stop Waiting</button></div>}
+          {v.busy && <div className="viz-working" role="status"><span className="viz-spinner" /><strong>{v.batch?`Creating Photo ${v.batch.jobs.findIndex(j=>j.status==='running')+1} of ${v.batch.jobs.length}`:'Creating Your Preview'}</strong><span>{elapsed}s elapsed. You can browse the portfolio while we work.</span><button onClick={v.cancel}>{v.batch?'Stop Remaining Previews':'Stop Waiting'}</button></div>}
         <input className="sr-only" ref={fileInput} type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-label="Choose home photo" onChange={e => { upload(e.target.files); e.target.value = ''; }} />
         <input className="sr-only" ref={cameraInput} type="file" accept="image/*" capture="environment" aria-label="Take home photo" onChange={e => { upload(Array.from(e.target.files || [])); e.target.value = ''; }} />
         {loadingPhoto && <p role="status">Preparing Your Photo...</p>}
