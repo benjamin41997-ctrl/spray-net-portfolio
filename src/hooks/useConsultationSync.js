@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {callVisualizer,connectionSettings,normalizeEndpoint} from '../lib/visualizerClient';
 import {cacheGet,cachePut,cacheDelete,cacheMedia,cachedMedia,blobDataUrl,queuedTasks,queueTask,removeTask,mediaPath} from '../lib/consultationCache';
+import {withoutRender} from '../lib/renderCollection';
 
 const defaultName=()=>`Consultation ${new Date().toLocaleString()}`;
 const metaPhoto=({id,mode,name,width,height})=>({id,mode,name,width,height});
@@ -141,10 +142,19 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
     if(!navigator.onLine)throw new Error('Connect to the internet to delete this shared preview from both tablets.');
     if((await queuedTasks()).some(task=>(task.body.consultationId || task.body.id)===look.consultationId))throw new Error('Let this consultation finish syncing before deleting a preview.');
     state.current.epoch++;state.current.revision='';
-    const result=await api('/api/consultations',{action:'deleteLook',consultationId:look.consultationId,lookId:look.id});
+    let result;
+    try{result=await api('/api/consultations',{action:'deleteLook',consultationId:look.consultationId,lookId:look.id});}
+    catch(error){
+      if(!['consultation_not_found','look_not_found'].includes(error.code))throw error;
+      // An older local copy can outlive a consultation deleted from another tablet.
+      const saved=await cacheGet('session:'+look.consultationId);
+      if(saved)await cachePut('session:'+look.consultationId,{...saved,looks:withoutRender(saved.looks,look.id),deletedLookIds:[...new Set([...(saved.deletedLookIds || []),look.id])]});
+    }
     for(const kind of ['render','raw'])await cacheDelete(mediaPath(look.consultationId,look.id,kind));
-    if(state.current.session?.id===look.consultationId)await hydrate({...result.consultation,expiresAt:state.current.session.expiresAt});
-    else await cachePut('session:'+look.consultationId,result.consultation);
+    if(result){
+      if(state.current.session?.id===look.consultationId)await hydrate({...result.consultation,expiresAt:state.current.session.expiresAt});
+      else await cachePut('session:'+look.consultationId,result.consultation);
+    }
   }
   useEffect(()=>{
     let alive=true;

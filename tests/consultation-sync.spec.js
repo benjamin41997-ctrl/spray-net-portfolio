@@ -17,6 +17,18 @@ async function install(context,h) {
 async function upload(page) {await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(fileURLToPath(new URL('../public/'+projects[0].beforeImage,import.meta.url)));await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();}
 async function create(page) {await page.getByLabel('Find a Color',{exact:true}).fill('SW7008');await page.locator('.viz-swatch').first().click();await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.locator('.viz-look-strip button')).toHaveCount(1);}
 
+test('an old local preview can be deleted after its shared consultation was removed elsewhere',async({browser,baseURL})=>{
+  test.setTimeout(60_000);const h=consultationFixture({origin:new URL(baseURL).origin,renderImage});const context=await browser.newContext({serviceWorkers:'block'});await install(context,h);const page=await context.newPage();
+  try{
+    await page.goto(baseURL+'#/visualize');await upload(page);await create(page);await expect(page.locator('.viz-sync-status')).toContainText('Synced');
+    const c=(await h.request('/api/consultations/active').then(r=>r.json())).active;await h.request('/api/consultations',{action:'delete',consultationId:c.id});
+    await expect(page).not.toHaveURL(/#\/visualize/,{timeout:15000});await page.goto(baseURL+'#/visualize');await tools(page);
+    await page.getByRole('button',{name:'Saved Previews on This Tablet',exact:true}).click();await expect(page.locator('.viz-render-card')).toHaveCount(1);
+    page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete Preview 1',exact:true}).click();
+    await expect(page.locator('.viz-render-card')).toHaveCount(0);await expect(page.locator('.viz-saved-item')).toHaveCount(0);expect(h.objects.size).toBe(0);
+  }finally{await context.close();}
+});
+
 test('deleting one shared preview removes it on both tablets, preserves originals and a usable cabinet reference',async({browser,baseURL})=>{
   test.setTimeout(90_000);const h=consultationFixture({origin:new URL(baseURL).origin,renderImage});
   const first=await browser.newContext({serviceWorkers:'block'}),second=await browser.newContext({serviceWorkers:'block'});
