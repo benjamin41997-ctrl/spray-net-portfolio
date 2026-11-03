@@ -112,13 +112,20 @@ export class ConsultationStore {
         await this.cleanupDeleted(c,lookId);
         return json({deleted:true,consultation:c});
       }
+      if(body.action==='labelPhoto') {
+        operatorOnly(operator);const photoId=requireId(body.photoId),p=c.photos.find(p=>p.id===photoId);
+        if(!p)invalid('This photo could not be found.');
+        p.viewLabel=text(body.viewLabel,60);if(!p.viewLabel)invalid('Enter a view name.');
+        c.looks=c.looks.map(r=>r.photoId===photoId?{...r,viewLabel:p.viewLabel}:r);
+        await this.commit(c);return json({saved:true,revision:c.revision});
+      }
       if(body.action==='photo') {
         const p=body.photo;if(!p || !['kitchen','exterior'].includes(p.mode) || ![p.width,p.height].every(n=>Number.isInteger(n)&&n>0&&n<=4096))invalid('This photo could not be read.');requireId(p.id);
         if(c.photos.some(photo=>photo.id===p.id))return json({saved:true,revision:c.revision});
         if(c.photos.filter(photo=>photo.mode===p.mode).length>=4)throw new ApiError(409,'photo_limit','Each consultation allows four kitchen and four exterior photos.');
         const image=validateImage(body.image);const bytes=Buffer.from(image.split(',')[1],'base64');
         await this.bucket.put(assetKey(id,p.id,'original'),bytes,{httpMetadata:{contentType:image.slice(5,image.indexOf(';'))}});
-        c.photos.push({id:p.id,mode:p.mode,name:text(p.name,160),width:p.width,height:p.height,bytes:bytes.length,createdAt:new Date(this.now()).toISOString()});
+        c.photos.push({id:p.id,mode:p.mode,name:text(p.name,160),viewLabel:text(p.viewLabel,60),width:p.width,height:p.height,bytes:bytes.length,createdAt:new Date(this.now()).toISOString()});
         try{await this.commit(c,bytes.length);}catch(error){await this.bucket.delete(assetKey(id,p.id,'original')).catch(()=>{});throw error;}return json({saved:true,revision:c.revision});
       }
       if(body.action==='look') {
@@ -138,7 +145,7 @@ export class ConsultationStore {
         let bytes=0;
         try{
           for(const [kind,data]of [['render',image],['raw',raw]]){const binary=Buffer.from(data.split(',')[1],'base64');bytes+=binary.length;await this.bucket.put(assetKey(id,r.id,kind),binary,{httpMetadata:{contentType:data.slice(5,data.indexOf(';'))}});}
-          c.looks.push({id:r.id,photoId:r.photoId,...(r.cabinetReferenceId?{cabinetReferenceId:r.cabinetReferenceId}:{}),design:{...design,...(checked.customPrompt?{customPrompt:checked.customPrompt}:{})},corrections:checked.corrections,regions:checked.regions,createdAt:Number.isNaN(Date.parse(r.createdAt))?new Date(this.now()).toISOString():new Date(r.createdAt).toISOString(),quality:checked.quality,model:text(r.model,100),bytes});
+          c.looks.push({id:r.id,photoId:r.photoId,viewLabel:c.photos.find(p=>p.id===r.photoId)?.viewLabel || text(r.viewLabel,60),...(r.cabinetReferenceId?{cabinetReferenceId:r.cabinetReferenceId}:{}),design:{...design,...(checked.customPrompt?{customPrompt:checked.customPrompt}:{})},corrections:checked.corrections,regions:checked.regions,createdAt:Number.isNaN(Date.parse(r.createdAt))?new Date(this.now()).toISOString():new Date(r.createdAt).toISOString(),quality:checked.quality,model:text(r.model,100),bytes});
           await this.commit(c,bytes);
         }catch(error){await this.bucket.delete([assetKey(id,r.id,'render'),assetKey(id,r.id,'raw')]).catch(()=>{});throw error;}
         return json({saved:true,revision:c.revision});

@@ -4,8 +4,8 @@ import {cacheGet,cachePut,cacheDelete,cacheMedia,cachedMedia,blobDataUrl,queuedT
 import {withoutRender} from '../lib/renderCollection';
 
 const defaultName=()=>`Consultation ${new Date().toLocaleString()}`;
-const metaPhoto=({id,mode,name,width,height})=>({id,mode,name,width,height});
-const metaLook=({id,photoId,design,cabinetReferenceId,corrections=[],regions=[],createdAt,quality,model})=>({id,photoId,design,...(cabinetReferenceId?{cabinetReferenceId}:{}),corrections,regions,createdAt,quality:quality || 'preview',model});
+const metaPhoto=({id,mode,name,viewLabel,width,height})=>({id,mode,name,viewLabel,width,height});
+const metaLook=({id,photoId,viewLabel,design,cabinetReferenceId,corrections=[],regions=[],createdAt,quality,model})=>({id,photoId,viewLabel,design,...(cabinetReferenceId?{cabinetReferenceId}:{}),corrections,regions,createdAt,quality:quality || 'preview',model});
 export default function useConsultationSync({snapshot,onRemote,onClear}) {
   const [enabled,setEnabled]=useState(false);const [session,setSession]=useState(null);const [status,setStatus]=useState('');const [pending,setPending]=useState(0);
   const state=useRef({enabled:false,session:null,revision:'',pumping:false,polling:false,epoch:0,prepare:null,online:navigator.onLine});
@@ -32,7 +32,7 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
     const photos=[];const looks=[];
     for(const p of c.photos) {
       const existing=!replacing&&local.allPhotos.find(item=>item.id===p.id);
-      if(existing){photos.push(existing);continue;}
+      if(existing){photos.push({...existing,...p});continue;}
       const blob=await media(c.id,p.id,'original');photos.push({...p,blob,dataUrl:await blobDataUrl(blob)});
     }
     for(const r of c.looks) {
@@ -108,6 +108,12 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
     state.current.localError='';
     }catch(error){state.current.localError=error.message;setStatus(settledStatus());throw error;}
   }
+  async function labelPhoto(c,photoId,viewLabel) {
+    if(!c)return;
+    const saved=await cacheGet('session:'+c.id);
+    if(saved)await cachePut('session:'+c.id,{...saved,photos:saved.photos.map(p=>p.id===photoId?{...p,viewLabel}:p),looks:saved.looks.map(r=>r.photoId===photoId?{...r,viewLabel}:r)});
+    await enqueue({action:'labelPhoto',consultationId:c.id,photoId,viewLabel});
+  }
   async function saveLook(c,look) {
     if(!c)return;
     try{
@@ -171,5 +177,5 @@ export default function useConsultationSync({snapshot,onRemote,onClear}) {
     window.addEventListener('online',reconnect);window.addEventListener('offline',disconnect);window.addEventListener('visualizer-connection-changed',reconnect);document.addEventListener('visibilitychange',tick);
     return()=>{alive=false;clearInterval(timer);window.removeEventListener('online',reconnect);window.removeEventListener('offline',disconnect);window.removeEventListener('visualizer-connection-changed',reconnect);document.removeEventListener('visibilitychange',tick);};
   },[]);
-  return {enabled,session,status:!navigator.onLine&&enabled?'Offline - Changes Saved Here':status,pending,prepare,savePhotos,saveLook,startNew,rename,list,activate,end,remove,removeLook,retry:async()=>{if(state.current.localError && state.current.session){await savePhotos(state.current.session,callbacks.current.snapshot.allPhotos);for(const look of callbacks.current.snapshot.looks)await saveLook(state.current.session,look);}await pump();await poll();}};
+  return {enabled,session,status:!navigator.onLine&&enabled?'Offline - Changes Saved Here':status,pending,prepare,savePhotos,labelPhoto,saveLook,startNew,rename,list,activate,end,remove,removeLook,retry:async()=>{if(state.current.localError && state.current.session){await savePhotos(state.current.session,callbacks.current.snapshot.allPhotos);for(const look of callbacks.current.snapshot.looks)await saveLook(state.current.session,look);}await pump();await poll();}};
 }

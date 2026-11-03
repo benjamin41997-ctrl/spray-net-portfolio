@@ -105,7 +105,7 @@ function restoreRecord(record) {
  * Resolves only after IndexedDB has committed both images and the design.
  * Browser storage is not a backup: clearing site data removes saved images.
  */
-export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, corrections = [], regions = [], design, photoId, cabinetReferenceId, consultationId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
+export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, corrections = [], regions = [], design, photoId, viewLabel, cabinetReferenceId, consultationId, consultationLabel = '', id = createId(), createdAt = new Date().toISOString() }) {
   assertImage(originalPhoto, 'Original photo');
   assertImage(renderPhoto, 'Rendering');
   if (!design || typeof design !== 'object' || Array.isArray(design)) {
@@ -121,6 +121,7 @@ export async function saveRender({ originalPhoto, renderPhoto, rawRenderPhoto, c
     originalPhoto,
     renderPhoto,
     design: structuredClone(design),
+    ...(typeof viewLabel==='string'?{viewLabel:viewLabel.trim().slice(0,60)}:{}),
     ...(typeof cabinetReferenceId==='string' && cabinetReferenceId.length<=80?{cabinetReferenceId}:{}),
     ...(typeof consultationId==='string'?{consultationId}:{}),
     corrections:structuredClone(corrections), regions:structuredClone(regions),
@@ -168,4 +169,13 @@ export async function storageSummary() {
     storage?.persisted ? storage.persisted().catch(() => false) : false,
   ]);
   return { count, usageBytes: estimate.usage ?? null, quotaBytes: estimate.quota ?? null, persistent };
+}
+
+export async function updateSavedView(photoId,viewLabel) {
+  const db=await openDatabase();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE_NAME,'readwrite'),cursor=tx.objectStore(STORE_NAME).openCursor();
+    cursor.onsuccess=()=>{const current=cursor.result;if(!current)return;if(current.value.photoId===photoId && current.value.viewLabel!==viewLabel)current.update({...current.value,viewLabel});current.continue();};
+    tx.oncomplete=resolve;tx.onabort=()=>reject(storageError(tx.error));tx.onerror=()=>{};
+  });
 }

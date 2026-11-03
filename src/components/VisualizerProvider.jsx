@@ -3,14 +3,17 @@ import {navigate} from '../lib/navigation';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { callVisualizer, connectionSettings, imageDataBlob } from '../lib/visualizerClient';
 import {withoutRender} from '../lib/renderCollection';
-import { saveRender, deleteRender } from '../lib/visualizerStorage';
+import { saveRender, deleteRender, updateSavedView } from '../lib/visualizerStorage';
 import {findCabinetReference} from '../lib/cabinetAppearance';
+import {photoViewThumbnail} from '../lib/visualizerPhoto';
+import {photoViewLabel} from '../lib/photoViews';
 import {blobDataUrl} from '../lib/consultationCache';
 
 const Context = createContext(null);
 export const useVisualizer = () => useContext(Context);
 export const newDesign = (mode = 'kitchen') => ({ mode, sidingMaterial: 'auto', ...(mode==='exterior'?{shutterAction:'keep'}:{}), surfaces: {}, hardwareStyle: 'keep', hardwareFinish: 'keep', backsplash: 'keep', countertop: 'keep' });
 export default function VisualizerProvider({ children }) {
+  const [advancedMode,setAdvancedMode]=useState(false);
   const [allPhotos,setPhotos]=useState([]);
   const [mode,setMode]=useState('kitchen');
   const [photoIds,setPhotoIds]=useState({kitchen:null,exterior:null});
@@ -37,7 +40,7 @@ export default function VisualizerProvider({ children }) {
   const controller = useRef(null);
   const epoch = useRef(0);
   const reset = () => {
-    setBatch(null);batchPlan.current=null;
+    setAdvancedMode(false);setBatch(null);batchPlan.current=null;
     epoch.current += 1; controller.current?.abort(); controller.current = null; analysisController.current?.abort(); analysisCache.current={}; analysisTasks.current={};analysisTask.current=null; correctionsByPhoto.current={}; setAnalyses({});
     setPhotos([]); setPhotoIds({kitchen:null,exterior:null});setMode('kitchen');setDesigns({kitchen:newDesign('kitchen'),exterior:newDesign('exterior')});setLooks([]);setSelectedIds({}); setLabel(''); setBusy(false); setError(''); setSaveWarning('');
   };
@@ -50,8 +53,16 @@ export default function VisualizerProvider({ children }) {
     if(photos.length+next.length>4){setError('Add up to 4 photos for each project type.');return;}
     const consultation=await syncRef.current.prepare(label);
     const generation=epoch.current;
-    const added = next.map(item => ({ ...item, mode, id:crypto.randomUUID() }));
+    const added = next.map(item => ({ ...item, mode, viewLabel:photoViewLabel(mode), id:crypto.randomUUID() }));
     setError(''); setSaveWarning('');
+    if(navigator.onLine && connectionSettings().token){
+      try{
+        const inputs=await Promise.all(added.map(async p=>({id:p.id,image:await photoViewThumbnail(p.blob)})));
+        const result=await callVisualizer('/api/view-labels',{...connectionSettings(),signal:AbortSignal.timeout(30_000),body:{mode,photos:inputs}});
+        for(const p of added){const label=result.photos?.find(r=>r.id===p.id)?.viewLabel;if(typeof label==='string' && label.trim())p.viewLabel=label.trim().slice(0,60);}
+      }catch{/* Photos remain usable; representatives can name views in Advanced Mode. */}
+    }
+    if(epoch.current!==generation)return;
     try{await syncRef.current.savePhotos(consultation,added);}catch(e){setSaveWarning('Photos are on this tablet but not synced: '+e.message);}
     if(epoch.current!==generation)return;
     setPhotos(current => [...current, ...added.filter(p=>!current.some(item=>item.id===p.id))]);
@@ -120,7 +131,7 @@ export default function VisualizerProvider({ children }) {
       const renderPhoto = await labelRender(rawRenderPhoto,finalDesign);
       if (epoch.current !== generation) return;
       const id=crypto.randomUUID();
-      const record = { id, ...(submittedDesign.mode==='kitchen' && !manual?{cabinetReferenceId:cabinetReference?.id || id}:{}), consultationId:consultation?.id, photoId:photo.id, originalPhoto: photo.blob, renderPhoto, rawRenderPhoto, corrections, regions, design: structuredClone({...submittedDesign,...(manual ? {customPrompt:manual} : {})}), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
+      const record = { id, ...(submittedDesign.mode==='kitchen' && !manual?{cabinetReferenceId:cabinetReference?.id || id}:{}), consultationId:consultation?.id, photoId:photo.id, viewLabel:photo.viewLabel, originalPhoto: photo.blob, renderPhoto, rawRenderPhoto, corrections, regions, design: structuredClone({...submittedDesign,...(manual ? {customPrompt:manual} : {})}), consultationLabel: label.trim() || `Consultation ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), model: data.model, quality };
       let saved = false;
       try { await saveRender(record); saved = true; }
       catch (e) { if (epoch.current === generation) setSaveWarning(e.message || 'This preview could not be saved on this tablet. Use Save Image before leaving.'); }
@@ -168,6 +179,11 @@ export default function VisualizerProvider({ children }) {
     if(!plan)return;
     batchPlan.current=plan;return runRenderPlan(plan);
   }
+  async function renamePhotoView(id,viewLabel) {
+    const value=viewLabel.trim().slice(0,60);if(!value || controller.current)return;
+    setPhotos(current=>current.map(p=>p.id===id?{...p,viewLabel:value}:p));setLooks(current=>current.map(r=>r.photoId===id?{...r,viewLabel:value}:r));
+    await updateSavedView(id,value);await syncRef.current.labelPhoto(syncRef.current.session,id,value);
+  }
   async function removeLook(record) {
     if(controller.current)throw new Error('Wait for rendering to finish before deleting a preview.');
     if(record.consultationId)await syncRef.current.removeLook(record);
@@ -184,14 +200,15 @@ export default function VisualizerProvider({ children }) {
       for(const mode of ['kitchen','exterior']){const latest=[...remoteLooks].filter(r=>r.design.mode===mode).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];if(latest){const {customPrompt,...design}=latest.design;initial[mode]=design;}}
       setDesigns(initial);window.dispatchEvent(new Event('consultation-switched'));
     }else{
-      setPhotos(current=>[...current,...remotePhotos.filter(p=>!current.some(item=>item.id===p.id))]);
+      setPhotos(current=>[...current.map(p=>remotePhotos.find(r=>r.id===p.id) || p),...remotePhotos.filter(p=>!current.some(item=>item.id===p.id))]);
       setLooks(current=>[...current.filter(r=>!deletedLookIds.includes(r.id)).map(r=>remoteLooks.find(remote=>remote.id===r.id) || r),...remoteLooks.filter(r=>!current.some(item=>item.id===r.id))].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
       setSelectedIds(current=>Object.fromEntries(Object.entries(current).filter(([,id])=>!deletedLookIds.includes(id))));
       setPhotoIds(current=>({...current,kitchen:current.kitchen || remotePhotos.find(p=>p.mode==='kitchen')?.id || null,exterior:current.exterior || remotePhotos.find(p=>p.mode==='exterior')?.id || null}));
     }
+    for(const p of remotePhotos)if(p.viewLabel)void updateSavedView(p.id,p.viewLabel).catch(()=>{});
     for(const r of remoteLooks){const key=`${r.photoId}:${r.design.mode}`;if(r.regions?.length && !analysisCache.current[key])analysisCache.current[key]={status:r.regions.some(region=>region.surface==='shutters')?'ready':'interrupted',regions:r.regions};if(!correctionsByPhoto.current[key])correctionsByPhoto.current[key]=r.corrections || [];}
     setAnalyses({...analysisCache.current});setLabel(name);
   }});
   syncRef.current=sync;
-  return <Context.Provider value={{ photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, generateAll, batch, removeLook, analyses, analyzePhoto, switchMode, sync, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ allPhotos, advancedMode, setAdvancedMode, renamePhotoView, photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, generateAll, batch, removeLook, analyses, analyzePhoto, switchMode, sync, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
 }

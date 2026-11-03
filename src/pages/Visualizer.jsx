@@ -3,6 +3,8 @@ import { useVisualizer } from '../components/VisualizerProvider';
 import { colors } from '../data/colors';
 import { useOnline } from '../hooks/useOnline';
 import { preparePhoto } from '../lib/visualizerPhoto';
+import VisualizerAdvanced from '../components/VisualizerAdvanced';
+import {renderName,renderDetails,renderFilename} from '../lib/renderNames';
 import RenderLibrary from '../components/RenderLibrary';
 import { listRenders } from '../lib/visualizerStorage';
 import { callVisualizer, connectionSettings, saveConnection } from '../lib/visualizerClient';
@@ -26,11 +28,11 @@ function useBlobUrl(blob) {
 }
 function SavedThumb({ record, onSelect }) {
   const url = useBlobUrl(record.renderPhoto);
-  return <button className="viz-saved-item" onClick={() => onSelect(record)}><img src={url} alt="Saved design preview" /><span>{record.consultationLabel}<small>{new Date(record.createdAt).toLocaleString()}</small></span></button>;
+  return <button className="viz-saved-item" onClick={() => onSelect(record)}><img src={url} alt="Saved design preview" /><span>{renderName(record)}<small>{renderDetails(record)}</small><small>{record.consultationLabel}</small><small>{new Date(record.createdAt).toLocaleString()}</small></span></button>;
 }
 async function exportImage(record, share = false) {
   const ext = record.renderPhoto.type === 'image/webp' ? 'webp' : record.renderPhoto.type === 'image/png' ? 'png' : 'jpg';
-  const file = new File([record.renderPhoto], `spray-net-design-${record.id.slice(0,8)}.${ext}`, { type: record.renderPhoto.type });
+  const file = new File([record.renderPhoto], `${renderFilename(record)}.${ext}`, { type: record.renderPhoto.type });
   if (share && navigator.canShare?.({ files: [file] })) {
     await navigator.share({ files: [file], title: 'Your Spray-Net Design Preview' }); return;
   }
@@ -40,10 +42,10 @@ export default function Visualizer() {
   const v = useVisualizer(); const online = useOnline();
   const [surface, setSurface] = useState('cabinets');
   const [tone, setTone] = useState('dark'); const [paletteSession, setPaletteSession] = useState(0);
-  const [kitchenPanel, setKitchenPanel] = useState('colors');
+  const [kitchenPanel, setKitchenPanel] = useState(v.advancedMode?'advanced':'colors');
   const [toolsOpen, setToolsOpen] = useState(false);
   const [operatorReady, setOperatorReady] = useState(false);
-  const [customPrompt, setCustomPrompt] = useState('');
+  const [promptDrafts,setPromptDrafts]=useState({});
   const [connected, setConnected] = useState(false);
   const [toolMessage, setToolMessage] = useState(''); const [saved, setSaved] = useState([]); const [archived, setArchived] = useState(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false); const [before, setBefore] = useState(false);
@@ -54,10 +56,17 @@ export default function Visualizer() {
   const fullscreenDialog = useRef(null);
   const fileInput = useRef(null); const cameraInput = useRef(null); const photoEpoch = useRef(0);
   const current = archived || v.looks.find(r => r.id === v.selectedId);
+  const sourceKey=archived?.id || (!before && current?current.id:v.photo?.id) || 'none';
+  const customPrompt=promptDrafts[sourceKey] || '';
+  const setCustomPrompt=text=>setPromptDrafts(d=>({...d,[sourceKey]:text}));
+  const namedRecords=[...v.looks,...saved.filter(r=>!v.looks.some(look=>look.id===r.id))].map(r=>({...r,viewLabel:v.allPhotos.find(p=>p.id===r.photoId)?.viewLabel || r.viewLabel}));
+  function toggleAdvanced(){const next=!v.advancedMode;v.setAdvancedMode(next);setKitchenPanel(next?'advanced':'colors');if(!next)setPromptDrafts({});}
+  function submitCustom(quality){setShowHighlight(false);const base=!before && current && !archived?{record:current,feedback:customPrompt}:null;setBefore(false);v.generate(quality,customPrompt,base,v.design.mode==='exterior'?availableSurfaces:null);}
+
   useEffect(()=>{const deleted=event=>{setSaved(current=>current.filter(r=>!event.detail.includes(r.id)));setArchived(current=>event.detail.includes(current?.id)?null:current);};window.addEventListener('visualizer-renders-deleted',deleted);return()=>window.removeEventListener('visualizer-renders-deleted',deleted);},[]);
   const angleLooks = v.looks.filter(r => r.photoId === v.photo?.id);
   const unlock = useOperatorUnlock(() => setToolsOpen(true));
-  const closeTools = () => { setToolsOpen(false); setCustomPrompt(''); };
+  const closeTools = () => setToolsOpen(false);
   const previewUrl = useBlobUrl(current?.renderPhoto); const originalUrl = useBlobUrl(current?.originalPhoto || v.photo?.blob);
   const [elapsed, setElapsed] = useState(0);
   const pairingCode = useRef(new URLSearchParams(window.location.hash.split('?')[1] || '').get('tablet'));
@@ -81,8 +90,8 @@ export default function Visualizer() {
     pair(); return () => { active = false; };
   }, []);
   useEffect(() => () => { photoEpoch.current += 1; }, []);
-  useEffect(()=>{const changed=()=>{setArchived(null);setSaved([]);setBefore(false);setCorrectionTarget(null);setSurface('siding');setTone('dark');};window.addEventListener('consultation-switched',changed);return()=>window.removeEventListener('consultation-switched',changed);},[]);
-  useEffect(()=>{const clear=()=>{setCorrectionTarget(null);setArchived(null);setSaved([]);setToolsOpen(false);setCustomPrompt('');};window.addEventListener('portfolio-session-reset',clear);return()=>window.removeEventListener('portfolio-session-reset',clear);},[]);
+  useEffect(()=>{const changed=()=>{setArchived(null);setSaved([]);setBefore(false);setCorrectionTarget(null);setPromptDrafts({});setKitchenPanel('colors');setSurface('siding');setTone('dark');};window.addEventListener('consultation-switched',changed);return()=>window.removeEventListener('consultation-switched',changed);},[]);
+  useEffect(()=>{const clear=()=>{setCorrectionTarget(null);setArchived(null);setSaved([]);setToolsOpen(false);setPromptDrafts({});setKitchenPanel('colors');};window.addEventListener('portfolio-session-reset',clear);return()=>window.removeEventListener('portfolio-session-reset',clear);},[]);
   useEffect(() => { if (fullscreen) fullscreenDialog.current?.showModal(); else fullscreenDialog.current?.close(); }, [fullscreen]);
   const layout = cabinetLayout(v.design.surfaces);
   const twoTone = v.design.mode === 'kitchen' && layout !== 'one-tone';
@@ -128,7 +137,7 @@ export default function Visualizer() {
     try{await v.addPhotos(prepared);}catch(e){v.setError(e.message);setLoadingPhoto(false);return;} setArchived(null); setBefore(false); setLoadingPhoto(false);
     if (failures.length) v.setError(failures.join(' '));
   }
-  function switchMode(mode) { if (mode === v.design.mode) return; v.switchMode(mode);setArchived(null);setBefore(false);setShowHighlight(true); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); }
+  function switchMode(mode) { if (mode === v.design.mode) return; v.switchMode(mode);setArchived(null);setBefore(false);setShowHighlight(true); setSurface('siding'); setTone('dark'); setKitchenPanel(v.advancedMode?'advanced':'colors'); setPaletteSession(n=>n+1); }
   function changeLayout(nextLayout) {
     setTone(nextLayout==='one-tone'?'light':'dark');
     if(nextLayout===layout)return;
@@ -145,24 +154,23 @@ export default function Visualizer() {
     </div>{v.sync.enabled && <span className="viz-sync-status" role="status">{v.sync.status || 'Connecting Tablets...'}</span>}</div>
     {toolsOpen && <section className="viz-tools" aria-label="Consultation tools">
       <div className="viz-tools-heading"><h2>Consultation Tools</h2><button className="button" onClick={closeTools}>Close Tools</button></div>
-      <VisualizerConnection connected={connected} online={online} onConnected={data => {setConnected(true);setOperatorReady(Boolean(data.operatorAuthorized));setToolMessage('');}} onForgotten={() => {setConnected(false);setOperatorReady(false);setCustomPrompt('');setToolMessage('');}} />
+      <VisualizerConnection connected={connected} online={online} onConnected={data => {setConnected(true);setOperatorReady(Boolean(data.operatorAuthorized));setToolMessage('');}} onForgotten={() => {setConnected(false);setOperatorReady(false);v.setAdvancedMode(false);setKitchenPanel('colors');setPromptDrafts({});setToolMessage('');}} />
       {v.sync.enabled && <ConsultationLibrary sync={v.sync} busy={v.busy || loadingPhoto} onOpened={()=>{setArchived(null);setSaved([]);setBefore(false);closeTools();}}/>}
       <div className="viz-actions"><button className="button" onClick={loadSaved}>Saved Previews on This Tablet</button></div>
-      <RenderLibrary records={[...v.looks,...saved.filter(r=>!v.looks.some(look=>look.id===r.id))]} busy={v.busy} operatorReady={operatorReady} onDelete={async record=>{await v.removeLook(record);if(archived?.id===record.id)setArchived(null);if(saved.length)await loadSaved();}}/>
+      <RenderLibrary records={namedRecords} busy={v.busy} operatorReady={operatorReady} onDelete={async record=>{await v.removeLook(record);if(archived?.id===record.id)setArchived(null);if(saved.length)await loadSaved();}}/>
+      {current && <div className="viz-actions"><button className="button" onClick={()=>exportCurrent(false)}>Save Image</button><button className="button" onClick={()=>exportCurrent(true)}>Share Image</button></div>}
       <p role="status">{toolMessage}</p>
-      {!!saved.length && <div className="viz-saved-list">{saved.map(record => <SavedThumb key={record.id} record={record} onSelect={r => { setArchived(r); setBefore(false); }} />)}</div>}
-      {archived && <div className="viz-actions"><button className="button" onClick={() => setArchived(null)}>Back to Current Consultation</button><button className="button" disabled={!operatorReady || v.busy} onClick={removeSaved}>Delete Selected Preview</button></div>}
-      <button className="button button-dark" disabled={!operatorReady || !v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>showPreview('detail')}>Create Detailed Preview</button>
+      {!!saved.length && <div className="viz-saved-list">{saved.map(record => <SavedThumb key={record.id} record={record} onSelect={r => { setArchived(r); setBefore(false);closeTools(); }} />)}</div>}
+
+      <button className="button button-dark" disabled={!operatorReady || !v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>{closeTools();showPreview('detail');}}>Create Detailed Preview</button>
       {current && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy} onClick={()=>{setCorrectionTarget({kind:'preview',record:current});closeTools();}}>Correct This Preview</button></div>}
       {v.design.mode==='exterior' && v.photo && !archived && <div className="viz-actions"><button className="button" disabled={!operatorReady || !online || v.busy || analysis?.status==='loading'} onClick={()=>{setCorrectionTarget({kind:'areas'});closeTools();}}>Correct Detected Areas</button></div>}
       {v.design.mode==='exterior' && v.photo && <button className="button" disabled={!operatorReady || v.busy} aria-pressed={manualSurfaces} onClick={()=>setManualSurfacePhotoId(manualSurfaces?null:v.photo.id)}>{manualSurfaces?'Use Detected Surfaces Only':'Show All Surface Options'}</button>}
-      <div className="viz-custom-prompt"><h3>Custom Design Instructions</h3><p>Render the selected photo with your specific changes. Each button creates one image using the normal usage allowance.</p>
-      {!operatorReady && <p>Activate this tablet with your password to enable custom instructions.</p>}
-      <label className="viz-label">Custom Instructions<textarea maxLength={1500} rows={4} value={customPrompt} disabled={!operatorReady || v.busy} onChange={e => setCustomPrompt(e.target.value)} placeholder="For example: Keep the upper cabinets white and make only the island a muted sage green. Keep the countertop unchanged." /></label>
-      <small>{customPrompt.length} / 1,500 characters</small><div className="viz-actions"><button className="button button-dark" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('preview',customPrompt)}>Create Custom Preview</button><button className="button" disabled={!operatorReady || !connected || !online || !v.photo || v.busy || loadingPhoto || !!archived || !customPrompt.trim()} onClick={() => showPreview('detail',customPrompt)}>Create Detailed Custom Preview</button></div></div>
+      <div className="viz-advanced-toggle"><button className="button" role="switch" aria-checked={v.advancedMode} disabled={!operatorReady || v.busy} onClick={toggleAdvanced}>Advanced Mode: {v.advancedMode?'On':'Off'}</button><p>Turn on custom instructions for the main visualizer. Close Tools, select an image, then describe your changes.</p></div>
         {!v.sync.enabled && <label className="viz-label">Consultation Label <span>(Optional)</span><input value={v.label} maxLength={100} placeholder="For finding these previews later" onChange={e => v.setLabel(e.target.value)} /></label>}
-        {!v.sync.enabled && <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setCustomPrompt(''); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('dark'); setKitchenPanel('colors'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>}
+        {!v.sync.enabled && <button className="viz-text-button" disabled={v.busy} onClick={() => { if (!v.photo || window.confirm('Start a new consultation? Saved previews will stay on this tablet.')) { photoEpoch.current += 1; v.reset(); setArchived(null); setSaved([]); setToolsOpen(false); setPromptDrafts({}); setToolMessage(''); setBefore(false); setLoadingPhoto(false); setSurface('siding'); setTone('dark'); setKitchenPanel(v.advancedMode?'advanced':'colors'); setPaletteSession(n=>n+1); } }}>Start a New Consultation</button>}
     </section>}
+    {!toolsOpen && <>
     {v.design.mode==='exterior' && <VisualizerExteriorSteps active={activeSurface} available={availableSurfaces} surfaces={v.design.surfaces} onSelect={setSurface} disabled={v.busy} status={detectionStatus}/>}
     <div className="viz-workspace">
       <section className="viz-canvas-column" aria-label="Your design preview">
@@ -173,11 +181,12 @@ export default function Visualizer() {
       <section className="viz-controls" id="visualizer-finishes" aria-label="Choose your finishes">
         <h2 className="sr-only">Choose Your Finishes</h2>
         <div className="viz-control-fields">
-        {v.design.mode==='kitchen' && <div className="viz-main-options" role="group" aria-label="Kitchen design options">
+        {(v.design.mode==='kitchen' || v.advancedMode) && <div className="viz-main-options" role="group" aria-label="Kitchen design options">
           <button className={`button ${kitchenPanel==='colors'?'button-dark':''}`} aria-pressed={kitchenPanel==='colors'} disabled={v.busy} onClick={()=>setKitchenPanel('colors')}>Color Options</button>
-          <button className={`button ${kitchenPanel==='hardware'?'button-dark':''}`} aria-pressed={kitchenPanel==='hardware'} disabled={v.busy} onClick={()=>setKitchenPanel('hardware')}>Hardware Finishes</button>
+          {v.design.mode==='kitchen' && <button className={`button ${kitchenPanel==='hardware'?'button-dark':''}`} aria-pressed={kitchenPanel==='hardware'} disabled={v.busy} onClick={()=>setKitchenPanel('hardware')}>Hardware Finishes</button>}
+          {v.advancedMode && <button className={`button ${kitchenPanel==='advanced'?'button-dark':''}`} aria-pressed={kitchenPanel==='advanced'} disabled={v.busy} onClick={()=>setKitchenPanel('advanced')}>Advanced Instructions</button>}
         </div>}
-        {v.design.mode==='exterior' && !activeSurface?<div className="viz-surface-empty"><strong>{detectionStatus==='loading'?'Finding the Options for This Photo':detectionStatus==='connection'?'Connect to Detect Visible Surfaces':v.photo?'No Editable Surfaces Found':'Start With Your Exterior Photo'}</strong><p>{detectionStatus==='loading'?'Color options will appear when detection finishes.':v.photo?'Your representative can retry or correct detection if an area was missed.':'Upload a photo to see only the surfaces visible in that view.'}</p></div>:v.design.mode==='kitchen' && kitchenPanel==='hardware' ? <>
+        {v.advancedMode && kitchenPanel==='advanced'?<VisualizerAdvanced photo={v.photo} name={current && !before?renderName(current,v.photo):v.photo?.viewLabel || 'Original Photo'} prompt={customPrompt} onPrompt={setCustomPrompt} onSubmit={submitCustom} onExit={toggleAdvanced} onRename={name=>v.renamePhotoView(v.photo.id,name)} disabled={!operatorReady || v.busy || loadingPhoto || !!archived} canRender={operatorReady && connected && online && !!v.photo && !v.busy && !loadingPhoto && !archived}/> : v.design.mode==='exterior' && !activeSurface?<div className="viz-surface-empty"><strong>{detectionStatus==='loading'?'Finding the Options for This Photo':detectionStatus==='connection'?'Connect to Detect Visible Surfaces':v.photo?'No Editable Surfaces Found':'Start With Your Exterior Photo'}</strong><p>{detectionStatus==='loading'?'Color options will appear when detection finishes.':v.photo?'Your representative can retry or correct detection if an area was missed.':'Upload a photo to see only the surfaces visible in that view.'}</p></div>:v.design.mode==='kitchen' && kitchenPanel==='hardware' ? <>
           <VisualizerOptions design={v.design} onChange={v.setDesign} disabled={v.busy}/>
           {twoTone && changes.length>0 && !(tones.light&&tones.dark) && <p className="viz-notice">Choose both cabinet colors in Color Options to finish your two-tone preview.</p>}
         </> : <>
@@ -191,10 +200,10 @@ export default function Visualizer() {
         {!online && <p className="viz-notice">Connect to the internet to create a new preview. Saved images and color selections still work offline.</p>}
         {!connected && online && <p className="viz-notice">Ask your representative to connect this tablet.</p>}
         {v.error && <p className="viz-error" role="alert">{v.error}</p>}
-        <div className="viz-generate"><button className="button button-dark" disabled={!v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={() => showPreview('preview')}>{v.busy ? 'Creating Preview...' : 'Create My Preview'}</button>
+        {!(v.advancedMode && kitchenPanel==='advanced') && <div className="viz-generate"><button className="button button-dark" disabled={!v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={() => showPreview('preview')}>{v.busy ? 'Creating Preview...' : 'Create My Preview'}</button>
           {v.design.mode==='kitchen' && v.photos.length>1 && <button className="button viz-render-all" disabled={!v.photo || !hasChanges || !connected || !online || v.busy || loadingPhoto || !!archived} onClick={()=>{setBefore(false);setShowHighlight(false);v.generateAll();}}>Render All {v.photos.length} Photos</button>}
           {v.design.mode==='kitchen' && v.batch && !v.busy && <div className="viz-batch-result" role="status"><span>{v.batch.jobs.filter(j=>j.status==='done').length} of {v.batch.jobs.length} Previews Saved</span>{v.batch.jobs.some(j=>j.status!=='done') && <button className="button" disabled={!connected || !online || !!archived} onClick={()=>v.generateAll(true)}>Retry Unfinished Photos</button>}</div>}
-        </div>
+        </div>}
       </section>
         <VisualizerPhotos photos={v.photos} photoId={v.photo?.id} disabled={v.busy || loadingPhoto} onSelect={id => { v.selectPhoto(id); setArchived(null); setBefore(false); }} />
       <section className="viz-media-panel" aria-label="Photo controls">
@@ -212,11 +221,13 @@ export default function Visualizer() {
           {analysis?.status==='ready' && !!region?.polygons?.length && <button className="viz-text-button" disabled={v.busy} onClick={()=>{setShowHighlight(!showHighlight);if(!showHighlight)setBefore(true);}}>{showHighlight?'Hide Highlight':'Show Highlight'}</button>}
           {['error','interrupted'].includes(analysis?.status) && <button className="viz-text-button" disabled={v.busy || !online} onClick={()=>v.analyzePhoto(v.design.mode,true)}>Retry Detection</button>}
         </div>}
+        {archived && <div className="viz-actions"><button className="button" onClick={()=>setArchived(null)}>Back to Current Consultation</button><button className="button" disabled={!operatorReady || v.busy} onClick={removeSaved}>Delete Selected Preview</button></div>}
         {v.saveWarning && <p className="viz-error" role="alert">{v.saveWarning}</p>}
-        {(toolsOpen || v.saveWarning) && current && <div className="viz-actions"><button className="button" onClick={() => exportCurrent(false)}>Save Image</button><button className="button" onClick={() => exportCurrent(true)}>Share Image</button></div>}
-        {!!angleLooks.length && <div className="viz-look-strip" aria-label="This consultation's previews">{angleLooks.map((record,i) => <button key={record.id} className={`chip ${v.selectedId === record.id && !archived ? 'selected' : ''}`} aria-pressed={v.selectedId === record.id && !archived} onClick={() => { v.setSelectedId(record.id); setArchived(null); setBefore(false); }}>Look {angleLooks.length-i}</button>)}</div>}
+        {v.saveWarning && current && <div className="viz-actions"><button className="button" onClick={() => exportCurrent(false)}>Save Image</button><button className="button" onClick={() => exportCurrent(true)}>Share Image</button></div>}
+        {!!angleLooks.length && <div className="viz-look-strip" aria-label="This consultation's previews">{angleLooks.map(record => <button key={record.id} className={`chip ${v.selectedId === record.id && !archived ? 'selected' : ''}`} aria-pressed={v.selectedId === record.id && !archived} onClick={() => { v.setSelectedId(record.id); setArchived(null); setBefore(false); }} title={[renderName(record,v.photo),renderDetails(record)].filter(Boolean).join(" · ")}><span>{renderName(record,v.photo)}</span></button>)}</div>}
       </section>
     </div>
+    </>}
     {correctionTarget && <VisualizerCorrection areas={correctionTarget.kind==='areas'} notes={correctionTarget.record?.corrections} disabled={v.busy || !online || !operatorReady} onClose={()=>setCorrectionTarget(null)} onSubmit={feedback=>{setCorrectionTarget(null);setBefore(false);setShowHighlight(false);if(correctionTarget.kind==='areas'){setBefore(true);setShowHighlight(true);v.analyzePhoto(v.design.mode,true,feedback);}else v.generate('preview','',{record:correctionTarget.record,feedback});}}/>}
     <dialog className="viz-fullscreen" ref={fullscreenDialog} onCancel={() => setFullscreen(false)} onClose={() => setFullscreen(false)} aria-label="Fullscreen design photo"><button className="button" autoFocus onClick={() => setFullscreen(false)}>Close Fullscreen</button><img src={current && !before ? previewUrl : originalUrl} alt={current && !before ? 'Design preview fullscreen' : 'Original home photo fullscreen'} /></dialog>
   </div>;

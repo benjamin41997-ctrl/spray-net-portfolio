@@ -167,3 +167,26 @@
 .viz-batch-result { font-size:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
 .viz-generate:has(.viz-render-all) { grid-template-columns:1fr 1fr; }
 .viz-generate .viz-batch-result { grid-column:1/-1; }
+
+.visualizer-app.with-tools, .visualizer-app.is-exterior.with-tools { height:auto; min-height:100%; grid-template-rows:44px auto; }
+.viz-advanced-toggle { padding:16px 0; border-top:1px solid #bccbd6; margin-top:16px; }
+.viz-advanced-toggle [role=switch][aria-checked=true] { background:#003965; color:white; }
+.viz-advanced-panel { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.viz-advanced-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.viz-advanced-heading h3 { font-size:18px; }
+.viz-advanced-panel textarea { width:100%; min-height:100px; padding:10px; border:1px solid #97a7b3; border-radius:9px; font:inherit; font-size:16px; color:#003965; resize:vertical; }
+.viz-editing-image { font-size:14px; line-height:1.4; overflow-wrap:anywhere; }
+.viz-view-editor { display:flex; align-items:end; gap:8px; }
+.viz-view-editor label { min-width:0; flex:1; }
+.viz-view-editor .button { flex:0 0 95px; }
+.viz-look-strip .chip { white-space:normal; overflow-wrap:anywhere; }
+.viz-look-strip .chip small { display:block; margin-top:3px; font-size:12px; line-height:1.2; }
+.viz-render-card label span { line-height:1.3; overflow-wrap:anywhere; }
+.viz-render-finishes { font-weight:600; }
+
+.viz-look-strip { max-height:28dvh; overflow:auto; }
+.visualizer-app .viz-look-strip .chip { height:64px; min-height:64px; padding:6px; font-size:14px; line-height:1.2; overflow:hidden; }
+.viz-look-strip .chip > span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+@media(min-width:700px) and (max-aspect-ratio:1/1) { .viz-workspace { grid-template-rows:auto minmax(min-content,.38fr) minmax(0,.62fr); } }
+
+.viz-main-options > button:last-child:nth-child(3) { grid-column:1/-1; }

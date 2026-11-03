@@ -136,3 +136,12 @@ export async function preparePhoto(file) {
     }
   }
 }
+
+
+/** Small, metadata-free view-classification input. Full resolution stays in renders. */
+export async function photoViewThumbnail(blob) {
+  const image=await loadImage(blob),scale=Math.min(1,512/Math.max(image.naturalWidth,image.naturalHeight));
+  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+  const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Unable to prepare view names.');ctx.drawImage(image,0,0,canvas.width,canvas.height);
+  return canvas.toDataURL('image/jpeg',.7);
+}

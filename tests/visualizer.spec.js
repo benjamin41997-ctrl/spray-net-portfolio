@@ -16,9 +16,9 @@ const generatedImage = `data:image/webp;base64,${(await readFile(new URL(`../pub
 
 test.use({ serviceWorkers: 'block' });
 
-async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false, renderImages = [], failRenderAt = 0 } = {}) {
+async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = false, absentSurfaces = [], surfaceSets = [], failAnalysis = false, renderImages = [], failRenderAt = 0, viewLabels = [] } = {}) {
   await page.addInitScript(endpoint => localStorage.setItem('spray-net-render-endpoint',endpoint),endpoint);
-  const renders = []; const analyses=[];
+  const renders = []; const analyses=[];const viewRequests=[];
   let releaseAnalysis;const analysisGate=new Promise(resolve=>{releaseAnalysis=resolve;});
   let release;
   const firstRenderGate = new Promise(resolve => { release = resolve; });
@@ -38,6 +38,10 @@ async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = 
       await route.fulfill({status:valid?200:401,contentType:'application/json',headers,body:JSON.stringify(valid?{ready:true,token:accessCode,operatorToken:operatorCode,operatorAuthorized:true}:{error:{message:'That password is incorrect. Please try again.'}})});
       return;
     }
+    if(request.url().endsWith('/api/view-labels')) {
+      const body=request.postDataJSON();viewRequests.push(body);
+      await route.fulfill({status:200,contentType:'application/json',headers,body:JSON.stringify({photos:body.photos.map((p,i)=>({id:p.id,viewLabel:viewLabels[i] || (body.mode==='kitchen'?'Sink View':'Front View')}))})});return;
+    }
     if(request.url().endsWith('/api/analyze')) {
       analyses.push({body:request.postDataJSON(),operator:request.headers()['x-visualizer-operator']});
       if(holdFirstAnalysis && analyses.length===1)await analysisGate;
@@ -55,7 +59,7 @@ async function stubService(page, { holdFirstRender = false, holdFirstAnalysis = 
     }
     await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ ready: true, operatorAuthorized:request.headers()['x-visualizer-operator'] === operatorCode }) });
   });
-  return { renders, analyses, release, releaseAnalysis, setAnalysisFailure:value=>{failAnalysis=value;} };
+  return { renders, analyses, viewRequests, release, releaseAnalysis, setAnalysisFailure:value=>{failAnalysis=value;} };
 }
 
 async function openTools(page) {
@@ -190,7 +194,7 @@ test('hardware and counter variants hold the same cabinet root, including after 
   await page.getByLabel('Countertops',{exact:true}).selectOption('dark-stone');await page.getByLabel('Backsplash',{exact:true}).selectOption('white-subway');
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,3);
   expect(api.renders[2].body.appearanceReference.image).toBe(generatedImage);expect(api.renders[2].body.appearanceReference.image).not.toBe(secondImage);
-  await page.getByRole('button',{name:'Look 2',exact:true}).click();await page.getByLabel('Hardware Finish',{exact:true}).selectOption('copper');
+  await page.locator('.viz-look-strip button').nth(1).click();await page.getByLabel('Hardware Finish',{exact:true}).selectOption('copper');
   await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,4);expect(api.renders[3].body.appearanceReference.image).toBe(generatedImage);
   await selectColor(page,'cabinets',kitchenColors[1]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,5);
   expect(api.renders[4].body.appearanceReference).toBeUndefined();expect(api.renders[4].body.image).toBe(api.renders[0].body.image);
@@ -236,6 +240,7 @@ test('exterior surfaces are independent and going offline blocks paid generation
   await expect(page.getByRole('button', { name: 'Create My Preview', exact: true })).toBeDisabled();
   await openTools(page);
   await expect(page.getByRole('button', { name: 'Create Detailed Preview', exact: true })).toBeDisabled();
+  await page.getByRole('button',{name:'Close Tools',exact:true}).click();
   await page.getByRole('button', { name: 'Show Original', exact: true }).click();
   await expect(page.getByAltText('Original photo of your home', { exact: true })).toBeVisible();
   await openTools(page);
@@ -344,23 +349,22 @@ test('operator menu requires a five-second hold and hides its controls again whe
   await expect(page.getByRole('heading',{name:'Consultation Tools',exact:true})).toHaveCount(0);
 });
 
-test('custom prompts stay in operator controls and do not carry into normal renders', async ({page}) => {
-  const api=await stubService(page);await page.goto('./#/visualize');
-  await openTools(page);await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
-  await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);
-  await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
-  await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeEnabled();
-  await uploadPhoto(page);
-  const text='Make the island a muted sage green and keep the existing countertop.';
-  await page.getByLabel('Custom Instructions',{exact:true}).fill(text);expect(api.renders).toHaveLength(0);
-  await page.getByRole('button',{name:'Create Custom Preview',exact:true}).click();await expectSaved(page);
-  expect(api.renders[0].body.customPrompt).toBe(text);
-  await page.getByRole('button',{name:'Close Tools',exact:true}).click();
-  await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveCount(0);
-  await selectColor(page,'cabinets',kitchenColors[0]);
-  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,2);
-  expect(api.renders[1].body.customPrompt).toBeUndefined();
-  await openTools(page);await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveValue('');
+test('advanced mode moves instructions onto the main page and selected-image revisions never enter ordinary previews', async ({page}) => {
+  const api=await stubService(page);await page.goto('./#/visualize');await openTools(page);
+  await expect(page.getByRole('switch',{name:/Advanced Mode/})).toBeDisabled();await expect(page.locator('.viz-workspace')).toHaveCount(0);
+  await page.getByLabel('Tablet Password',{exact:true}).fill(tabletPassword);await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
+  await page.getByRole('switch',{name:/Advanced Mode/}).click();await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'Close Tools',exact:true}).click();await uploadPhoto(page);
+  const text='Keep SW 7008 cabinets and change only the countertop to white Calacatta.';
+  await page.getByLabel('Custom Instructions',{exact:true}).fill(text);await page.getByRole('button',{name:'Create Custom Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[0].body.customPrompt).toBe(text);expect(api.renders[0].body.correction).toBeUndefined();
+  await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveValue('');
+  await page.getByLabel('Custom Instructions',{exact:true}).fill('Change only the hardware to copper. Keep the cabinets and lighting exactly as shown.');
+  await page.getByRole('button',{name:'Create Custom Preview',exact:true}).click();await expectSaved(page,2);
+  expect(api.renders[1].body.correction.image).toBe(generatedImage);expect(api.renders[1].body.correction.feedback).toContain('copper');expect(api.renders[1].body.image).toBe(api.renders[0].body.image);
+  await openTools(page);await expect(page.locator('.viz-workspace')).toHaveCount(0);await expect(page.getByRole('group',{name:'Kitchen design options'})).toHaveCount(0);
+  await page.getByRole('switch',{name:/Advanced Mode/}).click();await page.getByRole('button',{name:'Close Tools',exact:true}).click();await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveCount(0);
+  await selectColor(page,'cabinets',kitchenColors[0]);await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,3);expect(api.renders[2].body.customPrompt).toBeUndefined();expect(api.renders[2].body.correction).toBeUndefined();
 });
 
 test('official Sherwin-Williams references can be found with compact color codes', async ({page}) => {
@@ -381,14 +385,14 @@ test('password access survives a fresh browser session until Forget This Tablet 
     const reopened=await next.newPage();await stubService(reopened);await reopened.goto(page.url());
     await openTools(reopened);
     await expect(reopened.getByText('Tablet Connected',{exact:true})).toBeVisible();
-    await expect(reopened.getByLabel('Custom Instructions',{exact:true})).toBeEnabled();
+    await expect(reopened.getByRole('switch',{name:/Advanced Mode/})).toBeEnabled();
     await expect(reopened.getByLabel('Tablet Password',{exact:true})).toHaveCount(0);
     await reopened.getByRole('button',{name:'Forget This Tablet',exact:true}).click();
     await expect(reopened.getByLabel('Tablet Password',{exact:true})).toBeVisible();
     expect(await reopened.evaluate(key=>localStorage.getItem(key),connectionKey)).toBeNull();
     await reopened.reload();await openTools(reopened);
     await expect(reopened.getByLabel('Tablet Password',{exact:true})).toBeVisible();
-    await expect(reopened.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
+    await expect(reopened.getByRole('switch',{name:/Advanced Mode/})).toBeDisabled();
   } finally {await next.close();}
 });
 
@@ -406,7 +410,7 @@ test('incorrect passwords and unavailable persistent storage never claim the tab
   await page.getByRole('button',{name:'Activate This Tablet',exact:true}).click();
   await expect(page.getByText('This browser cannot remember tablet access. Allow site storage, then try again.',{exact:true})).toBeVisible();
   await expect(page.getByText('Tablet Connected',{exact:true})).toHaveCount(0);
-  await expect(page.getByLabel('Custom Instructions',{exact:true})).toBeDisabled();
+  await expect(page.getByRole('switch',{name:/Advanced Mode/})).toBeDisabled();
 });
 
 test('one tone covers all cabinets and two-tone layouts always put the darker choice on the island or base', async ({page}) => {
@@ -637,7 +641,7 @@ test('exterior options wait for detection before a customer can dispatch a rende
 
 test('a custom preview started during detection displays its result when detection completes',async({page})=>{
   const api=await stubService(page,{holdFirstAnalysis:true});await openAndConnect(page);await page.getByRole('button',{name:'Home Exterior',exact:true}).click();await uploadPhoto(page);
-  await openTools(page);await page.getByLabel('Custom Instructions',{exact:true}).fill('Remove the shutters and keep the windows and brick unchanged.');
+  await openTools(page);await page.getByRole('switch',{name:/Advanced Mode/}).click();await page.getByRole('button',{name:'Close Tools',exact:true}).click();await page.getByLabel('Custom Instructions',{exact:true}).fill('Remove the shutters and keep the windows and brick unchanged.');
   await page.getByRole('button',{name:'Create Custom Preview',exact:true}).click();await expect(page.getByRole('button',{name:'Stop Waiting',exact:true})).toBeVisible();
   api.releaseAnalysis();await expectSaved(page);expect(api.renders[0].body.customPrompt).toContain('Remove the shutters');
 });
@@ -726,7 +730,7 @@ test('Looks wrap into pairs on the left without horizontal scrolling',async({pag
 
 test('Render All applies one design to four separate kitchen angles and preserves progress while browsing',async({page})=>{
   test.setTimeout(75_000);
-  const api=await stubService(page,{holdFirstRender:true});await openAndConnect(page);
+  const api=await stubService(page,{holdFirstRender:true,viewLabels:['Sink & Dishwasher View','Fridge View','Stove View','Island View']});await openAndConnect(page);
   const files=await Promise.all(projects.slice(0,4).map(async(project,index)=>({name:`angle-${index+1}.webp`,mimeType:'image/webp',buffer:await readFile(new URL('../public/'+project.beforeImage,import.meta.url))})));
   await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(files);
   await expect(page.getByRole('button',{name:'Select Photo 4',exact:true})).toBeVisible();
@@ -739,6 +743,7 @@ test('Render All applies one design to four separate kitchen angles and preserve
   await page.getByRole('link',{name:'Home',exact:true}).click();api.release();
   await page.getByRole('link',{name:/Visualize Your Home/}).click();
   await expect(page.getByText('4 of 4 Previews Saved',{exact:true})).toBeVisible({timeout:45_000});
+  expect(api.viewRequests).toHaveLength(1);expect(api.viewRequests[0].photos).toHaveLength(4);
   expect(api.renders).toHaveLength(4);expect(new Set(api.renders.map(r=>r.body.image)).size).toBe(4);
   for(const r of api.renders){expect(r.body.design).toEqual(api.renders[0].body.design);expect(r.body.design.countertop).toBe('calacatta');expect(r.body.design.backsplash).toBe('match-countertop');expect(r.body).not.toHaveProperty('appearanceReference');}
   for(let index=1;index<=4;index++){await page.getByRole('button',{name:`Select Photo ${index}`,exact:true}).click();await expectSaved(page,1);}
@@ -771,7 +776,27 @@ test('a stopped batch starts no remaining requests and selected previews become 
   await page.getByRole('button',{name:'Select All Previews',exact:true}).click();await page.getByRole('button',{name:'Email Selected (2)',exact:true}).click();
   const shared=await page.evaluate(()=>window.__emailShare);expect(shared.files).toHaveLength(2);expect(shared.title).toBe('Your Spray-Net Design Previews');for(const f of shared.files){expect(f.type).toMatch(/^image\//);expect(f.size).toBeGreaterThan(0);}if(shared.active!==undefined)expect(shared.active).toBe(true);
   await page.evaluate(()=>Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false}));await page.getByRole('button',{name:'Email Selected (2)',exact:true}).click();await expect(page.getByText(/This browser cannot attach these images/)).toBeVisible();
-  page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Delete Preview 1',exact:true}).click();
+  page.once('dialog',dialog=>dialog.accept());await page.locator('.viz-render-card button').first().click();
   await expect(page.locator('.viz-render-card')).toHaveCount(1);await expect(page.getByRole('button',{name:'Email Selected (1)',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Close Tools',exact:true}).click();await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Select Photo 2',exact:true})).toBeVisible();
+});
+
+
+test('advanced instructions stay with their selected image and view names identify colors in cards and attachments',async({page,browserName})=>{
+  test.setTimeout(60_000);const api=await stubService(page,{viewLabels:['Sink & Dishwasher View','Fridge View']});await openAndConnect(page);
+  await page.getByLabel('Choose home photo',{exact:true}).setInputFiles([1,2].map(i=>({name:`angle-${i}.webp`,mimeType:'image/webp',buffer:photo})));
+  await expect(page.getByRole('button',{name:'Select Photo 2',exact:true})).toBeVisible();await selectColor(page,'cabinets',colors.find(c=>c.id==='sw-7008'));
+  await page.getByRole('button',{name:'Render All 2 Photos',exact:true}).click();await expect(page.getByText('2 of 2 Previews Saved',{exact:true})).toBeVisible({timeout:20000});
+  await openTools(page);await expect(page.locator('.viz-workspace')).toHaveCount(0);await expect(page.getByLabel('Select Alabaster · Sink & Dishwasher View',{exact:true})).toBeVisible();await expect(page.getByLabel('Select Alabaster · Fridge View',{exact:true})).toBeVisible();
+  await page.getByRole('switch',{name:/Advanced Mode/}).click();await page.getByRole('button',{name:'Close Tools',exact:true}).click();
+  await page.getByLabel('Photo View',{exact:true}).fill('Dishwasher View');await page.getByRole('button',{name:'Save View Name',exact:true}).click();await expect(page.getByText('View Name Saved',{exact:true})).toBeVisible();
+  await expect(page.locator('.viz-editing-image')).toContainText('Alabaster · Dishwasher View');
+  await page.getByLabel('Custom Instructions',{exact:true}).fill('Keep this dishwasher panel unchanged.');await page.getByRole('button',{name:'Select Photo 2',exact:true}).click();await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveValue('');
+  await expect(page.locator('.viz-editing-image')).toContainText('Fridge View');await page.getByLabel('Custom Instructions',{exact:true}).fill('Keep this refrigerator unchanged.');
+  await page.getByRole('button',{name:'Select Photo 1',exact:true}).click();await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveValue('Keep this dishwasher panel unchanged.');
+  for(const viewport of [{width:1180,height:820},{width:834,height:1194},{width:1024,height:768}]){await page.setViewportSize(viewport);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await expect(page.getByRole('button',{name:'Create Custom Preview',exact:true})).toBeVisible();}
+  if(browserName!=='webkit' || process.platform!=='win32'){const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();expect(results.violations).toEqual([]);}
+  await openTools(page);await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:({files})=>{window.__renderNames=files.map(f=>f.name);return Promise.resolve();}});});
+  await page.getByRole('button',{name:'Select All Previews',exact:true}).click();await page.getByRole('button',{name:'Email Selected (2)',exact:true}).click();const names=await page.evaluate(()=>window.__renderNames);expect(names.some(n=>n.includes('alabaster-dishwasher-view'))).toBe(true);expect(names.some(n=>n.includes('alabaster-fridge-view'))).toBe(true);expect(names.every(n=>!n.includes('preview-'))).toBe(true);
+  await page.getByRole('switch',{name:/Advanced Mode/}).click();await page.getByRole('button',{name:'Close Tools',exact:true}).click();await expect(page.getByLabel('Custom Instructions',{exact:true})).toHaveCount(0);expect(api.renders).toHaveLength(2);
 });

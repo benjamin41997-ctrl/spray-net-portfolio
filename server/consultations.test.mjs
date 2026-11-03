@@ -123,3 +123,15 @@ test('the shared media budget fails without publishing or leaving unreferenced f
   h.records.set('consultation:mediaBytes',0);await upload(h);assert.ok(h.records.get('consultation:mediaBytes')>0);
   await h.request('/api/consultations',{action:'delete',consultationId:id});assert.equal(h.records.get('consultation:mediaBytes'),0);
 });
+
+
+test('photo view labels persist with saved previews and representative renaming updates the shared archive',async()=>{
+  const h=consultationFixture();await create(h);await upload(h,{...photo(),viewLabel:'Sink View'});
+  const look={id:'named-render-000000001',photoId:photo().id,design,viewLabel:'Wrong Client Label'};
+  await h.request('/api/consultations',{action:'look',consultationId:id,look,image:fixtureImage});
+  assert.equal(h.records.get('consultation:'+id).looks[0].viewLabel,'Sink View');
+  const body={action:'labelPhoto',consultationId:id,photoId:photo().id,viewLabel:'Sink & Dishwasher View'};
+  assert.equal((await h.request('/api/consultations',body,false)).status,403);assert.equal((await h.request('/api/consultations',body)).status,200);
+  h.advance(3_600_001);const c=(await h.request('/api/consultations',{action:'activate',consultationId:id}).then(r=>r.json())).consultation;
+  assert.equal(c.photos[0].viewLabel,'Sink & Dishwasher View');assert.equal(c.looks[0].viewLabel,'Sink & Dishwasher View');assert.equal(h.renders,0);
+});

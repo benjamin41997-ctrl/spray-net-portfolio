@@ -17,6 +17,20 @@ async function install(context,h) {
 async function upload(page) {await page.getByLabel('Choose home photo',{exact:true}).setInputFiles(fileURLToPath(new URL('../public/'+projects[0].beforeImage,import.meta.url)));await expect(page.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();}
 async function create(page) {await page.getByLabel('Find a Color',{exact:true}).fill('SW7008');await page.locator('.viz-swatch').first().click();await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expect(page.locator('.viz-look-strip button')).toHaveCount(1);}
 
+test('corrected photo view names sync to the second tablet and survive reopening the archive',async({browser,baseURL})=>{
+  test.setTimeout(75_000);const h=consultationFixture({origin:new URL(baseURL).origin,renderImage});
+  const first=await browser.newContext({serviceWorkers:'block'}),second=await browser.newContext({serviceWorkers:'block'});await Promise.all([install(first,h),install(second,h)]);
+  const rep=await first.newPage(),customer=await second.newPage();
+  try{
+    await rep.goto(baseURL+'#/visualize');await upload(rep);await create(rep);await customer.goto(baseURL+'#/visualize');await expect(customer.locator('.viz-look-strip')).toContainText('Alabaster · Sink View',{timeout:20000});
+    await tools(rep);await rep.getByRole('switch',{name:/Advanced Mode/}).click();await rep.getByRole('button',{name:'Close Tools',exact:true}).click();
+    await rep.getByLabel('Photo View',{exact:true}).fill('Island & Stove View');await rep.getByRole('button',{name:'Save View Name',exact:true}).click();await expect(rep.getByText('View Name Saved',{exact:true})).toBeVisible();
+    await expect(customer.locator('.viz-look-strip')).toContainText('Alabaster · Island & Stove View',{timeout:20000});
+    await rep.reload();await expect(rep.locator('.viz-look-strip')).toContainText('Alabaster · Island & Stove View',{timeout:20000});await expect(rep.getByLabel('Custom Instructions',{exact:true})).toHaveCount(0);
+    await tools(rep);await rep.getByRole('button',{name:'Saved Consultations',exact:true}).click();await rep.locator('.viz-consultation-list button').filter({hasText:'Open'}).click();await expect(rep.locator('.viz-look-strip')).toContainText('Island & Stove View');expect(h.renders).toBe(1);
+  }finally{await first.close();await second.close();}
+});
+
 test('an old local preview can be deleted after its shared consultation was removed elsewhere',async({browser,baseURL})=>{
   test.setTimeout(60_000);const h=consultationFixture({origin:new URL(baseURL).origin,renderImage});const context=await browser.newContext({serviceWorkers:'block'});await install(context,h);const page=await context.newPage();
   try{
@@ -24,7 +38,7 @@ test('an old local preview can be deleted after its shared consultation was remo
     const c=(await h.request('/api/consultations/active').then(r=>r.json())).active;await h.request('/api/consultations',{action:'delete',consultationId:c.id});
     await expect(page).not.toHaveURL(/#\/visualize/,{timeout:15000});await page.goto(baseURL+'#/visualize');await tools(page);
     await page.getByRole('button',{name:'Saved Previews on This Tablet',exact:true}).click();await expect(page.locator('.viz-render-card')).toHaveCount(1);
-    page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete Preview 1',exact:true}).click();
+    page.once('dialog',d=>d.accept());await page.locator('.viz-render-card button').first().click();
     await expect(page.locator('.viz-render-card')).toHaveCount(0);await expect(page.locator('.viz-saved-item')).toHaveCount(0);expect(h.objects.size).toBe(0);
   }finally{await context.close();}
 });
@@ -40,7 +54,7 @@ test('deleting one shared preview removes it on both tablets, preserves original
     await customer.goto(baseURL+'#/visualize');await expect(customer.locator('.viz-look-strip button')).toHaveCount(2,{timeout:20000});
     await expect(rep.locator('.viz-sync-status')).toContainText('Synced');
     await tools(rep);await rep.getByRole('button',{name:'Saved Previews on This Tablet',exact:true}).click();await expect(rep.locator('.viz-saved-item')).toHaveCount(2);
-    rep.once('dialog',d=>d.accept());await rep.getByRole('button',{name:'Delete Preview 2',exact:true}).click();
+    rep.once('dialog',d=>d.accept());await rep.locator('.viz-render-card button').nth(1).click();
     await expect(rep.locator('.viz-render-card')).toHaveCount(1);await expect(rep.locator('.viz-saved-item')).toHaveCount(1);
     await expect(customer.locator('.viz-look-strip button')).toHaveCount(1,{timeout:20000});await expect(customer.getByRole('button',{name:'Select Photo 1',exact:true})).toBeVisible();
     const c=(await h.request('/api/consultations/active').then(r=>r.json())).active;expect(c.looks[0].cabinetReferenceId).toBe(c.looks[0].id);expect(h.objects.size).toBe(3);

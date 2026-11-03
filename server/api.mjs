@@ -1,3 +1,4 @@
+import {identifyViews} from './views.mjs';
 import {analyzePhoto, surfaceKeys, validateRegions} from './regions.mjs';
 import { ApiError, buildPrompt, validateDesign } from './design.mjs';
 import { MAX_BODY_BYTES, MAX_RESPONSE_BYTES, validateImage } from './images.mjs';
@@ -111,7 +112,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
   let busy = false;
   const paired = tabletCredentials(config);
   return async request => {
-    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-02.16', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
+    const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Visualizer-Release': '2026-11-02.17', 'X-Visualizer-Render-Mode':config.fastTestMode ? 'fast-test' : 'standard', Vary: 'Origin' };
     const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers });
     let acquired = false;
     try {
@@ -122,7 +123,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
       }
       const path = new URL(request.url).pathname;
       const consultationRoute=path==='/api/consultations' || path.startsWith('/api/consultations/');
-      if (!consultationRoute && !['/api/health', '/api/session', '/api/render', '/api/connect', '/api/analyze'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
+      if (!consultationRoute && !['/api/health', '/api/session', '/api/render', '/api/connect', '/api/analyze','/api/view-labels'].includes(path)) throw new ApiError(404, 'not_found', 'This page was not found.');
       if (request.method === 'OPTIONS') {
         const method = request.headers.get('access-control-request-method');
         const requestedHeaders = (request.headers.get('access-control-request-headers') || '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
@@ -133,7 +134,7 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
         return new Response(null, { status: 204, headers });
       }
       if(consultationRoute && !['GET','POST'].includes(request.method))throw new ApiError(405,'method_not_allowed','This request method is not allowed.');
-      if (!consultationRoute && (['/api/render','/api/connect','/api/analyze'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
+      if (!consultationRoute && (['/api/render','/api/connect','/api/analyze','/api/view-labels'].includes(path) ? request.method !== 'POST' : request.method !== 'GET')) throw new ApiError(405, 'method_not_allowed', 'This request method is not allowed.');
       if (path === '/api/health') return json({ configured: config.configured });
       if (!config.configured) throw new ApiError(503, 'not_configured', 'Ask your representative to connect the rendering service.');
       if (path === '/api/connect') {
@@ -155,6 +156,11 @@ export function createApi({ config, catalog, reserve, reserveAnalysis = reserve,
       busy = true;
       acquired = true;
       const body = await parseBody(request, path==='/api/render' ? MAX_BODY_BYTES*2 : MAX_BODY_BYTES);
+      if(path==='/api/view-labels') {
+        if(!body || Object.keys(body).some(k=>!['mode','photos'].includes(k)) || !['kitchen','exterior'].includes(body.mode) || !Array.isArray(body.photos) || !body.photos.length || body.photos.length>4 || new Set(body.photos.map(p=>p?.id)).size!==body.photos.length)throw new ApiError(400,'invalid_views','Choose up to four photos to name.');
+        for(const p of body.photos){if(!p || typeof p.id!=='string' || !/^[a-zA-Z0-9-]{1,80}$/.test(p.id) || Object.keys(p).some(k=>!['id','image'].includes(k)) || typeof p.image!=='string' || p.image.length>350_000)throw new ApiError(400,'invalid_views','Use a small thumbnail to identify the view.');validateImage(p.image);}
+        await reserveAnalysis();return json(await identifyViews(body,request,config,fetchImpl,readBounded));
+      }
       if(path==='/api/analyze') {
         if(!body || Array.isArray(body) || Object.keys(body).some(key=>!['image','mode','feedback','previousRegions','imageSize'].includes(key)) || !Object.hasOwn(surfaceKeys,body.mode)) throw new ApiError(400,'invalid_analysis','Choose a kitchen or exterior photograph.');
         if(body.imageSize!==undefined && (!body.imageSize || Object.keys(body.imageSize).some(k=>!['width','height'].includes(k)) || ![body.imageSize.width,body.imageSize.height].every(n=>Number.isInteger(n)&&n>0&&n<=4096)))throw new ApiError(400,'invalid_analysis','This photo has invalid dimensions. Choose the photo again.');
