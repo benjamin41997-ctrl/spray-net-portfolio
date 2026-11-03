@@ -36,11 +36,11 @@ test('the one-hour clear preserves originals and renders and representative reop
 test('stable cabinet references sync and survive archive reopening with color and photo validation',async()=>{
   const h=consultationFixture();await create(h);await upload(h);
   const base={id:'cabinet-base-0000000001',photoId:photo().id,design,cabinetReferenceId:'cabinet-base-0000000001',quality:'preview'};
-  const variant={...base,id:'cabinet-variant-000000001',design:{...design,hardwareFinish:'gold'}};
+  const variant={...base,id:'cabinet-variant-000000001',design:{...design,hardwareFinish:'gold',countertop:'calacatta',backsplash:'match-countertop'}};
   for(const look of [base,variant])assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look,image:fixtureImage})).status,200);
   const active=await h.request('/api/consultations/active',undefined,false).then(r=>r.json());assert.equal(active.active.looks[1].cabinetReferenceId,base.id);
   const wrong={...variant,id:'bad-cabinet-00000000001',design:{...design,surfaces:{cabinets:'sw-6258'}}};assert.equal((await h.request('/api/consultations',{action:'look',consultationId:id,look:wrong,image:fixtureImage})).status,400);
-  h.advance(3_600_001);const reopened=await h.request('/api/consultations',{action:'activate',consultationId:id}).then(r=>r.json());assert.equal(reopened.consultation.looks[1].cabinetReferenceId,base.id);
+  h.advance(3_600_001);const reopened=await h.request('/api/consultations',{action:'activate',consultationId:id}).then(r=>r.json());assert.equal(reopened.consultation.looks[1].cabinetReferenceId,base.id);assert.equal(reopened.consultation.looks[1].design.countertop,'calacatta');assert.equal(reopened.consultation.looks[1].design.backsplash,'match-countertop');
 });
 
 test('shutter colors and removal choices sync and survive archive reopening',async()=>{

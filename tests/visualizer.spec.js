@@ -159,6 +159,24 @@ test('two-tone kitchen changes send the original photo, save automatically, and 
   await expect(page.getByAltText('Original photo of your home', { exact: true })).toBeVisible();
 });
 
+test('Calacatta and a matching slab backsplash remain linked while the cabinet reference stays fixed',async({page})=>{
+  const api=await stubService(page);await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);
+  await page.getByRole('button',{name:'Hardware Finishes',exact:true}).click();
+  await expect(page.getByLabel('Countertops',{exact:true}).getByRole('option',{name:'White Calacatta',exact:true})).toBeAttached();
+  await expect(page.getByLabel('Backsplash',{exact:true}).getByRole('option',{name:'Calacatta Slab',exact:true})).toBeAttached();
+  await page.getByLabel('Countertops',{exact:true}).selectOption('calacatta');await page.getByLabel('Backsplash',{exact:true}).selectOption('match-countertop');
+  await expect(page.getByText('The countertop color and pattern continue up the backsplash in a seamless slab look.',{exact:true})).toBeVisible();
+  for(const viewport of [{width:1180,height:820},{width:834,height:1194}]){await page.setViewportSize(viewport);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth && document.querySelector('main').scrollHeight<=document.querySelector('main').clientHeight+1)).toBe(true);}
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page);
+  expect(api.renders[0].body.design.countertop).toBe('calacatta');expect(api.renders[0].body.design.backsplash).toBe('match-countertop');
+  await page.getByLabel('Countertops',{exact:true}).selectOption('dark-stone');
+  await expect(page.getByLabel('Backsplash',{exact:true})).toHaveValue('match-countertop');
+  await page.getByRole('button',{name:'Create My Preview',exact:true}).click();await expectSaved(page,2);
+  expect(api.renders[1].body.appearanceReference.image).toBe(generatedImage);expect(api.renders[1].body.appearanceReference.design.countertop).toBe('calacatta');
+  expect(api.renders[1].body.design.countertop).toBe('dark-stone');expect(api.renders[1].body.design.backsplash).toBe('match-countertop');
+  expect(api.renders[1].body.design.surfaces).toEqual(api.renders[0].body.design.surfaces);
+});
+
 test('hardware and counter variants hold the same cabinet root, including after viewing an earlier Look',async({page})=>{
   const secondImage='data:image/webp;base64,'+(await readFile(new URL('../public/media/projects/white-brick-stucco/after.webp',import.meta.url))).toString('base64');
   const api=await stubService(page,{renderImages:[generatedImage,secondImage,secondImage]});await openAndConnect(page);await uploadPhoto(page);await selectColor(page,'cabinets',kitchenColors[0]);

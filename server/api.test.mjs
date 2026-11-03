@@ -232,6 +232,28 @@ test('finish-only kitchen edits use the established unlabelled appearance as the
   const restored=JSON.parse(restore.calls[0][1].body);assert.equal(restored.images.length,2);const prompt=restored.prompt;assert.match(prompt,/Restore the original backsplash appearance from IMAGE 2/);assert.match(prompt,/Restore the original countertop appearance from IMAGE 2/);
 });
 
+test('Calacatta countertops and slab backsplashes specify white stone, contrasting veins and preserved boundaries',()=>{
+  for(const backsplash of ['calacatta','match-countertop']) {
+    const checked=validateDesign({image,quality:'preview',design:{mode:'kitchen',surfaces:{cabinets:'white'},countertop:'calacatta',backsplash}},catalog);
+    const prompt=buildPrompt(checked.design);
+    assert.match(prompt,/bright white Calacatta-style/);assert.match(prompt,/contrasting gray-to-charcoal veins/);
+    assert.match(prompt,/slab look/);assert.match(prompt,/sinks/);assert.match(prompt,/KITCHEN LIGHTING LOCK/);
+    if(backsplash==='match-countertop'){assert.match(prompt,/MATCH COUNTERTOP BACKSPLASH/);assert.match(prompt,/Match its base color, vein color, vein scale/);assert.match(prompt,/Remove the old tile\/grout grid/);}
+  }
+});
+
+test('a linked backsplash follows countertop changes even when its option value stays unchanged',async()=>{
+  const base={...payload().design,countertop:'calacatta',backsplash:'match-countertop'};
+  const target={...base,countertop:'dark-stone'};
+  const checked=validateDesign({image,quality:'preview',design:target,appearanceReference:{image,design:base}},catalog);
+  assert.deepEqual(checked.appearanceReference.changedFinishes,['countertop','backsplash']);
+  assert.equal(checked.appearanceReference.restoreOriginal,false);
+  const prompt=buildPrompt(checked.design,'',checked);assert.match(prompt,/MATCH COUNTERTOP BACKSPLASH/);assert.match(prompt,/dark charcoal stone/);assert.match(prompt,/FINAL CABINET COLOR LOCK/);
+  const restored=validateDesign({image,quality:'preview',design:{...base,countertop:'keep'},appearanceReference:{image,design:base}},catalog);
+  assert.equal(restored.appearanceReference.restoreOriginal,true);assert.match(buildPrompt(restored.design,'',restored),/original countertop being restored/);
+  const h=harness();assert.equal((await h.api(request({image,quality:'preview',design:target,appearanceReference:{image,design:base}}))).status,200);assert.equal(h.calls.length,1);
+});
+
 test('bad or mismatched appearance references are rejected before image billing',async()=>{
   for(const reference of [{image:'https://example.com/reference.jpg',design:payload().design},{image,design:{...payload().design,surfaces:{cabinets:'white'}}},{image,design:{mode:'exterior',surfaces:{frontDoor:'white'}}},{image,design:payload().design,extra:'bad'}]){
     const h=harness();assert.equal((await h.api(request({...payload(),appearanceReference:reference}))).status,400);assert.equal(h.calls.length,0);assert.equal(h.reservations,0);
