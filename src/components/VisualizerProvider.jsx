@@ -210,5 +210,5 @@ export default function VisualizerProvider({ children }) {
     setAnalyses({...analysisCache.current});setLabel(name);
   }});
   syncRef.current=sync;
-  return <Context.Provider value={{ allPhotos, advancedMode, setAdvancedMode, renamePhotoView, photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, generateAll, batch, removeLook, analyses, analyzePhoto, switchMode, sync, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ allPhotos, advancedMode, setAdvancedMode, renamePhotoView, photo, photos, addPhotos, selectPhoto, design, setDesign, looks, selectedIds, selectedId, setSelectedId, label, setLabel, busy, error, setError, saveWarning, generate, generateAll, batch, removeLook, analyses, analyzePhoto, switchMode, sync, reset, cancel: () => controller.current?.abort() }}>{children}</Context.Provider>;
 }

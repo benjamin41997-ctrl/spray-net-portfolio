@@ -110,7 +110,8 @@
   .viz-photo-thumb { position:relative; min-width:0; min-height:44px; padding:3px; border:2px solid #d5dfe6; border-radius:9px; background:#fff; color:#003965; }
   .viz-photo-thumb.selected { border-color:#003965; }
   .viz-photo-thumb img { width:100%; height:54px; object-fit:cover; border-radius:4px; }
-  .viz-photo-thumb span { position:absolute; bottom:5px; right:5px; display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:#003965; color:white; font-size:13px; font-weight:700; }
+  .viz-photo-number { position:absolute; bottom:5px; right:5px; display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:#003965; color:white; font-size:13px; font-weight:700; }
+  .viz-photo-ready { position:absolute; top:5px; left:5px; padding:3px 6px; border-radius:4px; background:#003965; color:#fff; font-size:12px; font-weight:700; }
   .viz-toolbar button { -webkit-touch-callout:none; user-select:none; }
   .viz-saved-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; max-height:300px; overflow:auto; }
   .viz-saved-item { border:1px solid #d5dfe6; padding:10px; background:white; color:#003965; text-align:left; border-radius:10px; }

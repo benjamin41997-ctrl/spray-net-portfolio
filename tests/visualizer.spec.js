@@ -746,7 +746,22 @@ test('Render All applies one design to four separate kitchen angles and preserve
   expect(api.viewRequests).toHaveLength(1);expect(api.viewRequests[0].photos).toHaveLength(4);
   expect(api.renders).toHaveLength(4);expect(new Set(api.renders.map(r=>r.body.image)).size).toBe(4);
   for(const r of api.renders){expect(r.body.design).toEqual(api.renders[0].body.design);expect(r.body.design.countertop).toBe('calacatta');expect(r.body.design.backsplash).toBe('match-countertop');expect(r.body).not.toHaveProperty('appearanceReference');}
-  for(let index=1;index<=4;index++){await page.getByRole('button',{name:`Select Photo ${index}`,exact:true}).click();await expectSaved(page,1);}
+  await expect(page.getByText('Tap a photo to view its preview.',{exact:true})).toBeVisible();
+  await expect(page.locator('.viz-photo-ready')).toHaveCount(4);
+  for(let index=1;index<=4;index++){
+    const thumbnail=page.getByRole('button',{name:`Select Photo ${index}`,exact:true});
+    await thumbnail.click();await expectSaved(page,1);
+    const shown=page.getByAltText('AI design preview of the selected finishes',{exact:true});
+    await expect.poll(async()=>{
+      const thumbSrc=await thumbnail.locator('img').getAttribute('src');
+      const previewSrc=await shown.getAttribute('src');
+      if(!thumbSrc || !previewSrc)return false;
+      return page.evaluate(async urls=>{
+        const hashes=await Promise.all(urls.map(async url=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await fetch(url).then(response=>response.arrayBuffer())))).join(',')));
+        return hashes[0]===hashes[1];
+      },[thumbSrc,previewSrc]);
+    }).toBe(true);
+  }
   for(const size of [{width:1180,height:820},{width:834,height:1194}]){await page.setViewportSize(size);const box=await page.getByRole('button',{name:'Render All 4 Photos',exact:true}).boundingBox();expect(box.y+box.height).toBeLessThanOrEqual(size.height);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
 });
 
